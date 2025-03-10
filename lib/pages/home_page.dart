@@ -1,13 +1,13 @@
 import 'package:adde/component/tool_card.dart';
 import 'package:adde/pages/Community_page.dart';
 import 'package:adde/pages/Education_page.dart';
-import 'package:adde/pages/calander_page.dart';
+import 'package:adde/pages/appointmentPages/calander_page.dart';
 import 'package:adde/pages/calculator_page.dart';
 import 'package:adde/pages/journal_page.dart';
 import 'package:adde/pages/name_suggation_page.dart';
 import 'package:adde/pages/notification_page.dart';
 import 'package:adde/pages/setting_page.dart';
-import 'package:adde/pages/tele-conseltation_page.dart';
+import 'package:adde/pages/appointmentPages/tele-conseltation_page.dart';
 import 'package:flutter/material.dart';
 import 'package:adde/pages/diary_form_page.dart';
 import 'package:adde/pages/login_page.dart';
