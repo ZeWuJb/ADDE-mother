@@ -1,357 +1,252 @@
+// BookingPage.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:table_calendar/table_calendar.dart';
+
+import 'appointments_page.dart';
 
 class BookingPage extends StatefulWidget {
   final String doctorId;
-  const BookingPage({super.key, required this.doctorId});
+
+  const BookingPage({Key? key, required this.doctorId}) : super(key: key);
 
   @override
-  State<BookingPage> createState() => _BookingPageState();
+  _BookingPageState createState() => _BookingPageState();
 }
 
 class _BookingPageState extends State<BookingPage> {
-  final CalendarFormat _calendarFormat = CalendarFormat.month;
-  DateTime _focusedDay = DateTime.now();
-  DateTime _selectedDay = DateTime.now();
-  bool _dateSelected = false;
-  bool _timeSelected = false;
-  List<DateTime> _availableTimes = [];
-  Set<DateTime> _availableDates = {};
   final supabase = Supabase.instance.client;
+
+  DateTime? _selectedDay;
+  List<DateTime> _availableTimes = [];
   int? _currentTimeIndex;
+  bool _timeSelected = false;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchInitialAvailability();
+    // Log the doctor ID for debugging
+    print('BookingPage initialized with doctor_id: ${widget.doctorId}');
   }
 
-  Future<void> _fetchInitialAvailability() async {
-    final firstDay = DateTime.now();
-    final lastDay = DateTime(firstDay.year + 10, 12, 31);
-    await _fetchAvailableDates(firstDay, lastDay);
+  Future<void> _fetchAvailableTimes(DateTime selectedDate) async {
+    final dateString = DateFormat('yyyy-MM-dd').format(selectedDate);
+    print('Fetching availability for doctor_id: ${widget.doctorId} on date: $dateString');
+
+    final response = await supabase
+        .from('doctor_availability')
+        .select('availability')
+        .eq('doctor_id', widget.doctorId)
+        .maybeSingle();
+
+    print('Response from Supabase: ${ supabase.auth.currentUser?.id}');
+    if (response == null || response['availability'] == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No availability found for this doctor.')),
+      );
+      return;
+    }
+
+    final availability = response['availability'];
+    final dateEntry = (availability['dates'] as List?)
+        ?.firstWhere((entry) => entry['date'] == dateString, orElse: () => null);
+
+    if (dateEntry != null) {
+      setState(() {
+        _availableTimes = (dateEntry['slots'] as List)
+            .map<DateTime>((slot) => DateFormat('HH:mm').parse(slot))
+            .toList();
+      });
+    } else {
+      setState(() {
+        _availableTimes = [];
+      });
+    }
+  }
+
+  // Check if mother record exists and create if needed
+  Future<bool> _ensureMotherRecordExists() async {
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) {
+      print('No authenticated user found');
+      return false;
+    }
+
+    try {
+      // Check if mother record exists
+      final motherRecord = await supabase
+          .from('mothers')
+          .select('user_id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (motherRecord != null) {
+        print('Mother record exists with ID: $userId');
+        return true;
+      }
+
+      // Get user details from auth
+      final user = supabase.auth.currentUser!;
+      final email = user.email ?? '';
+
+      // Create mother record without doctor_id
+      print('Creating mother record for user: $userId');
+      await supabase.from('mothers').insert({
+        'id': userId,
+        'full_name': email.split('@')[0], // Use part of email as name if no name available
+        'email': email,
+        // Remove doctor_id field as it's not part of the mothers table
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      print('Mother record created successfully');
+      return true;
+    } catch (error) {
+      print('Error ensuring mother record exists: $error');
+      return false;
+    }
+  }
+  Future<void> sendRequest() async {
+    if (_selectedDay == null || _currentTimeIndex == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a date and time')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // First ensure mother record exists
+      final motherRecordExists = await _ensureMotherRecordExists();
+      if (!motherRecordExists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not create user profile. Please try again.')),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final selectedTime = _availableTimes[_currentTimeIndex!];
+
+      // Create a proper DateTime object for the requested time
+      final requestedDateTime = DateTime(
+        _selectedDay!.year,
+        _selectedDay!.month,
+        _selectedDay!.day,
+        selectedTime.hour,
+        selectedTime.minute,
+      );
+
+      final userId = supabase.auth.currentUser?.id;
+      print('Creating appointment with doctor_id: ${widget.doctorId}');
+      print('Requested time: ${requestedDateTime.toIso8601String()}');
+      print('Current user ID: $userId');
+
+      // Create appointment data matching database schema
+      final appointmentData = {
+        'doctor_id': widget.doctorId,
+        'mother_id': userId,
+        // Convert DateTime to ISO8601 string for proper serialization
+        'requested_time': requestedDateTime.toIso8601String(),
+        'status': 'pending',
+        'payment_status': 'unpaid',
+        'video_conference_link': null,
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      final response = await supabase.from('appointments').insert([appointmentData]);
+
+      print('Appointment created successfully');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Appointment booked successfully!')),
+      );
+
+      // Navigate to SocketTestPage after successful booking
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => SocketTestPage(doctorId: widget.doctorId)),
+      );
+
+      setState(() {
+        _selectedDay = null;
+        _timeSelected = false;
+        _currentTimeIndex = null;
+        _availableTimes = [];
+      });
+    } catch (error) {
+      print('Error creating appointment: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error booking appointment: ${error.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Book Appointment'),
-        backgroundColor: Colors.teal,
-      ),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Column(
-              children: [
-                _buildTableCalendar(),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 35),
-                  child: Center(
-                    child: Text(
-                      'Select Consultation Time',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+      appBar: AppBar(title: const Text('Book Appointment')),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: CalendarDatePicker(
+              initialDate: DateTime.now(),
+              firstDate: DateTime.now(),
+              lastDate: DateTime.now().add(const Duration(days: 30)),
+              onDateChanged: (date) {
+                setState(() {
+                  _selectedDay = date;
+                  _availableTimes = [];
+                  _currentTimeIndex = null;
+                  _timeSelected = false;
+                });
+                _fetchAvailableTimes(date);
+              },
             ),
           ),
-          if (_availableTimes.isEmpty && _dateSelected)
-            SliverToBoxAdapter(
-              child: _buildMessage('No available times for this date.'),
-            )
-          else
-            SliverGrid(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final time = _availableTimes[index];
-                return InkWell(
-                  onTap: () {
-                    setState(() {
-                      _currentTimeIndex = index;
-                      _timeSelected = true;
-                    });
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color:
-                            _currentTimeIndex == index
-                                ? Colors.teal
-                                : Colors.black,
-                      ),
-                      borderRadius: BorderRadius.circular(15),
-                      color: _currentTimeIndex == index ? Colors.teal : null,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      DateFormat('h:mm a').format(time),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: _currentTimeIndex == index ? Colors.white : null,
-                      ),
-                    ),
+          if (_selectedDay != null) ...[
+            const Text('Available Time Slots:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Wrap(
+              children: List.generate(_availableTimes.length, (index) {
+                final time = DateFormat('HH:mm').format(_availableTimes[index]);
+                return Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: ChoiceChip(
+                    label: Text(time),
+                    selected: _currentTimeIndex == index,
+                    onSelected: (selected) {
+                      setState(() {
+                        _currentTimeIndex = selected ? index : null;
+                        _timeSelected = selected;
+                      });
+                    },
                   ),
                 );
-              }, childCount: _availableTimes.length),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                childAspectRatio: 1.7,
-              ),
+              }),
             ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(40.0),
-              child: Column(
-                children: [
-                  ElevatedButton(
-                    onPressed:
-                        _dateSelected && _timeSelected ? sendRequest : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    ),
-                    child: const Text(
-                      'Make Appointment',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) =>
-                                  const PaymentPage(appointmentId: null),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey,
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    ),
-                    child: const Text(
-                      'Pay',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          ],
+          const Spacer(),
+          ElevatedButton(
+            onPressed: _selectedDay != null && _timeSelected ? sendRequest : null,
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+            child: const Text('Make Appointment'),
           ),
+          const SizedBox(height: 20),
         ],
       ),
-    );
-  }
-
-  Widget _buildTableCalendar() {
-    return TableCalendar(
-      focusedDay: _focusedDay,
-      firstDay: DateTime.now(),
-      lastDay: DateTime.now().add(const Duration(days: 3650)),
-      calendarFormat: _calendarFormat,
-      currentDay: _selectedDay,
-      rowHeight: 48,
-      calendarStyle: const CalendarStyle(
-        todayDecoration: BoxDecoration(
-          color: Colors.teal,
-          shape: BoxShape.circle,
-        ),
-      ),
-      availableCalendarFormats: const {CalendarFormat.month: 'Month'},
-      enabledDayPredicate: (day) => _availableDates.contains(day),
-      onDaySelected: _onDaySelected,
-      onPageChanged: (focusedDay) {
-        setState(() => _focusedDay = focusedDay);
-        final start = DateTime(focusedDay.year, focusedDay.month, 1);
-        final end = DateTime(focusedDay.year, focusedDay.month + 1, 0);
-        _fetchAvailableDates(start, end);
-      },
-    );
-  }
-
-  Widget _buildMessage(String message) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 30),
-      alignment: Alignment.center,
-      child: Text(
-        message,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Colors.grey,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _fetchAvailableDates(DateTime start, DateTime end) async {
-    setState(() => _isLoading = true);
-    try {
-      final response = await supabase
-          .from('doctor_availability')
-          .select('availability')
-          .eq('doctor_id', widget.doctorId);
-
-      final dates = <DateTime>{};
-      for (var entry in response) {
-        final availability = Map<String, dynamic>.from(entry['availability']);
-        final dateList = List<Map<String, dynamic>>.from(
-          availability['dates'] ?? [],
-        );
-
-        for (var dateEntry in dateList) {
-          final dateString = dateEntry['date'] as String?;
-          if (dateString != null) {
-            final date = DateFormat('yyyy-MM-dd').parse(dateString);
-            if (date.isAfter(start.subtract(const Duration(days: 1))) &&
-                date.isBefore(end.add(const Duration(days: 1)))) {
-              dates.add(date);
-            }
-          }
-        }
-      }
-      setState(() => _availableDates = dates);
-    } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching availability: $error')),
-      );
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  void _onDaySelected(DateTime selectedDay, DateTime focusedDay) async {
-    if (!mounted) return;
-    setState(() {
-      _selectedDay = selectedDay;
-      _focusedDay = focusedDay;
-      _dateSelected = true;
-      _availableTimes = [];
-      _currentTimeIndex = null;
-      _timeSelected = false;
-    });
-    await _fetchAvailableTimes(selectedDay);
-  }
-
-  Future<void> _fetchAvailableTimes(DateTime date) async {
-    setState(() => _isLoading = true);
-    try {
-      final dateString = DateFormat('yyyy-MM-dd').format(date);
-      final response = await supabase
-          .from('doctor_availability')
-          .select('availability')
-          .eq('doctor_id', widget.doctorId);
-
-      final timeSet = <DateTime>{};
-      for (var entry in response) {
-        final availability = Map<String, dynamic>.from(entry['availability']);
-        final dateList = List<Map<String, dynamic>>.from(
-          availability['dates'] ?? [],
-        );
-
-        for (var dateEntry in dateList) {
-          if (dateEntry['date'] == dateString) {
-            final slots = List<String>.from(dateEntry['slots'] ?? []);
-
-            for (var slot in slots) {
-              final time = _parseTime(slot);
-              if (time != null) {
-                timeSet.add(
-                  DateTime(
-                    date.year,
-                    date.month,
-                    date.day,
-                    time.hour,
-                    time.minute,
-                  ),
-                );
-              }
-            }
-          }
-        }
-      }
-      setState(() => _availableTimes = timeSet.toList()..sort());
-    } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching available times: $error')),
-      );
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  TimeOfDay? _parseTime(String timeStr) {
-    try {
-      final parts = timeStr.split(':');
-      if (parts.length == 2) {
-        final hour = int.parse(parts[0]);
-        final minute = int.parse(parts[1]);
-        return TimeOfDay(hour: hour, minute: minute);
-      }
-    } catch (e) {
-      debugPrint('Invalid time format: $timeStr');
-    }
-    return null;
-  }
-
-  Future<void> sendRequest() async {
-    if (!_dateSelected || !_timeSelected) return;
-    setState(() => _isLoading = true);
-    try {
-      final selectedTime = _availableTimes[_currentTimeIndex!];
-      await supabase.from('appointments').insert({
-        'doctor_id': widget.doctorId,
-        'user_id': supabase.auth.currentUser!.id,
-        'date': DateFormat('yyyy-MM-dd').format(_selectedDay),
-        'time': DateFormat('h:mm a').format(selectedTime),
-        'status': 'pending',
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Request sent successfully')),
-      );
-      Navigator.pop(context);
-    } catch (error) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $error')));
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-}
-
-class PaymentPage extends StatelessWidget {
-  const PaymentPage({super.key, required appointmentId});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Payment'),
-        backgroundColor: Colors.teal,
-      ),
-      body: const Center(child: Text('Payment Page')),
     );
   }
 }
