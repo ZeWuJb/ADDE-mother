@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'doctors_detail_page.dart';
+import 'doctors_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DoctorsPage extends StatefulWidget {
@@ -39,32 +39,46 @@ class _DoctorsPageState extends State<DoctorsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Available Doctors'),
+        title: const Text(
+          'Available Doctors',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: Colors.white,
+          ),
+        ),
         backgroundColor: Colors.teal,
+        elevation: 0,
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.teal),
+        ),
+      )
+          : doctors.isEmpty
+          ? Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.person_off, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              "No doctors available",
+              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      )
           : ListView.builder(
         itemCount: doctors.length,
+        padding: const EdgeInsets.all(16),
         itemBuilder: (context, index) {
           final doctor = doctors[index];
-          return Card(
-            margin: const EdgeInsets.all(8.0),
-            child: ListTile(
-              title: Text(doctor['full_name']),
-              subtitle: Text(doctor['speciality']),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DoctorDetailsPage(doctor: doctor),
-                  ),
-                );
-              },
-            ),
-          );
+          return DoctorCard(doctor: doctor);
         },
       ),
     );
   }
 }
+

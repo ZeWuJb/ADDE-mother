@@ -1,8 +1,7 @@
-// BookingPage.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import 'serverioconfig.dart';
 import 'appointments_page.dart';
 
 class BookingPage extends StatefulWidget {
@@ -16,18 +15,65 @@ class BookingPage extends StatefulWidget {
 
 class _BookingPageState extends State<BookingPage> {
   final supabase = Supabase.instance.client;
+  final SocketService _socketService = SocketService();
 
   DateTime? _selectedDay;
   List<DateTime> _availableTimes = [];
   int? _currentTimeIndex;
   bool _timeSelected = false;
   bool _isLoading = false;
+  String? _requestStatus;
 
   @override
   void initState() {
     super.initState();
     // Log the doctor ID for debugging
     print('BookingPage initialized with doctor_id: ${widget.doctorId}');
+
+    // Initialize socket connection after widget is fully built
+    Future.microtask(() {
+      final userId = supabase.auth.currentUser?.id;
+      if (userId != null) {
+        _socketService.connect(userId);
+
+        // Set up callbacks for appointment responses
+        _socketService.onAppointmentAccepted = (data) {
+          if (!mounted) return;
+
+          setState(() {
+            _requestStatus = 'accepted';
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Your appointment has been accepted!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        };
+
+        _socketService.onAppointmentDeclined = (data) {
+          if (!mounted) return;
+
+          setState(() {
+            _requestStatus = 'declined';
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Your appointment was declined. Please try another time.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        };
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _socketService.disconnect();
+    super.dispose();
   }
 
   Future<void> _fetchAvailableTimes(DateTime selectedDate) async {
@@ -40,7 +86,7 @@ class _BookingPageState extends State<BookingPage> {
         .eq('doctor_id', widget.doctorId)
         .maybeSingle();
 
-    print('Response from Supabase: ${ supabase.auth.currentUser?.id}');
+    print('Response from Supabase: ${supabase.auth.currentUser?.id}');
     if (response == null || response['availability'] == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No availability found for this doctor.')),
@@ -107,6 +153,7 @@ class _BookingPageState extends State<BookingPage> {
       return false;
     }
   }
+
   Future<void> sendRequest() async {
     if (_selectedDay == null || _currentTimeIndex == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -144,31 +191,32 @@ class _BookingPageState extends State<BookingPage> {
       );
 
       final userId = supabase.auth.currentUser?.id;
-      print('Creating appointment with doctor_id: ${widget.doctorId}');
-      print('Requested time: ${requestedDateTime.toIso8601String()}');
-      print('Current user ID: $userId');
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
 
-      // Create appointment data matching database schema
-      final appointmentData = {
-        'doctor_id': widget.doctorId,
-        'mother_id': userId,
-        // Convert DateTime to ISO8601 string for proper serialization
-        'requested_time': requestedDateTime.toIso8601String(),
-        'status': 'pending',
-        'payment_status': 'unpaid',
-        'video_conference_link': null,
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      };
+      // Get user name from Supabase
+      final userData = await supabase
+          .from('mothers')
+          .select('full_name')
+          .eq('user_id', userId)
+          .single();
 
-      final response = await supabase.from('appointments').insert([appointmentData]);
+      final motherName = userData['full_name'] ?? 'Unknown Patient';
 
-      print('Appointment created successfully');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Appointment booked successfully!')),
+      // Send appointment request via socket instead of saving to database
+      _socketService.requestAppointment(
+        doctorId: widget.doctorId,
+        motherId: userId,
+        motherName: motherName,
+        requestedTime: requestedDateTime.toIso8601String(),
       );
 
-      // Navigate to SocketTestPage after successful booking
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Appointment request sent! Waiting for doctor approval.')),
+      );
+
+      // Navigate to waiting page
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => SocketTestPage(doctorId: widget.doctorId)),
@@ -181,9 +229,9 @@ class _BookingPageState extends State<BookingPage> {
         _availableTimes = [];
       });
     } catch (error) {
-      print('Error creating appointment: $error');
+      print('Error sending appointment request: $error');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error booking appointment: ${error.toString()}')),
+        SnackBar(content: Text('Error sending request: ${error.toString()}')),
       );
     } finally {
       setState(() {
@@ -242,7 +290,7 @@ class _BookingPageState extends State<BookingPage> {
           ElevatedButton(
             onPressed: _selectedDay != null && _timeSelected ? sendRequest : null,
             style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-            child: const Text('Make Appointment'),
+            child: const Text('Request Appointment'),
           ),
           const SizedBox(height: 20),
         ],
@@ -250,3 +298,4 @@ class _BookingPageState extends State<BookingPage> {
     );
   }
 }
+

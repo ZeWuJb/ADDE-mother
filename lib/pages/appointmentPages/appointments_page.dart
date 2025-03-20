@@ -1,8 +1,8 @@
-// SocketTestPage.dart
-
-import 'package:adde/pages/appointmentPages/serverioconfig.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
+import 'dart:async';
+import 'serverioconfig.dart';
 
 class SocketTestPage extends StatefulWidget {
   final String doctorId;
@@ -13,143 +13,424 @@ class SocketTestPage extends StatefulWidget {
   _SocketTestPageState createState() => _SocketTestPageState();
 }
 
-class _SocketTestPageState extends State<SocketTestPage> {
+class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProviderStateMixin {
   final SocketService _socketService = SocketService();
   final supabase = Supabase.instance.client;
-  List<String> notifications = [];
+
+  // Appointment lists by status
   List<Map<String, dynamic>> pendingAppointments = [];
+  List<Map<String, dynamic>> acceptedAppointments = [];
+  List<Map<String, dynamic>> rejectedAppointments = [];
+
   String connectionStatus = 'Disconnected';
   String errorMessage = '';
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _timeController = TextEditingController();
+  bool isLoading = true;
+  bool isReconnecting = false;
+
+  // Tab controller for the different appointment categories
+  late TabController _tabController;
+
+  // Add a method to handle connection status updates more robustly
+  void _handleConnectionStatus(bool connected) {
+    if (!mounted) return;
+
+    setState(() {
+      connectionStatus = connected ? 'Connected' : 'Disconnected';
+      isReconnecting = !connected;
+    });
+
+    // If connection was established, refresh data
+    if (connected) {
+      _loadAppointments();
+    }
+  }
+
+  // Add a method to periodically refresh data and check connection
+  Timer? _refreshTimer;
+
+  void _startPeriodicRefresh() {
+    // Cancel any existing timer
+    _refreshTimer?.cancel();
+
+    // Set up a new refresh timer
+    _refreshTimer = Timer.periodic(Duration(seconds: 30), (timer) {
+      if (mounted) {
+        // Check connection status
+        if (!_socketService.isConnected) {
+          print('Periodic check: Socket not connected, attempting to reconnect');
+          final userId = supabase.auth.currentUser?.id;
+          if (userId != null) {
+            setState(() {
+              isReconnecting = true;
+            });
+            _socketService.connect(userId);
+          }
+        }
+
+        // Refresh data
+        _loadAppointments();
+      }
+    });
+  }
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
     print('SocketTestPage initialized with doctor_id: ${widget.doctorId}');
-    _connectSocket();
+
+    // Set up connection status callback with the new handler
+    _socketService.onConnectionChange = _handleConnectionStatus;
+
+    // Set up error callback
+    _socketService.onError = (error) {
+      if (!mounted) return;
+
+      setState(() {
+        errorMessage = error;
+      });
+
+      // Show a snackbar for connection errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Connection error: $error'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Retry',
+            onPressed: () {
+              final userId = supabase.auth.currentUser?.id;
+              if (userId != null) {
+                setState(() {
+                  isReconnecting = true;
+                });
+                _socketService.connect(userId);
+              }
+            },
+          ),
+        ),
+      );
+    };
+
+    // Set up appointment history callback
+    _socketService.onAppointmentHistoryReceived = (appointments) {
+      if (!mounted) return;
+
+      // Process appointments by status
+      List<Map<String, dynamic>> pending = [];
+      List<Map<String, dynamic>> accepted = [];
+      List<Map<String, dynamic>> declined = [];
+
+      for (var appointment in appointments) {
+        String status = appointment['status'] ?? 'pending';
+
+        if (status == 'pending') {
+          pending.add(appointment);
+        } else if (status == 'accepted') {
+          accepted.add(appointment);
+        } else if (status == 'declined') {
+          declined.add(appointment);
+        }
+      }
+
+      setState(() {
+        pendingAppointments = pending;
+        acceptedAppointments = accepted;
+        rejectedAppointments = declined;
+        isLoading = false;
+      });
+    };
+
+    // Connect socket and load data after widget is fully initialized
+    // Use Future.microtask to ensure the widget is fully built
+    Future.microtask(() {
+      _connectSocket();
+      _loadAppointments();
+
+      // Set up a periodic refresh timer
+      _startPeriodicRefresh();
+    });
+  }
+
+  Future<void> _loadAppointments() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) {
+        setState(() {
+          errorMessage = 'User not authenticated';
+          isLoading = false;
+        });
+        return;
+      }
+
+      // First try to load from local storage
+      final storedAppointments = await _socketService.loadAppointmentsFromStorage();
+
+      setState(() {
+        pendingAppointments = storedAppointments['pending'] ?? [];
+        acceptedAppointments = storedAppointments['accepted'] ?? [];
+        rejectedAppointments = storedAppointments['declined'] ?? [];
+      });
+
+      // Then request fresh data from server
+      if (_socketService.isConnected) {
+        _socketService.requestAppointmentHistory(userId, 'mother');
+      }
+    } catch (error) {
+      print('Error loading appointments: $error');
+      setState(() {
+        errorMessage = 'Failed to load appointments: $error';
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   void _connectSocket() {
-    // Validate doctor_id before connecting
-    if (widget.doctorId.isEmpty) {
+    // Get the current user ID
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) {
       setState(() {
-        errorMessage = 'Invalid doctor ID';
-        connectionStatus = 'Connection Error';
+        errorMessage = 'User not authenticated';
+        connectionStatus = 'Authentication Error';
       });
       return;
     }
 
-    _socketService.connect(widget.doctorId);
+    // Connect using the user's ID
+    _socketService.connect(userId);
 
-    _socketService.socket.on('connect', (_) {
-      print('Socket connected for doctor_id: ${widget.doctorId}');
-      setState(() {
-        connectionStatus = 'Connected';
-        errorMessage = '';
-      });
-    });
-
-    _socketService.socket.on('disconnect', (_) {
-      print('Socket disconnected');
-      setState(() {
-        connectionStatus = 'Disconnected';
-      });
-    });
-
-    _socketService.socket.on('connect_error', (error) {
-      print('Socket connection error: $error');
-      setState(() {
-        connectionStatus = 'Connection Error';
-        errorMessage = error.toString();
-      });
-    });
-
-    _socketService.socket.on('new_appointment', (data) {
-      print('Received new appointment: $data');
-      setState(() {
-        notifications.add('New appointment request from ${data['mother_name']}');
-        pendingAppointments.add(data);
-      });
-    });
-
-    _socketService.socket.on('appointment_accepted', (data) {
+    // Set up callbacks for appointment responses
+    _socketService.onAppointmentAccepted = (data) {
       print('Appointment accepted: $data');
-      setState(() {
-        notifications.add('Appointment accepted for ${data['mother_name']}');
-        pendingAppointments.removeWhere((appointment) => appointment['appointmentId'] == data['appointmentId']);
-      });
-    });
 
-    _socketService.socket.on('appointment_declined', (data) {
-      print('Appointment declined: $data');
+      // Move appointment from pending to accepted
       setState(() {
-        notifications.add('Appointment declined for ${data['mother_name']}');
-        pendingAppointments.removeWhere((appointment) => appointment['appointmentId'] == data['appointmentId']);
+        final appointmentId = data['appointmentId'];
+        final appointmentIndex = pendingAppointments.indexWhere(
+                (appointment) => appointment['appointmentId'] == appointmentId);
+
+        if (appointmentIndex != -1) {
+          final appointment = pendingAppointments[appointmentIndex];
+          appointment['status'] = 'accepted';
+          acceptedAppointments.add(appointment);
+          pendingAppointments.removeAt(appointmentIndex);
+        }
       });
-    });
+
+      // Show notification
+      _showStatusDialog(
+          'Appointment Accepted',
+          'Your appointment has been accepted! Please proceed to payment.',
+          Colors.green);
+    };
+
+    _socketService.onAppointmentDeclined = (data) {
+      print('Appointment declined: $data');
+
+      // Move appointment from pending to rejected
+      setState(() {
+        final appointmentId = data['appointmentId'];
+        final appointmentIndex = pendingAppointments.indexWhere(
+                (appointment) => appointment['appointmentId'] == appointmentId);
+
+        if (appointmentIndex != -1) {
+          final appointment = pendingAppointments[appointmentIndex];
+          appointment['status'] = 'declined';
+          rejectedAppointments.add(appointment);
+          pendingAppointments.removeAt(appointmentIndex);
+        }
+      });
+
+      // Show notification
+      _showStatusDialog(
+          'Appointment Declined',
+          'Your appointment was declined. Please try another time or doctor.',
+          Colors.red);
+    };
   }
 
-  void _sendAppointmentRequest() {
-    final String motherName = _nameController.text.trim();
-    final String requestedTime = _timeController.text.trim();
+  void _showStatusDialog(String title, String message, Color color) {
+    if (!mounted) return;
 
-    if (motherName.isEmpty || requestedTime.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill in all fields')),
-      );
-      return;
-    }
-
-    // Format the date properly for the server
-    DateTime now = DateTime.now();
-    // Try to parse the time input or use a default format
-    DateTime requestedDateTime;
-    try {
-      // Attempt to parse the time string
-      List<String> timeParts = requestedTime.split(':');
-      if (timeParts.length >= 2) {
-        int hour = int.parse(timeParts[0]);
-        int minute = int.parse(timeParts[1]);
-        requestedDateTime = DateTime(now.year, now.month, now.day, hour, minute);
-      } else {
-        // Fallback to current time if parsing fails
-        requestedDateTime = now;
-      }
-    } catch (e) {
-      // If parsing fails, use current time
-      requestedDateTime = now;
-    }
-
-    // Get the current user ID or use a test ID
-    final userId = supabase.auth.currentUser?.id ?? 'test-mother-id';
-
-    print('Sending appointment request:');
-    print('doctor_id: ${widget.doctorId}');
-    print('mother_id: $userId');
-    print('mother_name: $motherName');
-    print('requested_time: ${requestedDateTime.toIso8601String()}');
-
-    _socketService.socket.emit('request_appointment', {
-      'doctor_id': widget.doctorId,
-      'mother_id': userId,
-      'mother_name': motherName,
-      'requested_time': requestedDateTime.toIso8601String(),
-    });
-
-    _nameController.clear();
-    _timeController.clear();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Appointment request sent!')),
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          backgroundColor: color.withOpacity(0.1),
+          actions: [
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
+  String _formatDateTime(String? dateTimeString) {
+    if (dateTimeString == null) return 'Not specified';
+    try {
+      final dateTime = DateTime.parse(dateTimeString);
+      return DateFormat('MMM d, yyyy - h:mm a').format(dateTime);
+    } catch (e) {
+      return dateTimeString;
+    }
+  }
+
+  Widget _buildAppointmentCard(Map<String, dynamic> appointment) {
+    final status = appointment['status'] ?? 'unknown';
+    final Color statusColor = status == 'pending'
+        ? Colors.amber
+        : status == 'accepted'
+        ? Colors.green
+        : Colors.red;
+
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    appointment['doctor_name'] ??
+                        (appointment['doctors'] != null ? appointment['doctors']['full_name'] : 'Unknown Doctor'),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    status.toUpperCase(),
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                SizedBox(width: 8),
+                Text(
+                  _formatDateTime(appointment['requested_time']),
+                  style: TextStyle(color: Colors.grey[700]),
+                ),
+              ],
+            ),
+            if (status == 'accepted') ...[
+              SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.payment, size: 16, color: Colors.grey),
+                  SizedBox(width: 8),
+                  Text(
+                    'Payment Status: ${appointment['payment_status']?.toUpperCase() ?? 'UNPAID'}',
+                    style: TextStyle(
+                      color: appointment['payment_status'] == 'paid' ? Colors.green : Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12),
+              if (appointment['payment_status'] != 'paid')
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Implement payment logic here
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Payment feature will be implemented soon')),
+                    );
+                  },
+                  icon: Icon(Icons.payment),
+                  label: Text('Pay Now'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              if (appointment['payment_status'] == 'paid' && appointment['video_conference_link'] != null)
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Open video conference link
+                    // Implement URL launcher here
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Opening video conference...')),
+                    );
+                  },
+                  icon: Icon(Icons.video_call),
+                  label: Text('Join Meeting'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String message, IconData icon) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 64, color: Colors.grey[400]),
+          SizedBox(height: 16),
+          Text(
+            message,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Update the dispose method to clean up the refresh timer
   @override
   void dispose() {
+    // Cancel any pending operations
     _socketService.disconnect();
-    _nameController.dispose();
-    _timeController.dispose();
+    _refreshTimer?.cancel();
+
+    // Dispose controllers
+    _tabController.dispose();
+
     super.dispose();
   }
 
@@ -157,94 +438,169 @@ class _SocketTestPageState extends State<SocketTestPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Socket.IO Test'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Connection Status: $connectionStatus',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        title: Text('My Appointments'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(
+              icon: Icon(Icons.hourglass_empty),
+              text: 'Pending (${pendingAppointments.length})',
             ),
-            Text(
-              'Doctor ID: ${widget.doctorId}',
-              style: TextStyle(fontSize: 16),
+            Tab(
+              icon: Icon(Icons.check_circle),
+              text: 'Accepted (${acceptedAppointments.length})',
             ),
-            if (errorMessage.isNotEmpty)
-              Text(
-                'Error: $errorMessage',
-                style: TextStyle(color: Colors.red),
-              ),
-            SizedBox(height: 20),
-            Text(
-              'Send Appointment Request:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(labelText: 'Patient Name'),
-            ),
-            TextField(
-              controller: _timeController,
-              decoration: InputDecoration(labelText: 'Requested Time (e.g., 10:00)'),
-            ),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _sendAppointmentRequest,
-              child: Text('Send Request'),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Notifications:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: notifications.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(notifications[index]),
-                  );
-                },
-              ),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Pending Appointments:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: pendingAppointments.length,
-                itemBuilder: (context, index) {
-                  final appointment = pendingAppointments[index];
-                  return ListTile(
-                    title: Text(appointment['mother_name'] ?? 'Unknown'),
-                    subtitle: Text('Time: ${appointment['requested_time'] ?? 'Not specified'}'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () => _socketService.acceptAppointment(appointment['appointmentId']),
-                          child: Text('Accept'),
-                        ),
-                        SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () => _socketService.declineAppointment(appointment['appointmentId']),
-                          child: Text('Decline'),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+            Tab(
+              icon: Icon(Icons.cancel),
+              text: 'Rejected (${rejectedAppointments.length})',
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: () {
+              _loadAppointments();
+              // Also attempt to reconnect if disconnected
+              if (connectionStatus != 'Connected') {
+                final userId = supabase.auth.currentUser?.id;
+                if (userId != null) {
+                  _socketService.connect(userId);
+                }
+              }
+            },
+            tooltip: 'Refresh',
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Connection status indicator
+          Container(
+            padding: EdgeInsets.all(8),
+            color: connectionStatus == 'Connected' ? Colors.green[50] : Colors.red[50],
+            child: Row(
+              children: [
+                Icon(
+                  connectionStatus == 'Connected' ? Icons.wifi : Icons.wifi_off,
+                  color: connectionStatus == 'Connected' ? Colors.green : Colors.red,
+                  size: 18,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Status: $connectionStatus',
+                  style: TextStyle(
+                    color: connectionStatus == 'Connected' ? Colors.green : Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (isReconnecting)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                      ),
+                    ),
+                  ),
+                Spacer(),
+                if (connectionStatus != 'Connected')
+                  TextButton(
+                    onPressed: () {
+                      final userId = supabase.auth.currentUser?.id;
+                      if (userId != null) {
+                        setState(() {
+                          isReconnecting = true;
+                        });
+                        _socketService.connect(userId);
+                      }
+                    },
+                    child: Text('Reconnect'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.red,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Error message if any
+          if (errorMessage.isNotEmpty)
+            Container(
+              padding: EdgeInsets.all(8),
+              color: Colors.red[50],
+              width: double.infinity,
+              child: Text(
+                'Error: $errorMessage',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+
+          // Main content
+          Expanded(
+            child: isLoading
+                ? Center(child: CircularProgressIndicator())
+                : TabBarView(
+              controller: _tabController,
+              children: [
+                // Pending Appointments Tab
+                pendingAppointments.isEmpty
+                    ? _buildEmptyState(
+                  'No pending appointments.\nRequests you send will appear here.',
+                  Icons.hourglass_empty,
+                )
+                    : ListView.builder(
+                  itemCount: pendingAppointments.length,
+                  padding: EdgeInsets.all(8),
+                  itemBuilder: (context, index) {
+                    return _buildAppointmentCard(pendingAppointments[index]);
+                  },
+                ),
+
+                // Accepted Appointments Tab
+                acceptedAppointments.isEmpty
+                    ? _buildEmptyState(
+                  'No accepted appointments.\nAccepted appointments will appear here.',
+                  Icons.check_circle,
+                )
+                    : ListView.builder(
+                  itemCount: acceptedAppointments.length,
+                  padding: EdgeInsets.all(8),
+                  itemBuilder: (context, index) {
+                    return _buildAppointmentCard(acceptedAppointments[index]);
+                  },
+                ),
+
+                // Rejected Appointments Tab
+                rejectedAppointments.isEmpty
+                    ? _buildEmptyState(
+                  'No rejected appointments.\nRejected appointments will appear here.',
+                  Icons.cancel,
+                )
+                    : ListView.builder(
+                  itemCount: rejectedAppointments.length,
+                  padding: EdgeInsets.all(8),
+                  itemBuilder: (context, index) {
+                    return _buildAppointmentCard(rejectedAppointments[index]);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Navigate back to booking page
+          Navigator.pop(context);
+        },
+        child: Icon(Icons.add),
+        tooltip: 'Book New Appointment',
       ),
     );
   }
 }
+
