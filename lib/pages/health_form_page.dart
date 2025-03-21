@@ -75,7 +75,7 @@ class _MotherFormPageState extends State<MotherFormPage> {
       "email": widget.email,
       "full_name": nameController.text,
       "gender": selectedGender,
-      "age": selectedAge.toInt(),
+      "age": selectedAge,
       "weight": double.tryParse(weightController.text) ?? 0.0,
       "weight_unit": selectedWeightUnit,
       "height": double.tryParse(heightController.text) ?? 0.0,
@@ -248,7 +248,7 @@ class _MotherFormPageState extends State<MotherFormPage> {
                     divisions: 82,
                     label: selectedAge.round().toString(),
                     onChanged:
-                        (value) => setState(() => selectedAge = value as int),
+                        (value) => setState(() => selectedAge = value.toInt()),
                     activeColor: Theme.of(context).colorScheme.primary,
                     inactiveColor: Colors.grey[300],
                   ),

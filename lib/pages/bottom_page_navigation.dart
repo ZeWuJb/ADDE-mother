@@ -18,17 +18,15 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
-  late DateTime pregnancyStartDate;
-  late int pregnancyWeeks;
-  late int pregnancyDays;
-  late String fullName;
-  late String gender;
-  late int age;
-  late double weight;
-  late double height;
-  late String weightUnit;
-  late String bloodPressure;
-  late List<String> healthConditions;
+  DateTime? pregnancyStartDate;
+  String? fullName;
+  String? gender;
+  int? age;
+  double? weight;
+  double? height;
+  String? weightUnit;
+  String? bloodPressure;
+  List<String>? healthConditions;
 
   bool isLoading = true;
 
@@ -40,37 +38,50 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> fetchMotherInfo() async {
     try {
+      if (widget.email == null) {
+        throw Exception("Email is null, cannot fetch mother info.");
+      }
+
+      print("Fetching data for email: ${widget.email}"); // Debug log
       final response =
           await Supabase.instance.client
               .from('mothers')
               .select()
-              .eq('email', widget.email as Object)
+              .eq('email', widget.email!)
               .limit(1)
               .single();
 
+      print("Supabase response: $response"); // Debug log
+
       setState(() {
-        fullName = response['full_name'];
-        gender = response['gender'].toString();
-        age = response['age'];
+        fullName = response['full_name'] as String? ?? 'Unknown';
+        gender = response['gender']?.toString() ?? 'N/A';
+        age = response['age'] as int? ?? 0;
         weight =
             (response['weight'] is double)
                 ? response['weight']
-                : double.tryParse(response['weight'].toString()) ?? 0.0;
-
+                : double.tryParse(response['weight']?.toString() ?? '0') ?? 0.0;
         height =
             (response['height'] is double)
                 ? response['height']
-                : double.tryParse(response['height'].toString()) ?? 0.0;
-        weightUnit = response['weight_unit'].toString();
-        bloodPressure = response['blood_pressure'].toString();
-        healthConditions = List<String>.from(response['health_conditions']);
-        pregnancyStartDate = DateTime.parse(response['pregnancy_start_date']);
-        pregnancyWeeks = response['pregnancy_weeks'];
-        pregnancyDays = response['pregnancy_days'];
+                : double.tryParse(response['height']?.toString() ?? '0') ?? 0.0;
+        weightUnit = response['weight_unit']?.toString() ?? 'kg';
+        bloodPressure = response['blood_pressure']?.toString() ?? 'N/A';
+        healthConditions =
+            (response['health_conditions'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            [];
+        pregnancyStartDate =
+            DateTime.tryParse(
+              response['pregnancy_start_date']?.toString() ?? '',
+            ) ??
+            DateTime.now();
         isLoading = false;
       });
     } catch (error) {
-      showSnackBar("An Error occurred: $error");
+      print("Error fetching mother info: $error"); // Debug log
+      showSnackBar("An error occurred: $error");
     }
   }
 
@@ -96,24 +107,24 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     List<Widget> pages = [
       isLoading
-          ? Center(
-            child: CircularProgressIndicator(
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          )
-          : HomeScreen(
+          ? const Center(child: CircularProgressIndicator())
+          : (fullName != null &&
+              weight != null &&
+              weightUnit != null &&
+              height != null &&
+              pregnancyStartDate != null)
+          ? HomeScreen(
             user_id: widget.user_id,
-            fullName: fullName,
-            pregnancyWeeks: pregnancyWeeks,
-            pregnancyDays: pregnancyDays,
-            weight: weight,
-            weightUnit: weightUnit,
-            height: height,
-            pregnancyStartDate: pregnancyStartDate,
-          ),
-      CommunityPage(),
-      EducationPage(),
-      TeleConseltationPage(),
+            fullName: fullName!,
+            weight: weight!,
+            weightUnit: weightUnit!,
+            height: height!,
+            pregnancyStartDate: pregnancyStartDate!,
+          )
+          : const Center(child: Text("Failed to load user data")),
+      const CommunityPage(),
+      const EducationPage(),
+      const TeleConseltationPage(),
     ];
 
     return Scaffold(
@@ -147,8 +158,8 @@ class _HomePageState extends State<HomePage> {
         type: BottomNavigationBarType.fixed,
         elevation: 8,
         backgroundColor: Colors.white,
-        selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold),
-        items: [
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
+        items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),

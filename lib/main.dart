@@ -1,15 +1,15 @@
+import 'package:adde/pages/notification/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:adde/auth/authentication_gate.dart';
 import 'package:adde/pages/bottom_page_navigation.dart';
 import 'package:adde/theme/theme_data.dart';
 import 'package:adde/theme/theme_provider.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Ensures Flutter is initialized
+  WidgetsFlutterBinding.ensureInitialized();
 
   await Supabase.initialize(
     url: 'https://kbqbwdmwzbkbpmayitib.supabase.co',
@@ -20,7 +20,12 @@ Future<void> main() async {
   final session = await getSavedSession();
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (context) => ThemeProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        Provider(
+          create: (context) => NotificationService(),
+        ), // Initialized here
+      ],
       child: MyApp(session: session),
     ),
   );
@@ -38,7 +43,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Adde Assistance App',
