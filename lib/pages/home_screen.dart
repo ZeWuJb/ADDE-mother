@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:adde/pages/chatbot/chat_screen.dart';
 import 'package:adde/pages/notification/notificatio_history_page.dart'
     show NotificationHistoryPage;
 import 'package:adde/pages/notification/notification_service.dart';
@@ -250,7 +251,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => JournalPage()),
+            MaterialPageRoute(builder: (context) => ChatScreen()),
           );
         },
         backgroundColor: Colors.pink,
