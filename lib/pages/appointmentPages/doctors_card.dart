@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 
 import 'doctors_detail_page.dart';
@@ -7,7 +5,7 @@ import 'doctors_detail_page.dart';
 class DoctorCard extends StatelessWidget {
   final dynamic doctor;
 
-  const DoctorCard({Key? key, required this.doctor}) : super(key: key);
+  const DoctorCard({super.key, required this.doctor});
 
   @override
   Widget build(BuildContext context) {
@@ -23,9 +21,7 @@ class DoctorCard extends StatelessWidget {
       child: Card(
         margin: const EdgeInsets.only(bottom: 16),
         elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -34,11 +30,7 @@ class DoctorCard extends StatelessWidget {
               CircleAvatar(
                 radius: 32,
                 backgroundColor: Colors.teal.shade100,
-                child: Icon(
-                  Icons.person,
-                  size: 32,
-                  color: Colors.teal,
-                ),
+                child: Icon(Icons.person, size: 32, color: Colors.teal),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -56,10 +48,7 @@ class DoctorCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       doctor['speciality'],
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                     ),
                     const SizedBox(height: 8),
                     Row(

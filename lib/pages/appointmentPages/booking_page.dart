@@ -7,7 +7,7 @@ import 'appointments_page.dart';
 class BookingPage extends StatefulWidget {
   final String doctorId;
 
-  const BookingPage({Key? key, required this.doctorId}) : super(key: key);
+  const BookingPage({super.key, required this.doctorId});
 
   @override
   _BookingPageState createState() => _BookingPageState();
@@ -61,7 +61,9 @@ class _BookingPageState extends State<BookingPage> {
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Your appointment was declined. Please try another time.'),
+              content: Text(
+                'Your appointment was declined. Please try another time.',
+              ),
               backgroundColor: Colors.red,
             ),
           );
@@ -78,13 +80,16 @@ class _BookingPageState extends State<BookingPage> {
 
   Future<void> _fetchAvailableTimes(DateTime selectedDate) async {
     final dateString = DateFormat('yyyy-MM-dd').format(selectedDate);
-    print('Fetching availability for doctor_id: ${widget.doctorId} on date: $dateString');
+    print(
+      'Fetching availability for doctor_id: ${widget.doctorId} on date: $dateString',
+    );
 
-    final response = await supabase
-        .from('doctor_availability')
-        .select('availability')
-        .eq('doctor_id', widget.doctorId)
-        .maybeSingle();
+    final response =
+        await supabase
+            .from('doctor_availability')
+            .select('availability')
+            .eq('doctor_id', widget.doctorId)
+            .maybeSingle();
 
     print('Response from Supabase: ${supabase.auth.currentUser?.id}');
     if (response == null || response['availability'] == null) {
@@ -95,14 +100,17 @@ class _BookingPageState extends State<BookingPage> {
     }
 
     final availability = response['availability'];
-    final dateEntry = (availability['dates'] as List?)
-        ?.firstWhere((entry) => entry['date'] == dateString, orElse: () => null);
+    final dateEntry = (availability['dates'] as List?)?.firstWhere(
+      (entry) => entry['date'] == dateString,
+      orElse: () => null,
+    );
 
     if (dateEntry != null) {
       setState(() {
-        _availableTimes = (dateEntry['slots'] as List)
-            .map<DateTime>((slot) => DateFormat('HH:mm').parse(slot))
-            .toList();
+        _availableTimes =
+            (dateEntry['slots'] as List)
+                .map<DateTime>((slot) => DateFormat('HH:mm').parse(slot))
+                .toList();
       });
     } else {
       setState(() {
@@ -121,11 +129,12 @@ class _BookingPageState extends State<BookingPage> {
 
     try {
       // Check if mother record exists
-      final motherRecord = await supabase
-          .from('mothers')
-          .select('user_id')
-          .eq('user_id', userId)
-          .maybeSingle();
+      final motherRecord =
+          await supabase
+              .from('mothers')
+              .select('user_id')
+              .eq('user_id', userId)
+              .maybeSingle();
 
       if (motherRecord != null) {
         print('Mother record exists with ID: $userId');
@@ -140,7 +149,10 @@ class _BookingPageState extends State<BookingPage> {
       print('Creating mother record for user: $userId');
       await supabase.from('mothers').insert({
         'id': userId,
-        'full_name': email.split('@')[0], // Use part of email as name if no name available
+        'full_name':
+            email.split(
+              '@',
+            )[0], // Use part of email as name if no name available
         'email': email,
         // Remove doctor_id field as it's not part of the mothers table
         'created_at': DateTime.now().toIso8601String(),
@@ -171,7 +183,9 @@ class _BookingPageState extends State<BookingPage> {
       final motherRecordExists = await _ensureMotherRecordExists();
       if (!motherRecordExists) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not create user profile. Please try again.')),
+          const SnackBar(
+            content: Text('Could not create user profile. Please try again.'),
+          ),
         );
         setState(() {
           _isLoading = false;
@@ -196,11 +210,12 @@ class _BookingPageState extends State<BookingPage> {
       }
 
       // Get user name from Supabase
-      final userData = await supabase
-          .from('mothers')
-          .select('full_name')
-          .eq('user_id', userId)
-          .single();
+      final userData =
+          await supabase
+              .from('mothers')
+              .select('full_name')
+              .eq('user_id', userId)
+              .single();
 
       final motherName = userData['full_name'] ?? 'Unknown Patient';
 
@@ -213,13 +228,19 @@ class _BookingPageState extends State<BookingPage> {
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Appointment request sent! Waiting for doctor approval.')),
+        const SnackBar(
+          content: Text(
+            'Appointment request sent! Waiting for doctor approval.',
+          ),
+        ),
       );
 
       // Navigate to waiting page
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => SocketTestPage(doctorId: widget.doctorId)),
+        MaterialPageRoute(
+          builder: (context) => SocketTestPage(doctorId: widget.doctorId),
+        ),
       );
 
       setState(() {
@@ -244,58 +265,71 @@ class _BookingPageState extends State<BookingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Book Appointment')),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: CalendarDatePicker(
-              initialDate: DateTime.now(),
-              firstDate: DateTime.now(),
-              lastDate: DateTime.now().add(const Duration(days: 30)),
-              onDateChanged: (date) {
-                setState(() {
-                  _selectedDay = date;
-                  _availableTimes = [];
-                  _currentTimeIndex = null;
-                  _timeSelected = false;
-                });
-                _fetchAvailableTimes(date);
-              },
-            ),
-          ),
-          if (_selectedDay != null) ...[
-            const Text('Available Time Slots:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            Wrap(
-              children: List.generate(_availableTimes.length, (index) {
-                final time = DateFormat('HH:mm').format(_availableTimes[index]);
-                return Padding(
-                  padding: const EdgeInsets.all(4.0),
-                  child: ChoiceChip(
-                    label: Text(time),
-                    selected: _currentTimeIndex == index,
-                    onSelected: (selected) {
-                      setState(() {
-                        _currentTimeIndex = selected ? index : null;
-                        _timeSelected = selected;
-                      });
-                    },
+      body:
+          _isLoading
+              ? Center(child: CircularProgressIndicator())
+              : Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: CalendarDatePicker(
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 30)),
+                      onDateChanged: (date) {
+                        setState(() {
+                          _selectedDay = date;
+                          _availableTimes = [];
+                          _currentTimeIndex = null;
+                          _timeSelected = false;
+                        });
+                        _fetchAvailableTimes(date);
+                      },
+                    ),
                   ),
-                );
-              }),
-            ),
-          ],
-          const Spacer(),
-          ElevatedButton(
-            onPressed: _selectedDay != null && _timeSelected ? sendRequest : null,
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-            child: const Text('Request Appointment'),
-          ),
-          const SizedBox(height: 20),
-        ],
-      ),
+                  if (_selectedDay != null) ...[
+                    const Text(
+                      'Available Time Slots:',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Wrap(
+                      children: List.generate(_availableTimes.length, (index) {
+                        final time = DateFormat(
+                          'HH:mm',
+                        ).format(_availableTimes[index]);
+                        return Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: ChoiceChip(
+                            label: Text(time),
+                            selected: _currentTimeIndex == index,
+                            onSelected: (selected) {
+                              setState(() {
+                                _currentTimeIndex = selected ? index : null;
+                                _timeSelected = selected;
+                              });
+                            },
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
+                  const Spacer(),
+                  ElevatedButton(
+                    onPressed:
+                        _selectedDay != null && _timeSelected
+                            ? sendRequest
+                            : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                    ),
+                    child: const Text('Request Appointment'),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
     );
   }
 }
-

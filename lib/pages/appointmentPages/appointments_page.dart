@@ -7,13 +7,14 @@ import 'serverioconfig.dart';
 class SocketTestPage extends StatefulWidget {
   final String doctorId;
 
-  const SocketTestPage({Key? key, required this.doctorId}) : super(key: key);
+  const SocketTestPage({super.key, required this.doctorId});
 
   @override
   _SocketTestPageState createState() => _SocketTestPageState();
 }
 
-class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProviderStateMixin {
+class _SocketTestPageState extends State<SocketTestPage>
+    with SingleTickerProviderStateMixin {
   final SocketService _socketService = SocketService();
   final supabase = Supabase.instance.client;
 
@@ -57,7 +58,9 @@ class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProvid
       if (mounted) {
         // Check connection status
         if (!_socketService.isConnected) {
-          print('Periodic check: Socket not connected, attempting to reconnect');
+          print(
+            'Periodic check: Socket not connected, attempting to reconnect',
+          );
           final userId = supabase.auth.currentUser?.id;
           if (userId != null) {
             setState(() {
@@ -168,7 +171,8 @@ class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProvid
       }
 
       // First try to load from local storage
-      final storedAppointments = await _socketService.loadAppointmentsFromStorage();
+      final storedAppointments =
+          await _socketService.loadAppointmentsFromStorage();
 
       setState(() {
         pendingAppointments = storedAppointments['pending'] ?? [];
@@ -214,7 +218,8 @@ class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProvid
       setState(() {
         final appointmentId = data['appointmentId'];
         final appointmentIndex = pendingAppointments.indexWhere(
-                (appointment) => appointment['appointmentId'] == appointmentId);
+          (appointment) => appointment['appointmentId'] == appointmentId,
+        );
 
         if (appointmentIndex != -1) {
           final appointment = pendingAppointments[appointmentIndex];
@@ -226,9 +231,10 @@ class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProvid
 
       // Show notification
       _showStatusDialog(
-          'Appointment Accepted',
-          'Your appointment has been accepted! Please proceed to payment.',
-          Colors.green);
+        'Appointment Accepted',
+        'Your appointment has been accepted! Please proceed to payment.',
+        Colors.green,
+      );
     };
 
     _socketService.onAppointmentDeclined = (data) {
@@ -238,7 +244,8 @@ class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProvid
       setState(() {
         final appointmentId = data['appointmentId'];
         final appointmentIndex = pendingAppointments.indexWhere(
-                (appointment) => appointment['appointmentId'] == appointmentId);
+          (appointment) => appointment['appointmentId'] == appointmentId,
+        );
 
         if (appointmentIndex != -1) {
           final appointment = pendingAppointments[appointmentIndex];
@@ -250,9 +257,10 @@ class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProvid
 
       // Show notification
       _showStatusDialog(
-          'Appointment Declined',
-          'Your appointment was declined. Please try another time or doctor.',
-          Colors.red);
+        'Appointment Declined',
+        'Your appointment was declined. Please try another time or doctor.',
+        Colors.red,
+      );
     };
   }
 
@@ -291,11 +299,12 @@ class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProvid
 
   Widget _buildAppointmentCard(Map<String, dynamic> appointment) {
     final status = appointment['status'] ?? 'unknown';
-    final Color statusColor = status == 'pending'
-        ? Colors.amber
-        : status == 'accepted'
-        ? Colors.green
-        : Colors.red;
+    final Color statusColor =
+        status == 'pending'
+            ? Colors.amber
+            : status == 'accepted'
+            ? Colors.green
+            : Colors.red;
 
     return Card(
       margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
@@ -311,11 +320,10 @@ class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProvid
                 Expanded(
                   child: Text(
                     appointment['doctor_name'] ??
-                        (appointment['doctors'] != null ? appointment['doctors']['full_name'] : 'Unknown Doctor'),
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                        (appointment['doctors'] != null
+                            ? appointment['doctors']['full_name']
+                            : 'Unknown Doctor'),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -356,7 +364,10 @@ class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProvid
                   Text(
                     'Payment Status: ${appointment['payment_status']?.toUpperCase() ?? 'UNPAID'}',
                     style: TextStyle(
-                      color: appointment['payment_status'] == 'paid' ? Colors.green : Colors.red,
+                      color:
+                          appointment['payment_status'] == 'paid'
+                              ? Colors.green
+                              : Colors.red,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -368,7 +379,11 @@ class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProvid
                   onPressed: () {
                     // Implement payment logic here
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Payment feature will be implemented soon')),
+                      SnackBar(
+                        content: Text(
+                          'Payment feature will be implemented soon',
+                        ),
+                      ),
                     );
                   },
                   icon: Icon(Icons.payment),
@@ -378,7 +393,8 @@ class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProvid
                     foregroundColor: Colors.white,
                   ),
                 ),
-              if (appointment['payment_status'] == 'paid' && appointment['video_conference_link'] != null)
+              if (appointment['payment_status'] == 'paid' &&
+                  appointment['video_conference_link'] != null)
                 ElevatedButton.icon(
                   onPressed: () {
                     // Open video conference link
@@ -410,10 +426,7 @@ class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProvid
           SizedBox(height: 16),
           Text(
             message,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             textAlign: TextAlign.center,
           ),
         ],
@@ -478,19 +491,28 @@ class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProvid
           // Connection status indicator
           Container(
             padding: EdgeInsets.all(8),
-            color: connectionStatus == 'Connected' ? Colors.green[50] : Colors.red[50],
+            color:
+                connectionStatus == 'Connected'
+                    ? Colors.green[50]
+                    : Colors.red[50],
             child: Row(
               children: [
                 Icon(
                   connectionStatus == 'Connected' ? Icons.wifi : Icons.wifi_off,
-                  color: connectionStatus == 'Connected' ? Colors.green : Colors.red,
+                  color:
+                      connectionStatus == 'Connected'
+                          ? Colors.green
+                          : Colors.red,
                   size: 18,
                 ),
                 SizedBox(width: 8),
                 Text(
                   'Status: $connectionStatus',
                   style: TextStyle(
-                    color: connectionStatus == 'Connected' ? Colors.green : Colors.red,
+                    color:
+                        connectionStatus == 'Connected'
+                            ? Colors.green
+                            : Colors.red,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -518,10 +540,8 @@ class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProvid
                         _socketService.connect(userId);
                       }
                     },
+                    style: TextButton.styleFrom(foregroundColor: Colors.red),
                     child: Text('Reconnect'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.red,
-                    ),
                   ),
               ],
             ),
@@ -541,54 +561,61 @@ class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProvid
 
           // Main content
           Expanded(
-            child: isLoading
-                ? Center(child: CircularProgressIndicator())
-                : TabBarView(
-              controller: _tabController,
-              children: [
-                // Pending Appointments Tab
-                pendingAppointments.isEmpty
-                    ? _buildEmptyState(
-                  'No pending appointments.\nRequests you send will appear here.',
-                  Icons.hourglass_empty,
-                )
-                    : ListView.builder(
-                  itemCount: pendingAppointments.length,
-                  padding: EdgeInsets.all(8),
-                  itemBuilder: (context, index) {
-                    return _buildAppointmentCard(pendingAppointments[index]);
-                  },
-                ),
+            child:
+                isLoading
+                    ? Center(child: CircularProgressIndicator())
+                    : TabBarView(
+                      controller: _tabController,
+                      children: [
+                        // Pending Appointments Tab
+                        pendingAppointments.isEmpty
+                            ? _buildEmptyState(
+                              'No pending appointments.\nRequests you send will appear here.',
+                              Icons.hourglass_empty,
+                            )
+                            : ListView.builder(
+                              itemCount: pendingAppointments.length,
+                              padding: EdgeInsets.all(8),
+                              itemBuilder: (context, index) {
+                                return _buildAppointmentCard(
+                                  pendingAppointments[index],
+                                );
+                              },
+                            ),
 
-                // Accepted Appointments Tab
-                acceptedAppointments.isEmpty
-                    ? _buildEmptyState(
-                  'No accepted appointments.\nAccepted appointments will appear here.',
-                  Icons.check_circle,
-                )
-                    : ListView.builder(
-                  itemCount: acceptedAppointments.length,
-                  padding: EdgeInsets.all(8),
-                  itemBuilder: (context, index) {
-                    return _buildAppointmentCard(acceptedAppointments[index]);
-                  },
-                ),
+                        // Accepted Appointments Tab
+                        acceptedAppointments.isEmpty
+                            ? _buildEmptyState(
+                              'No accepted appointments.\nAccepted appointments will appear here.',
+                              Icons.check_circle,
+                            )
+                            : ListView.builder(
+                              itemCount: acceptedAppointments.length,
+                              padding: EdgeInsets.all(8),
+                              itemBuilder: (context, index) {
+                                return _buildAppointmentCard(
+                                  acceptedAppointments[index],
+                                );
+                              },
+                            ),
 
-                // Rejected Appointments Tab
-                rejectedAppointments.isEmpty
-                    ? _buildEmptyState(
-                  'No rejected appointments.\nRejected appointments will appear here.',
-                  Icons.cancel,
-                )
-                    : ListView.builder(
-                  itemCount: rejectedAppointments.length,
-                  padding: EdgeInsets.all(8),
-                  itemBuilder: (context, index) {
-                    return _buildAppointmentCard(rejectedAppointments[index]);
-                  },
-                ),
-              ],
-            ),
+                        // Rejected Appointments Tab
+                        rejectedAppointments.isEmpty
+                            ? _buildEmptyState(
+                              'No rejected appointments.\nRejected appointments will appear here.',
+                              Icons.cancel,
+                            )
+                            : ListView.builder(
+                              itemCount: rejectedAppointments.length,
+                              padding: EdgeInsets.all(8),
+                              itemBuilder: (context, index) {
+                                return _buildAppointmentCard(
+                                  rejectedAppointments[index],
+                                );
+                              },
+                            ),
+                      ],
+                    ),
           ),
         ],
       ),
@@ -597,10 +624,9 @@ class _SocketTestPageState extends State<SocketTestPage> with SingleTickerProvid
           // Navigate back to booking page
           Navigator.pop(context);
         },
-        child: Icon(Icons.add),
         tooltip: 'Book New Appointment',
+        child: Icon(Icons.add),
       ),
     );
   }
 }
-

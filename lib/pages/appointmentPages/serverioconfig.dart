@@ -108,7 +108,6 @@ class SocketService {
 
       // Set up all other event handlers
       _setupEventHandlers(userId);
-
     } catch (e) {
       print('Exception during socket connection: $e');
       if (onError != null) {
@@ -136,7 +135,9 @@ class SocketService {
     socket.on('heartbeat', (data) {
       print('Received heartbeat from server: ${data['timestamp']}');
       // Respond to heartbeat to confirm client is still alive
-      socket.emit('heartbeat_response', {'timestamp': DateTime.now().millisecondsSinceEpoch});
+      socket.emit('heartbeat_response', {
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      });
     });
 
     // Set up listeners for appointment status updates with deduplication
@@ -204,7 +205,9 @@ class SocketService {
         final appointmentData = {
           'appointmentId': data['appointmentId'],
           'status': 'pending',
-          'requested_time': DateTime.now().toIso8601String(), // This should come from the server
+          'requested_time':
+              DateTime.now()
+                  .toIso8601String(), // This should come from the server
           'doctor_id': '', // This should be filled with actual data
           'mother_id': userId,
           'mother_name': '', // This should be filled with actual data
@@ -222,9 +225,10 @@ class SocketService {
 
       if (data != null && data['appointments'] != null) {
         List<dynamic> appointments = data['appointments'];
-        List<Map<String, dynamic>> typedAppointments = appointments
-            .map((appt) => Map<String, dynamic>.from(appt))
-            .toList();
+        List<Map<String, dynamic>> typedAppointments =
+            appointments
+                .map((appt) => Map<String, dynamic>.from(appt))
+                .toList();
 
         // Process and save appointments by status
         _processAppointmentHistory(typedAppointments);
@@ -238,7 +242,9 @@ class SocketService {
   }
 
   // Process and save appointment history by status
-  void _processAppointmentHistory(List<Map<String, dynamic>> appointments) async {
+  void _processAppointmentHistory(
+    List<Map<String, dynamic>> appointments,
+  ) async {
     List<Map<String, dynamic>> pendingAppointments = [];
     List<Map<String, dynamic>> acceptedAppointments = [];
     List<Map<String, dynamic>> declinedAppointments = [];
@@ -259,20 +265,32 @@ class SocketService {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     if (pendingAppointments.isNotEmpty) {
-      await prefs.setString(PENDING_APPOINTMENTS_KEY, jsonEncode(pendingAppointments));
+      await prefs.setString(
+        PENDING_APPOINTMENTS_KEY,
+        jsonEncode(pendingAppointments),
+      );
     }
 
     if (acceptedAppointments.isNotEmpty) {
-      await prefs.setString(ACCEPTED_APPOINTMENTS_KEY, jsonEncode(acceptedAppointments));
+      await prefs.setString(
+        ACCEPTED_APPOINTMENTS_KEY,
+        jsonEncode(acceptedAppointments),
+      );
     }
 
     if (declinedAppointments.isNotEmpty) {
-      await prefs.setString(DECLINED_APPOINTMENTS_KEY, jsonEncode(declinedAppointments));
+      await prefs.setString(
+        DECLINED_APPOINTMENTS_KEY,
+        jsonEncode(declinedAppointments),
+      );
     }
   }
 
   // Save appointment to SharedPreferences
-  Future<void> _saveAppointmentToStorage(Map<String, dynamic> appointment, String status) async {
+  Future<void> _saveAppointmentToStorage(
+    Map<String, dynamic> appointment,
+    String status,
+  ) async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String storageKey;
@@ -295,11 +313,14 @@ class SocketService {
 
       if (existingData != null && existingData.isNotEmpty) {
         List<dynamic> decoded = jsonDecode(existingData);
-        appointments = decoded.map((item) => Map<String, dynamic>.from(item)).toList();
+        appointments =
+            decoded.map((item) => Map<String, dynamic>.from(item)).toList();
       }
 
       // Check if appointment already exists
-      bool exists = appointments.any((a) => a['appointmentId'] == appointment['appointmentId']);
+      bool exists = appointments.any(
+        (a) => a['appointmentId'] == appointment['appointmentId'],
+      );
 
       if (!exists) {
         // Add new appointment
@@ -307,7 +328,9 @@ class SocketService {
 
         // Save back to storage
         await prefs.setString(storageKey, jsonEncode(appointments));
-        print('Saved appointment to $storageKey: ${appointment['appointmentId']}');
+        print(
+          'Saved appointment to $storageKey: ${appointment['appointmentId']}',
+        );
       }
     } catch (e) {
       print('Error saving appointment to storage: $e');
@@ -315,7 +338,8 @@ class SocketService {
   }
 
   // Load appointments from SharedPreferences
-  Future<Map<String, List<Map<String, dynamic>>>> loadAppointmentsFromStorage() async {
+  Future<Map<String, List<Map<String, dynamic>>>>
+  loadAppointmentsFromStorage() async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -323,44 +347,48 @@ class SocketService {
       Map<String, List<Map<String, dynamic>>> result = {
         'pending': [],
         'accepted': [],
-        'declined': []
+        'declined': [],
       };
 
       // Load pending appointments
       String? pendingData = prefs.getString(PENDING_APPOINTMENTS_KEY);
       if (pendingData != null && pendingData.isNotEmpty) {
         List<dynamic> decoded = jsonDecode(pendingData);
-        result['pending'] = decoded.map((item) => Map<String, dynamic>.from(item)).toList();
+        result['pending'] =
+            decoded.map((item) => Map<String, dynamic>.from(item)).toList();
       }
 
       // Load accepted appointments
       String? acceptedData = prefs.getString(ACCEPTED_APPOINTMENTS_KEY);
       if (acceptedData != null && acceptedData.isNotEmpty) {
         List<dynamic> decoded = jsonDecode(acceptedData);
-        result['accepted'] = decoded.map((item) => Map<String, dynamic>.from(item)).toList();
+        result['accepted'] =
+            decoded.map((item) => Map<String, dynamic>.from(item)).toList();
       }
 
       // Load declined appointments
       String? declinedData = prefs.getString(DECLINED_APPOINTMENTS_KEY);
       if (declinedData != null && declinedData.isNotEmpty) {
         List<dynamic> decoded = jsonDecode(declinedData);
-        result['declined'] = decoded.map((item) => Map<String, dynamic>.from(item)).toList();
+        result['declined'] =
+            decoded.map((item) => Map<String, dynamic>.from(item)).toList();
       }
 
-      print('Loaded appointments from storage: ${result['pending']!.length} pending, ${result['accepted']!.length} accepted, ${result['declined']!.length} declined');
+      print(
+        'Loaded appointments from storage: ${result['pending']!.length} pending, ${result['accepted']!.length} accepted, ${result['declined']!.length} declined',
+      );
       return result;
     } catch (e) {
       print('Error loading appointments from storage: $e');
-      return {
-        'pending': [],
-        'accepted': [],
-        'declined': []
-      };
+      return {'pending': [], 'accepted': [], 'declined': []};
     }
   }
 
   // Remove appointment from storage
-  Future<void> removeAppointmentFromStorage(String appointmentId, String status) async {
+  Future<void> removeAppointmentFromStorage(
+    String appointmentId,
+    String status,
+  ) async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String storageKey;
@@ -381,7 +409,8 @@ class SocketService {
       String? existingData = prefs.getString(storageKey);
       if (existingData != null && existingData.isNotEmpty) {
         List<dynamic> decoded = jsonDecode(existingData);
-        List<Map<String, dynamic>> appointments = decoded.map((item) => Map<String, dynamic>.from(item)).toList();
+        List<Map<String, dynamic>> appointments =
+            decoded.map((item) => Map<String, dynamic>.from(item)).toList();
 
         // Remove the appointment
         appointments.removeWhere((a) => a['appointmentId'] == appointmentId);
@@ -404,7 +433,9 @@ class SocketService {
     pingTimer = Timer.periodic(Duration(seconds: 15), (timer) {
       if (isConnected) {
         print('Sending ping to keep connection alive');
-        socket.emit('ping', {'timestamp': DateTime.now().millisecondsSinceEpoch});
+        socket.emit('ping', {
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+        });
       } else {
         print('Not connected, attempting to reconnect in ping timer');
         socket.connect();
@@ -425,7 +456,9 @@ class SocketService {
     }
 
     reconnectAttempts++;
-    print('Attempting to reconnect ($reconnectAttempts/$maxReconnectAttempts)...');
+    print(
+      'Attempting to reconnect ($reconnectAttempts/$maxReconnectAttempts)...',
+    );
 
     // Use exponential backoff with a maximum delay
     final delay = min(1000 * pow(1.5, reconnectAttempts), 10000);
@@ -450,7 +483,7 @@ class SocketService {
     // Fix: Pass the data as a single Map instead of multiple arguments
     socket.emit('get_appointment_history', {
       'userId': userId,
-      'userType': userType
+      'userType': userType,
     });
   }
 
@@ -521,12 +554,10 @@ class SocketService {
     reconnectTimer?.cancel();
 
     try {
-      if (socket != null) {
-        socket.disconnect();
-        socket.dispose();
-        isConnected = false;
-        print('Socket disconnected and disposed');
-      }
+      socket.disconnect();
+      socket.dispose();
+      isConnected = false;
+      print('Socket disconnected and disposed');
     } catch (e) {
       print('Error during socket disconnect: $e');
     }
@@ -535,4 +566,3 @@ class SocketService {
     processedAppointments.clear();
   }
 }
-

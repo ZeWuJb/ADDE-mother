@@ -1,28 +1,29 @@
+import 'dart:convert';
+import 'package:adde/pages/chatbot/chat_screen.dart';
+import 'package:adde/pages/notification/notificatio_history_page.dart'
+    show NotificationHistoryPage;
+import 'package:adde/pages/notification/notification_service.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:adde/auth/login_page.dart';
 import 'package:adde/pages/appointmentPages/calander_page.dart';
 import 'package:adde/pages/health_matrics_page.dart';
 import 'package:adde/pages/journal_page.dart';
 import 'package:adde/pages/name_suggation_page.dart';
-import 'package:adde/pages/notification_page.dart';
 import 'package:adde/pages/profile/profile_page.dart';
 
-class HomeScreen extends StatelessWidget {
-  final ScrollController _scrollController = ScrollController();
+class HomeScreen extends StatefulWidget {
   final String user_id;
   final String fullName;
-  final int pregnancyWeeks;
-  final int pregnancyDays;
   final double weight;
   final String weightUnit;
   final double height;
   final DateTime pregnancyStartDate;
 
-  HomeScreen({
+  const HomeScreen({
     super.key,
     required this.fullName,
-    required this.pregnancyWeeks,
-    required this.pregnancyDays,
     required this.weight,
     required this.weightUnit,
     required this.height,
@@ -31,15 +32,111 @@ class HomeScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late final ScrollController _scrollController;
+  bool _hasUnreadNotifications = false;
+  int _pregnancyWeeks = 0;
+  int _pregnancyDays = 0;
+  String? _profileImageBase64;
+
+  @override
+  void initState() {
+    super.initState();
+    _updatePregnancyProgress();
+    _checkUnreadNotifications();
+    _loadProfileImage();
+    _scrollController = ScrollController();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollController.animateTo(
-        pregnancyWeeks * 54.0, // Adjust scroll position
-        duration: Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _pregnancyWeeks * 54.0,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+      _scheduleHealthTips();
+      _checkAndShowTodaysTip();
     });
 
+    Future.delayed(const Duration(days: 1), () {
+      if (mounted) _updatePregnancyProgress();
+    });
+  }
+
+  void _updatePregnancyProgress() {
+    final currentDate = DateTime.now();
+    final difference = currentDate.difference(widget.pregnancyStartDate);
+    final totalDays = difference.inDays;
+    print('Total days since pregnancy start: $totalDays');
+    setState(() {
+      _pregnancyWeeks = (totalDays / 7).floor();
+      _pregnancyDays = totalDays % 7;
+    });
+  }
+
+  Future<void> _loadProfileImage() async {
+    try {
+      final response =
+          await Supabase.instance.client
+              .from('mothers')
+              .select('profile_url')
+              .eq('user_id', widget.user_id)
+              .single();
+      setState(() {
+        _profileImageBase64 = response['profile_url'];
+      });
+    } catch (e) {
+      print('Error loading profile image: $e');
+    }
+  }
+
+  Future<void> _checkUnreadNotifications() async {
+    final notificationService = Provider.of<NotificationService>(
+      context,
+      listen: false,
+    );
+    final history = await notificationService.getNotificationHistory(
+      widget.user_id,
+    );
+    setState(() {
+      _hasUnreadNotifications = history.any((n) => n['seen'] == false);
+    });
+  }
+
+  Future<void> _scheduleHealthTips() async {
+    final notificationService = Provider.of<NotificationService>(
+      context,
+      listen: false,
+    );
+    await notificationService.scheduleDailyHealthTips(
+      widget.pregnancyStartDate,
+      widget.user_id,
+    );
+  }
+
+  Future<void> _checkAndShowTodaysTip() async {
+    final notificationService = Provider.of<NotificationService>(
+      context,
+      listen: false,
+    );
+    await notificationService.checkAndShowTodaysTip(
+      widget.user_id,
+      widget.pregnancyStartDate,
+    );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     List<Map<String, dynamic>> features = [
       {
         "icon": "assets/calendar.png",
@@ -60,7 +157,7 @@ class HomeScreen extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => HealthMetricsPage(userId: user_id),
+              builder: (context) => HealthMetricsPage(userId: widget.user_id),
             ),
           );
         },
@@ -98,18 +195,22 @@ class HomeScreen extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ProfilePage()),
-                );
+                  MaterialPageRoute(builder: (context) => const ProfilePage()),
+                ).then((_) => _loadProfileImage()); // Refresh image on return
               },
               child: CircleAvatar(
                 backgroundColor: Colors.white,
-                child: Icon(Icons.person, size: 30, color: Colors.pink),
+                backgroundImage:
+                    _profileImageBase64 != null
+                        ? MemoryImage(base64Decode(_profileImageBase64!))
+                        : const AssetImage('assets/user.png') as ImageProvider,
+                radius: 20,
               ),
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
-              "Welcome, ${fullName.toUpperCase()}",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              "Welcome, ${widget.fullName.toUpperCase()}",
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -117,16 +218,26 @@ class HomeScreen extends StatelessWidget {
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.notifications, color: Colors.pink),
-            onPressed: () {
-              Navigator.push(
+            icon: Icon(
+              _hasUnreadNotifications
+                  ? Icons.notifications_active
+                  : Icons.notifications_none,
+              color: _hasUnreadNotifications ? Colors.red : Colors.grey,
+            ),
+            onPressed: () async {
+              await Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => NotificationPage()),
+                MaterialPageRoute(
+                  builder:
+                      (context) =>
+                          NotificationHistoryPage(userId: widget.user_id),
+                ),
               );
+              await _checkUnreadNotifications();
             },
           ),
           IconButton(
-            icon: Icon(Icons.logout, color: Colors.pink),
+            icon: const Icon(Icons.logout, color: Colors.pink),
             onPressed: () {
               Navigator.push(
                 context,
@@ -140,29 +251,29 @@ class HomeScreen extends StatelessWidget {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => JournalPage()),
+            MaterialPageRoute(builder: (context) => ChatScreen()),
           );
         },
         backgroundColor: Colors.pink,
-        child: Icon(Icons.chat, color: Colors.white),
+        child: const Icon(Icons.chat, color: Colors.white),
       ),
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.pink.shade100, Colors.purple.shade200],
+            colors: [Colors.pinkAccent, Colors.purpleAccent],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
         child: SingleChildScrollView(
+          controller: _scrollController,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Section
               Container(
                 width: double.infinity,
                 height: 250,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     colors: [Colors.pink, Colors.purple],
                     begin: Alignment.topLeft,
@@ -176,7 +287,7 @@ class HomeScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
+                    const Text(
                       "Pregnancy Tracker",
                       style: TextStyle(
                         fontSize: 28,
@@ -184,60 +295,63 @@ class HomeScreen extends StatelessWidget {
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         Column(
                           children: [
                             Text(
-                              "$pregnancyWeeks",
-                              style: TextStyle(
+                              "$_pregnancyWeeks",
+                              style: const TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
                             ),
-                            Text(
+                            const Text(
                               "Weeks",
                               style: TextStyle(color: Colors.white),
                             ),
                           ],
                         ),
-                        CircleAvatar(
+                        const CircleAvatar(
                           radius: 70,
-                          backgroundColor: Colors.white.withOpacity(0.2),
-                          child: Image.asset("assets/embryo.gif"),
+                          backgroundColor: Colors.white24,
+                          backgroundImage: AssetImage("assets/embryo.gif"),
                         ),
                         Column(
                           children: [
                             Text(
-                              "$pregnancyDays",
-                              style: TextStyle(
+                              "$_pregnancyDays",
+                              style: const TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
                             ),
-                            Text("Days", style: TextStyle(color: Colors.white)),
+                            const Text(
+                              "Days",
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ],
                         ),
                       ],
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: LinearProgressIndicator(
-                        value: pregnancyWeeks / 40,
-                        backgroundColor: Colors.white.withOpacity(0.3),
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        value: _pregnancyWeeks / 40,
+                        backgroundColor: Colors.white24,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Colors.white,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-
-              // Feature Boxes Section
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -262,7 +376,7 @@ class HomeScreen extends StatelessWidget {
                                     height: 50,
                                     color: Colors.pink,
                                   ),
-                                  SizedBox(width: 16),
+                                  const SizedBox(width: 16),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -270,15 +384,15 @@ class HomeScreen extends StatelessWidget {
                                       children: [
                                         Text(
                                           item["name"],
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                        SizedBox(height: 4),
+                                        const SizedBox(height: 4),
                                         Text(
                                           item["description"],
-                                          style: TextStyle(fontSize: 14),
+                                          style: const TextStyle(fontSize: 14),
                                         ),
                                       ],
                                     ),
