@@ -23,6 +23,7 @@ class _BookingPageState extends State<BookingPage> {
   bool _timeSelected = false;
   bool _isLoading = false;
   String? _requestStatus;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -67,6 +68,38 @@ class _BookingPageState extends State<BookingPage> {
               backgroundColor: Colors.red,
             ),
           );
+        };
+        
+        // Add error handler
+        _socketService.onError = (error) {
+          if (!mounted) return;
+          
+          setState(() {
+            _errorMessage = error;
+          });
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Connection error: $error'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        };
+        
+        // Add connection status handler
+        _socketService.onConnectionChange = (connected) {
+          if (!mounted) return;
+          
+          if (connected) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Connected to server'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
         };
       }
     });
@@ -176,6 +209,7 @@ class _BookingPageState extends State<BookingPage> {
 
     setState(() {
       _isLoading = true;
+      _errorMessage = null;
     });
 
     try {
@@ -219,7 +253,29 @@ class _BookingPageState extends State<BookingPage> {
 
       final motherName = userData['full_name'] ?? 'Unknown Patient';
 
-      // Send appointment request via socket instead of saving to database
+      // Check if socket is connected
+      if (!_socketService.isConnected) {
+        // Try to reconnect
+        _socketService.connect(userId);
+        
+        // Show a message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Trying to connect to server...'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        
+        // Wait a moment for connection
+        await Future.delayed(Duration(seconds: 2));
+        
+        // Check again
+        if (!_socketService.isConnected) {
+          throw Exception('Cannot connect to server. Please try again later.');
+        }
+      }
+
+      // Send appointment request via socket
       _socketService.requestAppointment(
         doctorId: widget.doctorId,
         motherId: userId,
@@ -251,6 +307,9 @@ class _BookingPageState extends State<BookingPage> {
       });
     } catch (error) {
       print('Error sending appointment request: $error');
+      setState(() {
+        _errorMessage = error.toString();
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error sending request: ${error.toString()}')),
       );
@@ -270,6 +329,50 @@ class _BookingPageState extends State<BookingPage> {
               ? Center(child: CircularProgressIndicator())
               : Column(
                 children: [
+                  // Error message if any
+                  if (_errorMessage != null)
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      margin: EdgeInsets.all(8),
+                      color: Colors.red[50],
+                      child: Row(
+                        children: [
+                          Icon(Icons.error, color: Colors.red),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                  // Connection status indicator
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    margin: EdgeInsets.symmetric(horizontal: 8),
+                    color: _socketService.isConnected ? Colors.green[50] : Colors.orange[50],
+                    child: Row(
+                      children: [
+                        Icon(
+                          _socketService.isConnected ? Icons.wifi : Icons.wifi_off,
+                          color: _socketService.isConnected ? Colors.green : Colors.orange,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          _socketService.isConnected 
+                              ? 'Connected to server' 
+                              : 'Not connected - appointments may not be sent',
+                          style: TextStyle(
+                            color: _socketService.isConnected ? Colors.green : Colors.orange,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: CalendarDatePicker(
@@ -333,3 +436,4 @@ class _BookingPageState extends State<BookingPage> {
     );
   }
 }
+

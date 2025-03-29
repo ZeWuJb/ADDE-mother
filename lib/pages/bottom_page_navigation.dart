@@ -3,6 +3,7 @@ import 'package:adde/pages/home_screen.dart';
 import 'package:adde/pages/Community_page.dart';
 import 'package:adde/pages/education/Education_page.dart';
 import 'package:adde/pages/appointmentPages/tele-conseltation_page.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomePage extends StatefulWidget {
@@ -124,7 +125,6 @@ class _HomePageState extends State<HomePage> {
           : const Center(child: Text("Failed to load user data")),
       const CommunityPage(),
       const EducationPage(),
-      const TeleConseltationPage(),
     ];
 
     return Scaffold(

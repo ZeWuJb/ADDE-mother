@@ -355,61 +355,23 @@ class _SocketTestPageState extends State<SocketTestPage>
                 ),
               ],
             ),
-            if (status == 'accepted') ...[
-              SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.payment, size: 16, color: Colors.grey),
-                  SizedBox(width: 8),
-                  Text(
-                    'Payment Status: ${appointment['payment_status']?.toUpperCase() ?? 'UNPAID'}',
-                    style: TextStyle(
-                      color:
-                          appointment['payment_status'] == 'paid'
-                              ? Colors.green
-                              : Colors.red,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+            if (status == 'accepted' && appointment['video_conference_link'] != null) ...[
               SizedBox(height: 12),
-              if (appointment['payment_status'] != 'paid')
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // Implement payment logic here
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Payment feature will be implemented soon',
-                        ),
-                      ),
-                    );
-                  },
-                  icon: Icon(Icons.payment),
-                  label: Text('Pay Now'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  // Open video conference link
+                  // Implement URL launcher here
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Opening video conference...')),
+                  );
+                },
+                icon: Icon(Icons.video_call),
+                label: Text('Join Meeting'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
                 ),
-              if (appointment['payment_status'] == 'paid' &&
-                  appointment['video_conference_link'] != null)
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // Open video conference link
-                    // Implement URL launcher here
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Opening video conference...')),
-                    );
-                  },
-                  icon: Icon(Icons.video_call),
-                  label: Text('Join Meeting'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
+              ),
             ],
           ],
         ),
@@ -630,3 +592,4 @@ class _SocketTestPageState extends State<SocketTestPage>
     );
   }
 }
+
