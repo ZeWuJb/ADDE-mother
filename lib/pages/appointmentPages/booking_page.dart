@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'serverioconfig.dart';
 import 'appointments_page.dart';
+import 'tele-conseltation_page.dart';
 
 class BookingPage extends StatefulWidget {
   final String doctorId;
@@ -45,12 +46,46 @@ class _BookingPageState extends State<BookingPage> {
             _requestStatus = 'accepted';
           });
 
+          // Show a snackbar with an action button
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Your appointment has been accepted!'),
               backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+              action: SnackBarAction(
+                label: 'Join Call',
+                onPressed: () {
+                  // Navigate to the video call page
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => TeleConseltationPage(
+                            appointment: data,
+                            doctorName: data['doctor_name'] ?? 'Doctor',
+                          ),
+                    ),
+                  );
+                },
+              ),
             ),
           );
+
+          // Automatically navigate to the video call page after a short delay
+          Future.delayed(Duration(seconds: 1), () {
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => TeleConseltationPage(
+                        appointment: data,
+                        doctorName: data['doctor_name'] ?? 'Doctor',
+                      ),
+                ),
+              );
+            }
+          });
         };
 
         _socketService.onAppointmentDeclined = (data) {
@@ -69,15 +104,15 @@ class _BookingPageState extends State<BookingPage> {
             ),
           );
         };
-        
+
         // Add error handler
         _socketService.onError = (error) {
           if (!mounted) return;
-          
+
           setState(() {
             _errorMessage = error;
           });
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Connection error: $error'),
@@ -86,11 +121,11 @@ class _BookingPageState extends State<BookingPage> {
             ),
           );
         };
-        
+
         // Add connection status handler
         _socketService.onConnectionChange = (connected) {
           if (!mounted) return;
-          
+
           if (connected) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -257,7 +292,7 @@ class _BookingPageState extends State<BookingPage> {
       if (!_socketService.isConnected) {
         // Try to reconnect
         _socketService.connect(userId);
-        
+
         // Show a message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -265,10 +300,10 @@ class _BookingPageState extends State<BookingPage> {
             duration: Duration(seconds: 2),
           ),
         );
-        
+
         // Wait a moment for connection
         await Future.delayed(Duration(seconds: 2));
-        
+
         // Check again
         if (!_socketService.isConnected) {
           throw Exception('Cannot connect to server. Please try again later.');
@@ -348,31 +383,42 @@ class _BookingPageState extends State<BookingPage> {
                         ],
                       ),
                     ),
-                    
+
                   // Connection status indicator
                   Container(
                     padding: EdgeInsets.all(8),
                     margin: EdgeInsets.symmetric(horizontal: 8),
-                    color: _socketService.isConnected ? Colors.green[50] : Colors.orange[50],
+                    color:
+                        _socketService.isConnected
+                            ? Colors.green[50]
+                            : Colors.orange[50],
                     child: Row(
                       children: [
                         Icon(
-                          _socketService.isConnected ? Icons.wifi : Icons.wifi_off,
-                          color: _socketService.isConnected ? Colors.green : Colors.orange,
+                          _socketService.isConnected
+                              ? Icons.wifi
+                              : Icons.wifi_off,
+                          color:
+                              _socketService.isConnected
+                                  ? Colors.green
+                                  : Colors.orange,
                         ),
                         SizedBox(width: 8),
                         Text(
-                          _socketService.isConnected 
-                              ? 'Connected to server' 
+                          _socketService.isConnected
+                              ? 'Connected to server'
                               : 'Not connected - appointments may not be sent',
                           style: TextStyle(
-                            color: _socketService.isConnected ? Colors.green : Colors.orange,
+                            color:
+                                _socketService.isConnected
+                                    ? Colors.green
+                                    : Colors.orange,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  
+
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: CalendarDatePicker(
@@ -436,4 +482,3 @@ class _BookingPageState extends State<BookingPage> {
     );
   }
 }
-

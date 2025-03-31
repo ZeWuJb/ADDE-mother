@@ -355,7 +355,8 @@ class _SocketTestPageState extends State<SocketTestPage>
                 ),
               ],
             ),
-            if (status == 'accepted' && appointment['video_conference_link'] != null) ...[
+            if (status == 'accepted' &&
+                appointment['video_conference_link'] != null) ...[
               SizedBox(height: 12),
               ElevatedButton.icon(
                 onPressed: () {
@@ -592,4 +593,3 @@ class _SocketTestPageState extends State<SocketTestPage>
     );
   }
 }
-
