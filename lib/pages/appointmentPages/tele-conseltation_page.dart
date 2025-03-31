@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class TeleConseltationPage extends StatefulWidget {
   final Map<String, dynamic> appointment;
@@ -21,17 +22,122 @@ class TeleConseltationPage extends StatefulWidget {
 
 class _TeleConseltationPageState extends State<TeleConseltationPage> {
   final JitsiMeet jitsiMeet = JitsiMeet();
+  final supabase = Supabase.instance.client;
   bool isCallActive = false;
   String callStatus = 'Ready to join';
   late String roomName;
   late String meetingUrl;
   bool isJoining = false;
   String? errorMessage;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     _initializeJitsiMeet();
+
+    // Set up a timer to periodically check for updates to the appointment
+    _refreshTimer = Timer.periodic(Duration(seconds: 30), (timer) {
+      if (mounted) {
+        _refreshAppointmentData();
+      }
+    });
+  }
+
+  Future<void> _refreshAppointmentData() async {
+    try {
+      // Only refresh if we have a valid appointment ID
+      final appointmentId = widget.appointment['id'];
+      if (appointmentId == null) return;
+
+      // Fetch the latest appointment data from Supabase
+      final response =
+          await supabase
+              .from('appointments')
+              .select('video_conference_link, status')
+              .eq('id', appointmentId)
+              .single();
+
+      if (response != null && mounted) {
+        // Check if the video conference link has changed
+        final newVideoLink = response['video_conference_link'];
+        if (newVideoLink != null &&
+            newVideoLink.isNotEmpty &&
+            newVideoLink != meetingUrl) {
+          setState(() {
+            meetingUrl = newVideoLink;
+            roomName = meetingUrl.split('/').last;
+          });
+
+          // If we're not in a call, show a prompt to join with the new link
+          if (!isCallActive) {
+            _showNewLinkDialog();
+          }
+        }
+
+        // Check if the appointment status has changed to cancelled
+        final status = response['status'];
+        if (status == 'cancelled' && isCallActive) {
+          _showAppointmentCancelledDialog();
+        }
+      }
+    } catch (e) {
+      print("Error refreshing appointment data: $e");
+    }
+  }
+
+  void _showNewLinkDialog() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text('New Meeting Link Available'),
+            content: Text(
+              'A new video conference link is available. Would you like to join with the new link?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Later'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _joinMeeting();
+                },
+                child: Text('Join Now'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _showAppointmentCancelledDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => AlertDialog(
+            title: Text('Appointment Cancelled'),
+            content: Text(
+              'This appointment has been cancelled. The video call will be ended.',
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  jitsiMeet.hangUp();
+                  Navigator.of(context).pop(); // Return to appointments page
+                },
+                child: Text('OK'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              ),
+            ],
+          ),
+    );
   }
 
   Future<void> _initializeJitsiMeet() async {
@@ -48,13 +154,16 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
       } else {
         // Fallback to using appointment ID if no URL is available
         final appointmentId =
-            widget.appointment['appointmentId'] ??
             widget.appointment['id'] ??
+            widget.appointment['appointmentId'] ??
             'default_room';
         roomName = 'caresync_appointment_$appointmentId';
         meetingUrl = 'https://meet.jit.si/$roomName';
         print("Generated room name: $roomName");
         print("Generated meeting URL: $meetingUrl");
+
+        // If we had to generate a URL, try to update it in the database
+        _updateVideoLinkInDatabase(appointmentId, meetingUrl);
       }
 
       // Auto-join the meeting after a short delay
@@ -68,6 +177,25 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
       setState(() {
         errorMessage = "Error initializing: $e";
       });
+    }
+  }
+
+  // Update the video conference link in the database if needed
+  Future<void> _updateVideoLinkInDatabase(
+    String appointmentId,
+    String videoLink,
+  ) async {
+    try {
+      // Only update if this is a valid UUID (not a socket-generated ID)
+      if (appointmentId.contains('-')) {
+        await supabase
+            .from('appointments')
+            .update({'video_conference_link': videoLink})
+            .eq('id', appointmentId);
+        print("Updated video link in database for appointment $appointmentId");
+      }
+    } catch (e) {
+      print("Error updating video link in database: $e");
     }
   }
 
@@ -190,8 +318,8 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
   Future<void> _logCallEvent(String event) async {
     try {
       final appointmentId =
-          widget.appointment['appointmentId'] ??
           widget.appointment['id'] ??
+          widget.appointment['appointmentId'] ??
           'unknown';
       final timestamp = DateTime.now().toIso8601String();
 
@@ -450,19 +578,6 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
                       leading: Icon(Icons.check_circle, color: Colors.green),
                       title: Text('Have your questions ready for the doctor'),
                     ),
-                    // Debug information
-                    SizedBox(height: 20),
-                    Text(
-                      'Debug Information:',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text('Room: $roomName'),
-                    Text('URL: $meetingUrl'),
-                    Text('Call active: $isCallActive'),
-                    Text('Joining: $isJoining'),
                   ],
                 ),
               ),
@@ -476,6 +591,7 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
   @override
   void dispose() {
     // Clean up resources
+    _refreshTimer?.cancel();
     if (isCallActive) {
       try {
         jitsiMeet.hangUp();

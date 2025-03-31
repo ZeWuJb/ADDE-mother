@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'serverioconfig.dart';
+import 'tele-conseltation_page.dart'; // Import the video consultation page
 
 class SocketTestPage extends StatefulWidget {
   final String doctorId;
@@ -31,59 +32,26 @@ class _SocketTestPageState extends State<SocketTestPage>
   // Tab controller for the different appointment categories
   late TabController _tabController;
 
-  // Add a method to handle connection status updates more robustly
-  void _handleConnectionStatus(bool connected) {
-    if (!mounted) return;
-
-    setState(() {
-      connectionStatus = connected ? 'Connected' : 'Disconnected';
-      isReconnecting = !connected;
-    });
-
-    // If connection was established, refresh data
-    if (connected) {
-      _loadAppointments();
-    }
-  }
-
-  // Add a method to periodically refresh data and check connection
-  Timer? _refreshTimer;
-
-  void _startPeriodicRefresh() {
-    // Cancel any existing timer
-    _refreshTimer?.cancel();
-
-    // Set up a new refresh timer
-    _refreshTimer = Timer.periodic(Duration(seconds: 30), (timer) {
-      if (mounted) {
-        // Check connection status
-        if (!_socketService.isConnected) {
-          print(
-            'Periodic check: Socket not connected, attempting to reconnect',
-          );
-          final userId = supabase.auth.currentUser?.id;
-          if (userId != null) {
-            setState(() {
-              isReconnecting = true;
-            });
-            _socketService.connect(userId);
-          }
-        }
-
-        // Refresh data
-        _loadAppointments();
-      }
-    });
-  }
-
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     print('SocketTestPage initialized with doctor_id: ${widget.doctorId}');
 
-    // Set up connection status callback with the new handler
-    _socketService.onConnectionChange = _handleConnectionStatus;
+    // Set up connection status callback
+    _socketService.onConnectionChange = (connected) {
+      if (!mounted) return;
+
+      setState(() {
+        connectionStatus = connected ? 'Connected' : 'Disconnected';
+        isReconnecting = !connected;
+      });
+
+      // If connection was established, refresh data
+      if (connected) {
+        _loadAppointments();
+      }
+    };
 
     // Set up error callback
     _socketService.onError = (error) {
@@ -145,13 +113,16 @@ class _SocketTestPageState extends State<SocketTestPage>
     };
 
     // Connect socket and load data after widget is fully initialized
-    // Use Future.microtask to ensure the widget is fully built
     Future.microtask(() {
       _connectSocket();
       _loadAppointments();
 
-      // Set up a periodic refresh timer
-      _startPeriodicRefresh();
+      // Set up a timer to periodically check for new appointments in the database
+      Timer.periodic(Duration(seconds: 10), (timer) {
+        if (mounted) {
+          _fetchAppointmentsFromDatabase();
+        }
+      });
     });
   }
 
@@ -184,6 +155,9 @@ class _SocketTestPageState extends State<SocketTestPage>
       if (_socketService.isConnected) {
         _socketService.requestAppointmentHistory(userId, 'mother');
       }
+
+      // Also fetch appointments directly from database
+      _fetchAppointmentsFromDatabase();
     } catch (error) {
       print('Error loading appointments: $error');
       setState(() {
@@ -194,6 +168,109 @@ class _SocketTestPageState extends State<SocketTestPage>
         isLoading = false;
       });
     }
+  }
+
+  // Fetch appointments directly from Supabase
+  Future<void> _fetchAppointmentsFromDatabase() async {
+    try {
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return;
+
+      // IMPORTANT: Use userId directly since it's the primary key in mothers table
+      // No need to query the mothers table first
+
+      // Fetch appointments from the database
+      final response = await supabase
+          .from('appointments')
+          .select('''
+            id, 
+            requested_time, 
+            status, 
+            payment_status, 
+            video_conference_link,
+            created_at,
+            updated_at,
+            doctors:doctor_id (
+              id, 
+              full_name, 
+              speciality,
+              profile_url
+            )
+          ''')
+          .eq('mother_id', userId) // Use userId directly as mother_id
+          .order('requested_time', ascending: true);
+
+      if (response == null || response.isEmpty) {
+        print('No appointments found in database');
+        return;
+      }
+
+      print('Fetched ${response.length} appointments from database');
+
+      // Process appointments by status
+      List<Map<String, dynamic>> pending = [];
+      List<Map<String, dynamic>> accepted = [];
+      List<Map<String, dynamic>> declined = [];
+
+      for (var appointment in response) {
+        // Convert to Map<String, dynamic> if it's not already
+        final appointmentMap = Map<String, dynamic>.from(appointment);
+
+        String status = appointmentMap['status'] ?? 'pending';
+
+        if (status == 'pending') {
+          pending.add(appointmentMap);
+        } else if (status == 'accepted') {
+          accepted.add(appointmentMap);
+
+          // Check if this is a newly accepted appointment with a video link
+          if (appointmentMap['video_conference_link'] != null &&
+              appointmentMap['video_conference_link'].toString().isNotEmpty) {
+            // Check if we've already processed this appointment
+            if (!_processedAppointments.contains(appointmentMap['id'])) {
+              _processedAppointments.add(appointmentMap['id']);
+
+              // Navigate to video call immediately
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _navigateToVideoCall(appointmentMap);
+              });
+            }
+          }
+        } else if (status == 'declined' || status == 'cancelled') {
+          declined.add(appointmentMap);
+        }
+      }
+
+      // Update state with database appointments
+      setState(() {
+        pendingAppointments = pending;
+        acceptedAppointments = accepted;
+        rejectedAppointments = declined;
+      });
+    } catch (error) {
+      print('Error fetching appointments from database: $error');
+    }
+  }
+
+  // Keep track of appointments we've already processed
+  Set<String> _processedAppointments = {};
+
+  void _navigateToVideoCall(Map<String, dynamic> appointment) {
+    final doctorName =
+        appointment['doctors'] != null
+            ? appointment['doctors']['full_name']
+            : 'Doctor';
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => TeleConseltationPage(
+              appointment: appointment,
+              doctorName: doctorName,
+            ),
+      ),
+    );
   }
 
   void _connectSocket() {
@@ -232,9 +309,12 @@ class _SocketTestPageState extends State<SocketTestPage>
       // Show notification
       _showStatusDialog(
         'Appointment Accepted',
-        'Your appointment has been accepted! Please proceed to payment.',
+        'Your appointment has been accepted! The video consultation will open shortly.',
         Colors.green,
       );
+
+      // Immediately fetch from database to get the video conference link
+      _fetchAppointmentsFromDatabase();
     };
 
     _socketService.onAppointmentDeclined = (data) {
@@ -306,6 +386,11 @@ class _SocketTestPageState extends State<SocketTestPage>
             ? Colors.green
             : Colors.red;
 
+    // Check if this appointment has a video conference link
+    final hasVideoLink =
+        appointment['video_conference_link'] != null &&
+        appointment['video_conference_link'].toString().isNotEmpty;
+
     return Card(
       margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       elevation: 2,
@@ -355,21 +440,16 @@ class _SocketTestPageState extends State<SocketTestPage>
                 ),
               ],
             ),
-            if (status == 'accepted' &&
-                appointment['video_conference_link'] != null) ...[
+            if (status == 'accepted') ...[
               SizedBox(height: 12),
               ElevatedButton.icon(
                 onPressed: () {
-                  // Open video conference link
-                  // Implement URL launcher here
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Opening video conference...')),
-                  );
+                  _navigateToVideoCall(appointment);
                 },
                 icon: Icon(Icons.video_call),
-                label: Text('Join Meeting'),
+                label: Text('Join Video Call'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: hasVideoLink ? Colors.blue : Colors.grey,
                   foregroundColor: Colors.white,
                 ),
               ),
@@ -397,16 +477,10 @@ class _SocketTestPageState extends State<SocketTestPage>
     );
   }
 
-  // Update the dispose method to clean up the refresh timer
   @override
   void dispose() {
-    // Cancel any pending operations
     _socketService.disconnect();
-    _refreshTimer?.cancel();
-
-    // Dispose controllers
     _tabController.dispose();
-
     super.dispose();
   }
 

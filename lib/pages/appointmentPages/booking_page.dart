@@ -196,16 +196,16 @@ class _BookingPageState extends State<BookingPage> {
     }
 
     try {
-      // Check if mother record exists
+      // Check if mother record exists - IMPORTANT: use user_id, not id
       final motherRecord =
           await supabase
               .from('mothers')
-              .select('user_id')
+              .select()
               .eq('user_id', userId)
               .maybeSingle();
 
       if (motherRecord != null) {
-        print('Mother record exists with ID: $userId');
+        print('Mother record exists with user_id: $userId');
         return true;
       }
 
@@ -213,16 +213,15 @@ class _BookingPageState extends State<BookingPage> {
       final user = supabase.auth.currentUser!;
       final email = user.email ?? '';
 
-      // Create mother record without doctor_id
+      // Create mother record with user_id as the primary key
       print('Creating mother record for user: $userId');
       await supabase.from('mothers').insert({
-        'id': userId,
+        'user_id': userId, // This is the primary key
         'full_name':
             email.split(
               '@',
             )[0], // Use part of email as name if no name available
         'email': email,
-        // Remove doctor_id field as it's not part of the mothers table
         'created_at': DateTime.now().toIso8601String(),
       });
 
@@ -278,7 +277,7 @@ class _BookingPageState extends State<BookingPage> {
         throw Exception('User not authenticated');
       }
 
-      // Get user name from Supabase
+      // Get user name from Supabase - use user_id, not id
       final userData =
           await supabase
               .from('mothers')
