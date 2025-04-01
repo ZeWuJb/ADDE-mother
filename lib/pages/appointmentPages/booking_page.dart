@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'serverioconfig.dart';
 import 'appointments_page.dart';
 import 'tele-conseltation_page.dart';
 
@@ -11,179 +10,91 @@ class BookingPage extends StatefulWidget {
   const BookingPage({super.key, required this.doctorId});
 
   @override
-  _BookingPageState createState() => _BookingPageState();
+  State<BookingPage> createState() => _BookingPageState();
 }
 
 class _BookingPageState extends State<BookingPage> {
   final supabase = Supabase.instance.client;
-  final SocketService _socketService = SocketService();
 
   DateTime? _selectedDay;
   List<DateTime> _availableTimes = [];
   int? _currentTimeIndex;
   bool _timeSelected = false;
   bool _isLoading = false;
-  String? _requestStatus;
   String? _errorMessage;
+  bool _isConnected = true;
 
   @override
   void initState() {
     super.initState();
-    // Log the doctor ID for debugging
-    print('BookingPage initialized with doctor_id: ${widget.doctorId}');
-
-    // Initialize socket connection after widget is fully built
-    Future.microtask(() {
-      final userId = supabase.auth.currentUser?.id;
-      if (userId != null) {
-        _socketService.connect(userId);
-
-        // Set up callbacks for appointment responses
-        _socketService.onAppointmentAccepted = (data) {
-          if (!mounted) return;
-
-          setState(() {
-            _requestStatus = 'accepted';
-          });
-
-          // Show a snackbar with an action button
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Your appointment has been accepted!'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-              action: SnackBarAction(
-                label: 'Join Call',
-                onPressed: () {
-                  // Navigate to the video call page
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => TeleConseltationPage(
-                            appointment: data,
-                            doctorName: data['doctor_name'] ?? 'Doctor',
-                          ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          );
-
-          // Automatically navigate to the video call page after a short delay
-          Future.delayed(Duration(seconds: 1), () {
-            if (mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder:
-                      (context) => TeleConseltationPage(
-                        appointment: data,
-                        doctorName: data['doctor_name'] ?? 'Doctor',
-                      ),
-                ),
-              );
-            }
-          });
-        };
-
-        _socketService.onAppointmentDeclined = (data) {
-          if (!mounted) return;
-
-          setState(() {
-            _requestStatus = 'declined';
-          });
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Your appointment was declined. Please try another time.',
-              ),
-              backgroundColor: Colors.red,
-            ),
-          );
-        };
-
-        // Add error handler
-        _socketService.onError = (error) {
-          if (!mounted) return;
-
-          setState(() {
-            _errorMessage = error;
-          });
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Connection error: $error'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 5),
-            ),
-          );
-        };
-
-        // Add connection status handler
-        _socketService.onConnectionChange = (connected) {
-          if (!mounted) return;
-
-          if (connected) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Connected to server'),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
-              ),
-            );
-          }
-        };
-      }
-    });
+    // Check connection status
+    _checkConnectionStatus();
   }
 
-  @override
-  void dispose() {
-    _socketService.disconnect();
-    super.dispose();
+  Future<void> _checkConnectionStatus() async {
+    try {
+      // Simple query to check if Supabase is connected
+      await supabase.from('doctors').select('id').limit(1);
+      if (mounted) {
+        setState(() {
+          _isConnected = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isConnected = false;
+        });
+      }
+    }
   }
 
   Future<void> _fetchAvailableTimes(DateTime selectedDate) async {
     final dateString = DateFormat('yyyy-MM-dd').format(selectedDate);
-    print(
-      'Fetching availability for doctor_id: ${widget.doctorId} on date: $dateString',
-    );
 
-    final response =
-        await supabase
-            .from('doctor_availability')
-            .select('availability')
-            .eq('doctor_id', widget.doctorId)
-            .maybeSingle();
+    try {
+      final response =
+          await supabase
+              .from('doctor_availability')
+              .select('availability')
+              .eq('doctor_id', widget.doctorId)
+              .maybeSingle();
 
-    print('Response from Supabase: ${supabase.auth.currentUser?.id}');
-    if (response == null || response['availability'] == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No availability found for this doctor.')),
+      if (!mounted) return;
+
+      if (response == null || response['availability'] == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No availability found for this doctor.'),
+          ),
+        );
+        return;
+      }
+
+      final availability = response['availability'];
+      final dateEntry = (availability['dates'] as List?)?.firstWhere(
+        (entry) => entry['date'] == dateString,
+        orElse: () => null,
       );
-      return;
-    }
 
-    final availability = response['availability'];
-    final dateEntry = (availability['dates'] as List?)?.firstWhere(
-      (entry) => entry['date'] == dateString,
-      orElse: () => null,
-    );
-
-    if (dateEntry != null) {
-      setState(() {
-        _availableTimes =
-            (dateEntry['slots'] as List)
-                .map<DateTime>((slot) => DateFormat('HH:mm').parse(slot))
-                .toList();
-      });
-    } else {
-      setState(() {
-        _availableTimes = [];
-      });
+      if (dateEntry != null) {
+        setState(() {
+          _availableTimes =
+              (dateEntry['slots'] as List)
+                  .map<DateTime>((slot) => DateFormat('HH:mm').parse(slot))
+                  .toList();
+        });
+      } else {
+        setState(() {
+          _availableTimes = [];
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching availability: $error')),
+        );
+      }
     }
   }
 
@@ -191,7 +102,6 @@ class _BookingPageState extends State<BookingPage> {
   Future<bool> _ensureMotherRecordExists() async {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) {
-      print('No authenticated user found');
       return false;
     }
 
@@ -205,7 +115,6 @@ class _BookingPageState extends State<BookingPage> {
               .maybeSingle();
 
       if (motherRecord != null) {
-        print('Mother record exists with user_id: $userId');
         return true;
       }
 
@@ -214,7 +123,6 @@ class _BookingPageState extends State<BookingPage> {
       final email = user.email ?? '';
 
       // Create mother record with user_id as the primary key
-      print('Creating mother record for user: $userId');
       await supabase.from('mothers').insert({
         'user_id': userId, // This is the primary key
         'full_name':
@@ -225,19 +133,24 @@ class _BookingPageState extends State<BookingPage> {
         'created_at': DateTime.now().toIso8601String(),
       });
 
-      print('Mother record created successfully');
       return true;
     } catch (error) {
-      print('Error ensuring mother record exists: $error');
+      if (mounted) {
+        setState(() {
+          _errorMessage = error.toString();
+        });
+      }
       return false;
     }
   }
 
   Future<void> sendRequest() async {
     if (_selectedDay == null || _currentTimeIndex == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a date and time')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a date and time')),
+        );
+      }
       return;
     }
 
@@ -250,11 +163,13 @@ class _BookingPageState extends State<BookingPage> {
       // First ensure mother record exists
       final motherRecordExists = await _ensureMotherRecordExists();
       if (!motherRecordExists) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not create user profile. Please try again.'),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not create user profile. Please try again.'),
+            ),
+          );
+        }
         setState(() {
           _isLoading = false;
         });
@@ -277,61 +192,41 @@ class _BookingPageState extends State<BookingPage> {
         throw Exception('User not authenticated');
       }
 
-      // Get user name from Supabase - use user_id, not id
-      final userData =
+      // Calculate expires_at (20 minutes from now)
+      final now = DateTime.now();
+      final expiresAt = now.add(const Duration(minutes: 20));
+
+      // Create temporary appointment request
+      final result =
           await supabase
-              .from('mothers')
-              .select('full_name')
-              .eq('user_id', userId)
+              .from('temporary_appointments')
+              .insert({
+                'doctor_id': widget.doctorId,
+                'mother_id': userId,
+                'requested_time': requestedDateTime.toIso8601String(),
+                'expires_at': expiresAt.toIso8601String(),
+                'status': 'pending',
+              })
+              .select()
               .single();
 
-      final motherName = userData['full_name'] ?? 'Unknown Patient';
-
-      // Check if socket is connected
-      if (!_socketService.isConnected) {
-        // Try to reconnect
-        _socketService.connect(userId);
-
-        // Show a message
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Trying to connect to server...'),
-            duration: Duration(seconds: 2),
+            content: Text(
+              'Appointment request sent! Waiting for doctor approval.',
+            ),
           ),
         );
 
-        // Wait a moment for connection
-        await Future.delayed(Duration(seconds: 2));
-
-        // Check again
-        if (!_socketService.isConnected) {
-          throw Exception('Cannot connect to server. Please try again later.');
-        }
-      }
-
-      // Send appointment request via socket
-      _socketService.requestAppointment(
-        doctorId: widget.doctorId,
-        motherId: userId,
-        motherName: motherName,
-        requestedTime: requestedDateTime.toIso8601String(),
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Appointment request sent! Waiting for doctor approval.',
+        // Navigate to appointments page - pass the doctorId
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SocketTestPage(doctorId: widget.doctorId),
           ),
-        ),
-      );
-
-      // Navigate to waiting page
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SocketTestPage(doctorId: widget.doctorId),
-        ),
-      );
+        );
+      }
 
       setState(() {
         _selectedDay = null;
@@ -340,17 +235,20 @@ class _BookingPageState extends State<BookingPage> {
         _availableTimes = [];
       });
     } catch (error) {
-      print('Error sending appointment request: $error');
-      setState(() {
-        _errorMessage = error.toString();
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error sending request: ${error.toString()}')),
-      );
+      if (mounted) {
+        setState(() {
+          _errorMessage = error.toString();
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error sending request: ${error.toString()}')),
+        );
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -360,23 +258,23 @@ class _BookingPageState extends State<BookingPage> {
       appBar: AppBar(title: const Text('Book Appointment')),
       body:
           _isLoading
-              ? Center(child: CircularProgressIndicator())
+              ? const Center(child: CircularProgressIndicator())
               : Column(
                 children: [
                   // Error message if any
                   if (_errorMessage != null)
                     Container(
-                      padding: EdgeInsets.all(8),
-                      margin: EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(8),
+                      margin: const EdgeInsets.all(8),
                       color: Colors.red[50],
                       child: Row(
                         children: [
-                          Icon(Icons.error, color: Colors.red),
-                          SizedBox(width: 8),
+                          const Icon(Icons.error, color: Colors.red),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _errorMessage!,
-                              style: TextStyle(color: Colors.red),
+                              style: const TextStyle(color: Colors.red),
                             ),
                           ),
                         ],
@@ -385,33 +283,22 @@ class _BookingPageState extends State<BookingPage> {
 
                   // Connection status indicator
                   Container(
-                    padding: EdgeInsets.all(8),
-                    margin: EdgeInsets.symmetric(horizontal: 8),
-                    color:
-                        _socketService.isConnected
-                            ? Colors.green[50]
-                            : Colors.orange[50],
+                    padding: const EdgeInsets.all(8),
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    color: _isConnected ? Colors.green[50] : Colors.orange[50],
                     child: Row(
                       children: [
                         Icon(
-                          _socketService.isConnected
-                              ? Icons.wifi
-                              : Icons.wifi_off,
-                          color:
-                              _socketService.isConnected
-                                  ? Colors.green
-                                  : Colors.orange,
+                          _isConnected ? Icons.wifi : Icons.wifi_off,
+                          color: _isConnected ? Colors.green : Colors.orange,
                         ),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Text(
-                          _socketService.isConnected
+                          _isConnected
                               ? 'Connected to server'
                               : 'Not connected - appointments may not be sent',
                           style: TextStyle(
-                            color:
-                                _socketService.isConnected
-                                    ? Colors.green
-                                    : Colors.orange,
+                            color: _isConnected ? Colors.green : Colors.orange,
                           ),
                         ),
                       ],
