@@ -1,8 +1,8 @@
+import 'package:adde/pages/weekly_tips/weeklytip_add_page.dart';
 import 'package:flutter/material.dart';
 import 'package:adde/pages/home_screen.dart';
 import 'package:adde/pages/Community_page.dart';
 import 'package:adde/pages/education/Education_page.dart';
-import 'package:adde/pages/appointmentPages/tele-conseltation_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomePage extends StatefulWidget {
@@ -124,7 +124,8 @@ class _HomePageState extends State<HomePage> {
           : const Center(child: Text("Failed to load user data")),
       const CommunityPage(),
       const EducationPage(),
-      const TeleConseltationPage(),
+      const WeeklyTipAddPage(),
+      // const TeleConseltationPage(),
     ];
 
     return Scaffold(
@@ -176,10 +177,15 @@ class _HomePageState extends State<HomePage> {
             label: "Education",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.video_call_outlined),
+            icon: Icon(Icons.add_a_photo),
             activeIcon: Icon(Icons.video_call),
-            label: "Consult",
+            label: "add tips",
           ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.video_call_outlined),
+          //   activeIcon: Icon(Icons.video_call),
+          //   label: "Consult",
+          // ),
         ],
       ),
     );

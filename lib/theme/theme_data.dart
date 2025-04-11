@@ -6,15 +6,15 @@ class ThemeModes {
     colorScheme: ColorScheme(
       brightness: Brightness.light,
       primary: Color(0xFFff8fab), // Soft pink for primary actions
-      onPrimary: Colors.black87,
+      onPrimary: Colors.white,
       secondary: Color(0xFFffb3c6), // Lighter pink for secondary actions
       onSecondary: Colors.black87,
-      tertiary: Color(0xFF9AE6B4), // Soft green for highlights
+      tertiary: Color(0xFFffcad4), // Soft green for highlights
       onTertiary: Colors.black87,
       error: Colors.redAccent,
       onError: Colors.white,
-      surface: Color(0xFFFDE2E4), // Light pink surface
-      onSurface: Colors.black87,
+      surface: Color(0xFFffe5ec), // Light pink surface
+      onSurface: Color(0xFFfb6f92),
       outline: Colors.grey[400]!,
       shadow: Colors.black12,
       surfaceContainerHighest: Color(0xFFFCE4EC),

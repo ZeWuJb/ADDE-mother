@@ -1,10 +1,10 @@
 import 'package:adde/pages/chatbot/chat_history.dart';
-import 'package:adde/pages/chatbot/chat_message.dart'; // Ensure this path matches your project structure
+import 'package:adde/pages/chatbot/chat_message.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_gemini/flutter_gemini.dart'; // For Gemini API
+import 'package:flutter_gemini/flutter_gemini.dart';
 import 'config.dart';
-import 'package:intl/intl.dart'; // For formatting timestamps
+import 'package:intl/intl.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -18,17 +18,35 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final SupabaseClient supabase = Supabase.instance.client;
   bool _isLoading = false;
+  Map<String, dynamic>? _motherData; // Store data from 'mothers' table
+  List<Map<String, dynamic>> _healthMetrics =
+      []; // Store data from 'health_metrics'
 
-  // System prompt with "Hiwot"
-  final String systemPrompt = """
-You are Hiwot, a friendly and knowledgeable assistant specializing in pregnancy and child care. Provide accurate, supportive advice on topics like prenatal health, nutrition, baby milestones, postpartum care, and parenting tips. Keep responses concise, empathetic, and tailored to the user's needs.
+  // Dynamic system prompt incorporating mother and health data
+  String getSystemPrompt() {
+    String bioInfo =
+        _motherData != null
+            ? "The user's name is ${_motherData!['full_name'] ?? 'unknown'}, age ${_motherData!['age'] ?? 'unknown'}, ${_motherData!['pregnancy_weeks'] ?? 0} weeks pregnant (started ${_motherData!['pregnancy_start_date'] ?? 'unknown'}). Baseline weight: ${_motherData!['weight'] ?? 0} ${_motherData!['weight_unit'] ?? 'kg'}, baseline BP: ${_motherData!['blood_pressure'] ?? 'unknown'} mmHg."
+            : "No biography data available for the user.";
+
+    String healthInfo =
+        _healthMetrics.isNotEmpty
+            ? "Latest health metrics (recorded ${_healthMetrics.last['created_at'] ?? 'unknown'}): BP ${_healthMetrics.last['bp_systolic']}/${_healthMetrics.last['bp_diastolic']} mmHg, HR ${_healthMetrics.last['heart_rate']} bpm, Temp ${_healthMetrics.last['body_temp']}°C, Weight ${_healthMetrics.last['weight']} kg."
+            : "No recent health metrics available.";
+
+    return """
+You are Adde, a friendly and knowledgeable assistant specializing in pregnancy and child care. Provide accurate, supportive advice on topics like prenatal health, nutrition, baby milestones, postpartum care, and parenting tips. Keep responses concise, empathetic, and tailored to the user's needs. Use the following user data to personalize your responses:
+- $bioInfo
+- $healthInfo
 """;
+  }
 
   @override
   void initState() {
     super.initState();
     Gemini.init(apiKey: Config.geminiApiKey);
-    _addWelcomeMessage(); // Only add welcome message, no history loading
+    _fetchMotherData(); // Fetch data on initialization
+    _addWelcomeMessage();
   }
 
   @override
@@ -38,64 +56,54 @@ You are Hiwot, a friendly and knowledgeable assistant specializing in pregnancy 
     super.dispose();
   }
 
+  // Fetch mother data from 'mothers' and 'health_metrics' tables
+  Future<void> _fetchMotherData() async {
+    try {
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return;
+
+      // Fetch from 'mothers' table
+      final motherResponse =
+          await supabase
+              .from('mothers')
+              .select()
+              .eq('user_id', userId)
+              .maybeSingle(); // Assumes one row per user
+
+      // Fetch from 'health_metrics' table
+      final healthResponse = await supabase
+          .from('health_metrics')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: true);
+
+      setState(() {
+        _motherData =
+            motherResponse != null
+                ? Map<String, dynamic>.from(motherResponse)
+                : null;
+        _healthMetrics = List<Map<String, dynamic>>.from(healthResponse);
+      });
+    } catch (e) {
+      debugPrint("Error fetching mother data: $e");
+    }
+  }
+
   // Add a welcome message from Hiwot
   void _addWelcomeMessage() {
     setState(() {
+      String welcomeText =
+          _motherData != null
+              ? "Hello ${_motherData!['full_name'] ?? ''}! I’m Adde, your pregnancy and child care companion. You’re ${_motherData!['pregnancy_weeks'] ?? 0} weeks along—how can I assist you today?"
+              : "Hello! I’m Adde, your pregnancy and child care companion. How can I assist you today?";
       _messages.add(
         ChatMessage(
-          text:
-              "Hello! I’m Hiwot, your pregnancy and child care companion. How can I assist you today?",
+          text: welcomeText,
           isUser: false,
           timestamp: DateTime.now(),
         ),
       );
     });
-  }
-
-  // Load chat history from Supabase (kept for potential future use, not called automatically)
-  Future<void> _loadChatHistory() async {
-    try {
-      final userId = supabase.auth.currentUser?.id;
-      if (userId == null) return;
-
-      final response = await supabase
-          .from("chat_history")
-          .select()
-          .eq("user_id", userId)
-          .order("timestamp", ascending: true);
-
-      setState(() {
-        _messages.clear();
-        for (var msg in response) {
-          DateTime? parsedTimestamp;
-          try {
-            parsedTimestamp =
-                msg["timestamp"] != null
-                    ? DateTime.parse(msg["timestamp"])
-                    : DateTime.now();
-          } catch (e) {
-            parsedTimestamp = DateTime.now();
-          }
-
-          _messages.add(
-            ChatMessage(
-              text: msg["message"] ?? "No message",
-              isUser: true,
-              timestamp: parsedTimestamp,
-            ),
-          );
-          _messages.add(
-            ChatMessage(
-              text: msg["response"] ?? "No response",
-              isUser: false,
-              timestamp: parsedTimestamp,
-            ),
-          );
-        }
-      });
-    } catch (e) {
-      debugPrint("Error loading chat history: $e");
-    }
   }
 
   // Send message asynchronously with streaming
@@ -140,8 +148,8 @@ You are Hiwot, a friendly and knowledgeable assistant specializing in pregnancy 
     try {
       final stream = Gemini.instance.promptStream(
         parts: [
-          TextPart(systemPrompt), // System prompt as a TextPart
-          TextPart("User: $userInput"), // User input as a TextPart
+          TextPart(getSystemPrompt()), // Updated system prompt with data
+          TextPart("User: $userInput"),
         ],
       );
       await for (final response in stream) {
@@ -203,7 +211,7 @@ You are Hiwot, a friendly and knowledgeable assistant specializing in pregnancy 
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Hiwot - Your Pregnancy Companion"),
+        title: const Text("Adde - Your Pregnancy Companion"),
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
@@ -246,7 +254,7 @@ You are Hiwot, a friendly and knowledgeable assistant specializing in pregnancy 
                           Text(message.text),
                           Text(
                             message.timestamp != null
-                                ? DateFormat('HH:mm').format(message.timestamp!)
+                                ? DateFormat('HH:mm').format(message.timestamp)
                                 : "Time unavailable",
                             style: const TextStyle(
                               fontSize: 10,
@@ -268,7 +276,7 @@ You are Hiwot, a friendly and knowledgeable assistant specializing in pregnancy 
                 children: [
                   SizedBox(width: 10),
                   Text(
-                    "Hiwot is typing...",
+                    "Adde is typing...",
                     style: TextStyle(color: Colors.grey),
                   ),
                 ],
@@ -282,7 +290,7 @@ You are Hiwot, a friendly and knowledgeable assistant specializing in pregnancy 
                   child: TextField(
                     controller: _controller,
                     decoration: const InputDecoration(
-                      hintText: "Ask Hiwot anything...",
+                      hintText: "Ask Adde anything...",
                       border: OutlineInputBorder(),
                     ),
                     onSubmitted: _sendMessage,

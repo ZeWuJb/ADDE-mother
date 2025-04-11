@@ -22,9 +22,7 @@ Future<void> main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
-        Provider(
-          create: (context) => NotificationService(),
-        ), // Initialized here
+        Provider(create: (context) => NotificationService()),
       ],
       child: MyApp(session: session),
     ),
@@ -34,6 +32,64 @@ Future<void> main() async {
 Future<String?> getSavedSession() async {
   final prefs = await SharedPreferences.getInstance();
   return prefs.getString('supabase_session');
+}
+
+class SplashScreen extends StatefulWidget {
+  final String? session;
+  const SplashScreen({super.key, required this.session});
+
+  @override
+  _SplashScreenState createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 3), () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder:
+              (context) =>
+                  widget.session != null
+                      ? HomePage(
+                        user_id: Supabase.instance.client.auth.currentUser!.id,
+                        email: Supabase.instance.client.auth.currentUser?.email,
+                      )
+                      : const AuthenticationGate(),
+        ),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.pink.shade300,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.assistant, size: 100, color: Colors.white),
+            const SizedBox(height: 20),
+            const Text(
+              'Adde Assistance',
+              style: TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -49,13 +105,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeModes.lightMode,
       darkTheme: ThemeModes.darkMode,
       themeMode: themeProvider.themeMode,
-      home:
-          session != null
-              ? HomePage(
-                user_id: Supabase.instance.client.auth.currentUser!.id,
-                email: Supabase.instance.client.auth.currentUser?.email,
-              )
-              : const AuthenticationGate(),
+      home: SplashScreen(session: session),
     );
   }
 }

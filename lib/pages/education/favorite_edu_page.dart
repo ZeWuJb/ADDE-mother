@@ -1,30 +1,29 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:adde/pages/education/favorite_edu_page.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class EducationPage extends StatefulWidget {
-  const EducationPage({super.key});
+class FavoritesPage extends StatefulWidget {
+  const FavoritesPage({super.key});
 
   @override
-  State<EducationPage> createState() => _EducationPageState();
+  State<FavoritesPage> createState() => _FavoritesPageState();
 }
 
-class _EducationPageState extends State<EducationPage> {
-  List<Map<String, dynamic>> _entries = [];
+class _FavoritesPageState extends State<FavoritesPage> {
+  List<Map<String, dynamic>> _favoriteEntries = [];
   bool _isLoading = false;
-  Set<int> expandedEntries = {}; // Track expanded items
+  Set<int> expandedEntries = {};
 
   @override
   void initState() {
     super.initState();
-    _fetchDiaryEntries();
+    _fetchFavoriteEntries();
   }
 
-  /// Function to fetch diary entries
-  Future<void> _fetchDiaryEntries() async {
+  /// Function to fetch favorite diary entries
+  Future<void> _fetchFavoriteEntries() async {
     setState(() => _isLoading = true);
 
     try {
@@ -32,44 +31,18 @@ class _EducationPageState extends State<EducationPage> {
       final response = await supabase
           .from('info1')
           .select('*')
+          .eq('is_favorite', true)
           .order('created_at', ascending: false);
 
       setState(() {
-        _entries = List<Map<String, dynamic>>.from(response);
+        _favoriteEntries = List<Map<String, dynamic>>.from(response);
       });
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error loading entries: $e')));
+      ).showSnackBar(SnackBar(content: Text('Error loading favorites: $e')));
     } finally {
       setState(() => _isLoading = false);
-    }
-  }
-
-  
-  Future<void> _toggleFavorite(String entryId, bool currentStatus) async {
-    try {
-      final supabase = Supabase.instance.client;
-      final newStatus = !currentStatus;
-
-      await supabase
-          .from('info1')
-          .update({'is_favorite': newStatus})
-          .eq('id', entryId);
-
-     
-      setState(() {
-        final entryIndex = _entries.indexWhere(
-          (entry) => entry['id'] == entryId,
-        );
-        if (entryIndex != -1) {
-          _entries[entryIndex]['is_favorite'] = newStatus;
-        }
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error updating favorite: $e')));
     }
   }
 
@@ -78,7 +51,7 @@ class _EducationPageState extends State<EducationPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'My Day',
+          'Favorite Entries',
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,
@@ -86,16 +59,7 @@ class _EducationPageState extends State<EducationPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _fetchDiaryEntries,
-          ),
-          IconButton(
-            icon: const Icon(Icons.favorite, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const FavoritesPage()),
-              );
-            },
+            onPressed: _fetchFavoriteEntries,
           ),
         ],
       ),
@@ -118,7 +82,7 @@ class _EducationPageState extends State<EducationPage> {
           ),
           // Main Content
           RefreshIndicator(
-            onRefresh: _fetchDiaryEntries,
+            onRefresh: _fetchFavoriteEntries,
             child:
                 _isLoading
                     ? Center(
@@ -126,13 +90,13 @@ class _EducationPageState extends State<EducationPage> {
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                     )
-                    : _entries.isEmpty
+                    : _favoriteEntries.isEmpty
                     ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.book_outlined,
+                            Icons.favorite_border,
                             size: 60,
                             color: Theme.of(
                               context,
@@ -140,7 +104,7 @@ class _EducationPageState extends State<EducationPage> {
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            'No diary entries yet.',
+                            'No favorite entries yet.',
                             style: TextStyle(
                               fontSize: 18,
                               color: Theme.of(
@@ -152,12 +116,11 @@ class _EducationPageState extends State<EducationPage> {
                       ),
                     )
                     : ListView.builder(
-                      itemCount: _entries.length,
+                      itemCount: _favoriteEntries.length,
                       padding: const EdgeInsets.all(16),
                       itemBuilder: (context, index) {
-                        final entry = _entries[index];
+                        final entry = _favoriteEntries[index];
                         bool isExpanded = expandedEntries.contains(index);
-                        bool isFavorite = entry['is_favorite'] ?? false;
 
                         Uint8List? imageBytes;
                         if (entry['image'] != null &&
@@ -207,40 +170,16 @@ class _EducationPageState extends State<EducationPage> {
                                       ),
                                     ),
                                   const SizedBox(height: 10),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          entry['title'] ?? 'No Title',
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color:
-                                                Theme.of(
-                                                  context,
-                                                ).colorScheme.onSurface,
-                                          ),
-                                        ),
-                                      ),
-                                      IconButton(
-                                        icon: Icon(
-                                          isFavorite
-                                              ? Icons.favorite
-                                              : Icons.favorite_border,
-                                          color:
-                                              isFavorite
-                                                  ? Colors.red
-                                                  : Colors.grey,
-                                        ),
-                                        onPressed:
-                                            () => _toggleFavorite(
-                                              entry['id'].toString(),
-                                              isFavorite,
-                                            ),
-                                      ),
-                                    ],
+                                  Text(
+                                    entry['title'] ?? 'No Title',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                    ),
                                   ),
                                   const SizedBox(height: 5),
                                   // Expandable Text Section

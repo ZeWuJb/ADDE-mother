@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:adde/pages/chatbot/chat_screen.dart';
-import 'package:adde/pages/notification/notificatio_history_page.dart'
-    show NotificationHistoryPage;
+import 'package:adde/pages/notification/notificatio_history_page.dart';
 import 'package:adde/pages/notification/notification_service.dart';
+import 'package:adde/pages/weekly_tips/weeklytip_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -12,6 +12,7 @@ import 'package:adde/pages/health_matrics_page.dart';
 import 'package:adde/pages/journal_page.dart';
 import 'package:adde/pages/name_suggation_page.dart';
 import 'package:adde/pages/profile/profile_page.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class HomeScreen extends StatefulWidget {
   final String user_id;
@@ -41,27 +42,27 @@ class _HomeScreenState extends State<HomeScreen> {
   int _pregnancyWeeks = 0;
   int _pregnancyDays = 0;
   String? _profileImageBase64;
+  late Future<void> _notificationCheckFuture;
+  List<Map<String, dynamic>> _weeklyTips = [];
 
   @override
   void initState() {
     super.initState();
-    _updatePregnancyProgress();
-    _checkUnreadNotifications();
-    _loadProfileImage();
     _scrollController = ScrollController();
+    _updatePregnancyProgress();
+    _loadProfileImage();
+    _notificationCheckFuture = _checkUnreadNotifications();
+    _loadWeeklyTips();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _pregnancyWeeks * 54.0,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
+        _scrollController.jumpTo(0); // Ensure top is visible on load
       }
       _scheduleHealthTips();
       _checkAndShowTodaysTip();
     });
 
+    // Periodic update for pregnancy progress (once a day)
     Future.delayed(const Duration(days: 1), () {
       if (mounted) _updatePregnancyProgress();
     });
@@ -71,7 +72,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final currentDate = DateTime.now();
     final difference = currentDate.difference(widget.pregnancyStartDate);
     final totalDays = difference.inDays;
-    print('Total days since pregnancy start: $totalDays');
     setState(() {
       _pregnancyWeeks = (totalDays / 7).floor();
       _pregnancyDays = totalDays % 7;
@@ -129,286 +129,561 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
+  Future<void> _loadWeeklyTips() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('weekly_tips')
+          .select()
+          .order('week', ascending: true)
+          .limit(3);
+      setState(() {
+        _weeklyTips = List<Map<String, dynamic>>.from(response);
+      });
+    } catch (e) {
+      print('Error loading weekly tips: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> features = [
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: _buildAppBar(context),
+      floatingActionButton: _buildFloatingActionButton(context),
+      body: Container(
+        decoration: _buildBackgroundGradient(),
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            SliverToBoxAdapter(child: _buildPregnancyJourneySection()),
+            SliverPadding(
+              padding: const EdgeInsets.all(20),
+              sliver: SliverToBoxAdapter(
+                child: _buildWeeklyTipsSection(context),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              sliver: SliverToBoxAdapter(child: _buildFeaturesSection(context)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  AppBar _buildAppBar(BuildContext context) {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      title: Row(
+        children: [
+          GestureDetector(
+            onTap:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfilePage()),
+                ).then((_) => _loadProfileImage()),
+            child: CircleAvatar(
+              radius: 20,
+              backgroundColor: Colors.white.withOpacity(0.3),
+              backgroundImage:
+                  _profileImageBase64 != null
+                      ? MemoryImage(base64Decode(_profileImageBase64!))
+                      : const AssetImage('assets/user.png') as ImageProvider,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              "Hi, ${widget.fullName}!",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onPrimary,
+                shadows: [
+                  Shadow(
+                    color: Theme.of(context).colorScheme.shadow,
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        FutureBuilder<void>(
+          future: _notificationCheckFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return SizedBox(
+                width: 36,
+                height: 36,
+                child: CircularProgressIndicator(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  strokeWidth: 2,
+                ),
+              );
+            }
+            return Stack(
+              children: [
+                IconButton(
+                  icon: Icon(
+                    Icons.notifications,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    size: 28,
+                  ),
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (_) =>
+                                NotificationHistoryPage(userId: widget.user_id),
+                      ),
+                    );
+                    _notificationCheckFuture = _checkUnreadNotifications();
+                    setState(() {});
+                  },
+                ),
+                if (_hasUnreadNotifications)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.error,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context).colorScheme.shadow,
+                            blurRadius: 2,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+        IconButton(
+          icon: Icon(
+            Icons.logout,
+            color: Theme.of(context).colorScheme.onPrimary,
+            size: 28,
+          ),
+          onPressed:
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => LoginPage()),
+              ),
+        ),
+      ],
+    );
+  }
+
+  Animate _buildFloatingActionButton(BuildContext context) {
+    return FloatingActionButton(
+      onPressed:
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => ChatScreen()),
+          ),
+      backgroundColor: Colors.white,
+      elevation: 6,
+      child: const Icon(Icons.chat, color: Colors.pink, size: 28),
+    ).animate().fadeIn(duration: 600.ms).scale(delay: 400.ms);
+  }
+
+  BoxDecoration _buildBackgroundGradient() {
+    return BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Colors.pink.shade100, Colors.purple.shade50],
+      ),
+    );
+  }
+
+  Widget _buildPregnancyJourneySection() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 100, 20, 40),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.pink.shade400, Colors.purple.shade400],
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(40),
+          bottomRight: Radius.circular(40),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          const Text(
+            "Pregnancy Journey",
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 1.2,
+            ),
+          ).animate().fadeIn(duration: 800.ms),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildCounterBox(_pregnancyWeeks, "Weeks"),
+              const SizedBox(width: 20),
+              CircleAvatar(
+                radius: 70,
+                backgroundColor: Colors.white.withOpacity(0.9),
+                child: ClipOval(
+                  child: Image.asset(
+                    "assets/embryo.gif",
+                    fit: BoxFit.cover,
+                    width: 120,
+                    height: 120,
+                  ),
+                ),
+              ).animate().scale(duration: 600.ms, curve: Curves.easeOut),
+              const SizedBox(width: 20),
+              _buildCounterBox(_pregnancyDays, "Days"),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Stack(
+              children: [
+                Container(
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                ),
+                FractionallySizedBox(
+                  widthFactor: (_pregnancyWeeks / 40).clamp(0.0, 1.0),
+                  child: Container(
+                    height: 10,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.white, Colors.pink.shade200],
+                      ),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ).animate().fadeIn(duration: 1000.ms),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeeklyTipsSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Weekly Tips",
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.purple,
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 180,
+          child:
+              _weeklyTips.isEmpty
+                  ? Center(
+                    child: Text(
+                      "No tips yet—add some!",
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 16,
+                      ),
+                    ),
+                  )
+                  : ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _weeklyTips.length,
+                    itemBuilder: (context, index) {
+                      final tip = _weeklyTips[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: GestureDetector(
+                          onTap:
+                              () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => WeeklyTipPage(
+                                        initialTip: tip,
+                                        pregnancyStartDate:
+                                            widget.pregnancyStartDate,
+                                      ),
+                                ),
+                              ),
+                          child: Container(
+                            width: 200,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(20),
+                                  ),
+                                  child:
+                                      tip['image'] != null
+                                          ? Image.memory(
+                                            base64Decode(tip['image']),
+                                            height: 100,
+                                            width: double.infinity,
+                                            fit: BoxFit.cover,
+                                          )
+                                          : Container(
+                                            height: 100,
+                                            color: Colors.grey.shade200,
+                                            child: const Icon(
+                                              Icons.image,
+                                              size: 40,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Week ${tip['week']}",
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.pink,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        tip['title'] ?? 'No Title',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey.shade700,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ).animate().fadeIn(delay: (index * 200).ms),
+                      );
+                    },
+                  ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFeaturesSection(BuildContext context) {
+    final features = [
       {
         "icon": "assets/calendar.png",
         "name": "Calendar",
         "description": "Schedule Appointments",
-        "navigation": () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => CalendarPage()),
-          );
-        },
+        "navigation":
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => CalendarPage()),
+            ),
       },
       {
         "icon": "assets/bmi.png",
         "name": "Health Metrics",
         "description": "Check your health",
-        "navigation": () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => HealthMetricsPage(userId: widget.user_id),
+        "navigation":
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => HealthMetricsPage(userId: widget.user_id),
+              ),
             ),
-          );
-        },
       },
       {
         "icon": "assets/diary.png",
         "name": "Journal",
         "description": "Write your thoughts",
-        "navigation": () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => JournalPage()),
-          );
-        },
+        "navigation":
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => JournalPage()),
+            ),
       },
       {
         "icon": "assets/label.png",
         "name": "Name Suggestion",
         "description": "Find baby names",
-        "navigation": () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => NameSuggationPage()),
-          );
-        },
+        "navigation":
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => NameSuggationPage()),
+            ),
       },
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProfilePage()),
-                ).then((_) => _loadProfileImage()); // Refresh image on return
-              },
-              child: CircleAvatar(
-                backgroundColor: Colors.white,
-                backgroundImage:
-                    _profileImageBase64 != null
-                        ? MemoryImage(base64Decode(_profileImageBase64!))
-                        : const AssetImage('assets/user.png') as ImageProvider,
-                radius: 20,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              "Welcome, ${widget.fullName.toUpperCase()}",
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(
-              _hasUnreadNotifications
-                  ? Icons.notifications_active
-                  : Icons.notifications_none,
-              color: _hasUnreadNotifications ? Colors.red : Colors.grey,
-            ),
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder:
-                      (context) =>
-                          NotificationHistoryPage(userId: widget.user_id),
-                ),
-              );
-              await _checkUnreadNotifications();
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.pink),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => LoginPage()),
-              );
-            },
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => ChatScreen()),
-          );
-        },
-        backgroundColor: Colors.pink,
-        child: const Icon(Icons.chat, color: Colors.white),
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.pinkAccent, Colors.purpleAccent],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Explore Features",
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.purple,
           ),
         ),
-        child: SingleChildScrollView(
-          controller: _scrollController,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(height: 12),
+        ...features.map(
+          (feature) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildFeatureCard(feature),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCounterBox(int value, String label) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4),
+            ],
+          ),
+          child: Text(
+            "$value",
+            style: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 16,
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    ).animate().fadeIn(duration: 600.ms);
+  }
+
+  Widget _buildFeatureCard(Map<String, dynamic> feature) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: InkWell(
+        onTap: feature["navigation"],
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
             children: [
               Container(
-                width: double.infinity,
-                height: 250,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.pink, Colors.purple],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(30),
-                    bottomRight: Radius.circular(30),
-                  ),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.pink.shade50,
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                child: Image.asset(
+                  feature["icon"],
+                  width: 40,
+                  height: 40,
+                  color: Colors.pink.shade400,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "Pregnancy Tracker",
-                      style: TextStyle(
-                        fontSize: 28,
+                    Text(
+                      feature["name"],
+                      style: const TextStyle(
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Colors.purple,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Column(
-                          children: [
-                            Text(
-                              "$_pregnancyWeeks",
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const Text(
-                              "Weeks",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ],
-                        ),
-                        const CircleAvatar(
-                          radius: 70,
-                          backgroundColor: Colors.white24,
-                          backgroundImage: AssetImage("assets/embryo.gif"),
-                        ),
-                        Column(
-                          children: [
-                            Text(
-                              "$_pregnancyDays",
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const Text(
-                              "Days",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: LinearProgressIndicator(
-                        value: _pregnancyWeeks / 40,
-                        backgroundColor: Colors.white24,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          Colors.white,
-                        ),
+                    const SizedBox(height: 4),
+                    Text(
+                      feature["description"],
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
                       ),
                     ),
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children:
-                      features.map<Widget>((item) {
-                        return Card(
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: InkWell(
-                            onTap: item["navigation"],
-                            borderRadius: BorderRadius.circular(12),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Row(
-                                children: [
-                                  Image.asset(
-                                    item["icon"],
-                                    width: 50,
-                                    height: 50,
-                                    color: Colors.pink,
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          item["name"],
-                                          style: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          item["description"],
-                                          style: const TextStyle(fontSize: 14),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                ),
-              ),
+              const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.pink),
             ],
           ),
         ),
       ),
-    );
+    ).animate().slideY(begin: 0.2, end: 0, duration: 400.ms);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 }

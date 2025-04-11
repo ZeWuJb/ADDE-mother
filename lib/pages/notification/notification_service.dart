@@ -14,15 +14,12 @@ class NotificationService {
     _initNotification();
   }
 
-  // Initialize the notification plugin
   Future<void> _initNotification() async {
     if (_isInitialized) return;
 
     try {
       tz.initializeTimeZones();
-      final String timeZoneName = tz.local.name;
-      tz.setLocalLocation(tz.getLocation(timeZoneName));
-      print('Step 1: Timezone initialized: $timeZoneName');
+      tz.setLocalLocation(tz.getLocation(tz.local.name));
 
       const AndroidInitializationSettings initSettingsAndroid =
           AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -42,21 +39,14 @@ class NotificationService {
               final day = int.parse(parts[1]);
               final title = parts[2];
               final scheduledDate = DateTime.parse(parts[3]);
-              await _saveDeliveredNotification(
-                userId,
-                day,
-                title,
-                scheduledDate,
-              );
-              await markNotificationAsSeen(
-                userId,
-                day,
-              ); // Mark as seen when tapped
+              await Future.wait([
+                _saveDeliveredNotification(userId, day, title, scheduledDate),
+                markNotificationAsSeen(userId, day),
+              ]);
             }
           }
         },
       );
-      print('Step 2: Notification plugin initialized with callback');
 
       final androidPlugin =
           notificationPlugin
@@ -65,23 +55,18 @@ class NotificationService {
               >();
       if (androidPlugin != null) {
         final granted = await androidPlugin.requestNotificationsPermission();
-        if (granted != true) {
-          print('Step 3: Notification permission not granted');
-          return; // Exit if permission is denied
-        }
-        print('Step 3: Notification permission granted');
-      }
+        if (granted != true) return;
 
-      const AndroidNotificationChannel channel = AndroidNotificationChannel(
-        'daily_channel_id',
-        'Daily Tip',
-        description: 'Daily health tips for pregnancy',
-        importance: Importance.max,
-        playSound: true,
-        enableVibration: true,
-      );
-      await androidPlugin?.createNotificationChannel(channel);
-      print('Step 4: Notification channel created');
+        const AndroidNotificationChannel channel = AndroidNotificationChannel(
+          'daily_channel_id',
+          'Daily Tip',
+          description: 'Health tips every 4 days',
+          importance: Importance.max,
+          playSound: true,
+          enableVibration: true,
+        );
+        await androidPlugin.createNotificationChannel(channel);
+      }
 
       _isInitialized = true;
     } catch (e) {
@@ -90,23 +75,19 @@ class NotificationService {
     }
   }
 
-  // Notification details for consistent styling
-  NotificationDetails _notificationDetails() {
-    return const NotificationDetails(
-      android: AndroidNotificationDetails(
-        'daily_channel_id',
-        'Daily Tip',
-        channelDescription: 'Daily health tips for pregnancy',
-        importance: Importance.max,
-        priority: Priority.high,
-        showWhen: true,
-        playSound: true,
-        enableVibration: true,
-      ),
-    );
-  }
+  NotificationDetails _notificationDetails() => const NotificationDetails(
+    android: AndroidNotificationDetails(
+      'daily_channel_id',
+      'Daily Tip',
+      channelDescription: 'Health tips every 4 days',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: true,
+      playSound: true,
+      enableVibration: true,
+    ),
+  );
 
-  // Show an immediate notification
   Future<void> showNotification({
     required int id,
     required String title,
@@ -122,110 +103,95 @@ class NotificationService {
         _notificationDetails(),
         payload: payload,
       );
-      print('Notification shown - ID: $id, Title: $title, Body: $body');
     } catch (e) {
       print('Error showing notification: $e');
     }
   }
 
-  // Schedule daily health tips for 280 days
   Future<void> scheduleDailyHealthTips(
     DateTime startDate,
     String userId,
   ) async {
     await _initNotification();
-    if (!_isInitialized) {
-      print('Notification service not initialized, aborting scheduling');
-      return;
-    }
+    if (!_isInitialized) return;
 
-    print('Scheduling daily health tips for user: $userId');
     final tips = await _fetchHealthTips();
-    if (tips.length < 280) {
-      print('Error: Not enough tips in Supabase (${tips.length}/280)');
-      return;
-    }
+    if (tips.isEmpty) return;
 
-    await notificationPlugin.cancelAll(); // Clear old schedules
-    print('Cancelled all previous notifications');
-
+    await notificationPlugin.cancelAll();
     final now = DateTime.now();
-    for (int day = 0; day < 280; day++) {
-      final scheduledDate = DateTime(
-        startDate.year,
-        startDate.month,
-        startDate.day + day,
-        8, // 8:00 AM daily
-        0,
-      );
-      final tzScheduledDate = tz.TZDateTime.from(scheduledDate, tz.local);
+    const interval = 4; // 4-day interval
+    final maxTips = (280 / interval).ceil(); // 280 days / 4 = 70 tips max
 
-      if (tzScheduledDate.isAfter(now)) {
-        final title = 'Day ${day + 1} Health Tip';
-        final body = tips[day]['tip'];
+    await Future.wait(
+      List.generate(maxTips, (index) {
+        final day = index * interval; // Day 0, 4, 8, ..., 276
+        if (day >= 280 || day >= tips.length * interval) return Future.value();
 
-        await notificationPlugin.zonedSchedule(
-          day,
-          title,
-          body,
-          tzScheduledDate,
-          _notificationDetails(),
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-          payload: '$userId|$day|$title|${scheduledDate.toIso8601String()}',
+        final scheduledDate = DateTime(
+          startDate.year,
+          startDate.month,
+          startDate.day + day,
+          8,
+          0,
         );
-        print('Scheduled tip for Day ${day + 1} at $tzScheduledDate');
-      } else {
-        print('Skipped past tip for Day ${day + 1} at $tzScheduledDate');
-      }
-    }
-    print('All notifications scheduled');
+        final tzScheduledDate = tz.TZDateTime.from(scheduledDate, tz.local);
+
+        if (tzScheduledDate.isAfter(now)) {
+          final tipIndex = (day / interval).floor(); // Map to tip index
+          final tip = tips[tipIndex];
+          final title = tip['title'];
+          final body = tip['body'];
+
+          return notificationPlugin.zonedSchedule(
+            tip['id'],
+            title,
+            body,
+            tzScheduledDate,
+            _notificationDetails(),
+            androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+            payload: '$userId|$day|$title|${scheduledDate.toIso8601String()}',
+          );
+        }
+        return Future.value();
+      }),
+    );
   }
 
-  // Check and show today's tip if not seen when app opens
   Future<void> checkAndShowTodaysTip(String userId, DateTime startDate) async {
     await _initNotification();
-    if (!_isInitialized) {
-      print('Notification service not initialized, skipping today\'s tip');
-      return;
-    }
+    if (!_isInitialized) return;
 
     final now = DateTime.now();
     final daysSinceStart = now.difference(startDate).inDays;
-    if (daysSinceStart < 0 || daysSinceStart >= 280) {
-      print('Day $daysSinceStart is out of pregnancy range (0-279)');
-      return;
-    }
+    if (daysSinceStart < 0 || daysSinceStart >= 280) return;
 
-    final todayDay = daysSinceStart;
+    final todayIntervalDay =
+        (daysSinceStart ~/ 4) * 4; // Nearest lower 4-day mark
     final history = await getNotificationHistory(userId);
     final todayNotification = history.firstWhere(
-      (n) => n['day'] == todayDay,
+      (n) => n['day'] == todayIntervalDay,
       orElse: () => {},
     );
 
     if (todayNotification.isEmpty || todayNotification['seen'] == false) {
       final tips = await _fetchHealthTips();
-      if (tips.length <= todayDay) {
-        print('No tip available for Day ${todayDay + 1}');
-        return;
-      }
+      final tipIndex = todayIntervalDay ~/ 4;
+      if (tipIndex >= tips.length) return;
 
-      final title = 'Day ${todayDay + 1} Health Tip';
-      final body = tips[todayDay]['tip'];
+      final tip = tips[tipIndex];
+      final title = tip['title'];
+      final body = tip['body'];
       await showNotification(
-        id: todayDay,
+        id: tip['id'],
         title: title,
         body: body,
-        payload: '$userId|$todayDay|$title|${now.toIso8601String()}',
+        payload: '$userId|$todayIntervalDay|$title|${now.toIso8601String()}',
       );
-      print('Showed today\'s tip for Day ${todayDay + 1}');
-      _saveDeliveredNotification(userId, todayDay, title, now);
-    } else {
-      print('Today\'s tip for Day ${todayDay + 1} already seen');
+      await _saveDeliveredNotification(userId, todayIntervalDay, title, now);
     }
   }
 
-  // Save delivered notification to Supabase
   Future<void> _saveDeliveredNotification(
     String userId,
     int day,
@@ -234,24 +200,29 @@ class NotificationService {
   ) async {
     try {
       final tips = await _fetchHealthTips();
-      final body = tips[day]['tip'];
-      await Supabase.instance.client.from('notification_history').insert({
+      final tipIndex = day ~/ 4;
+      if (tipIndex >= tips.length) return;
+
+      final tip = tips[tipIndex];
+      final body = tip['body'];
+      final relevance = tip['relevance'];
+
+      await Supabase.instance.client.from('notification_history').upsert({
         'user_id': userId,
         'day': day,
         'title': title,
         'body': body,
+        if (relevance != null) 'relevance': relevance,
         'scheduled_date': scheduledDate.toIso8601String(),
         'created_at': DateTime.now().toIso8601String(),
         'seen': false,
         'delivered_at': DateTime.now().toIso8601String(),
-      });
-      print('Saved delivered notification for user: $userId, day: $day');
+      }, onConflict: 'user_id,day');
     } catch (e) {
       print('Error saving delivered notification: $e');
     }
   }
 
-  // Mark notification as seen
   Future<void> markNotificationAsSeen(String userId, int day) async {
     try {
       await Supabase.instance.client
@@ -259,13 +230,11 @@ class NotificationService {
           .update({'seen': true})
           .eq('user_id', userId)
           .eq('day', day);
-      print('Marked notification as seen for user: $userId, day: $day');
     } catch (e) {
       print('Error marking notification as seen: $e');
     }
   }
 
-  // Fetch notification history
   Future<List<Map<String, dynamic>>> getNotificationHistory(
     String userId,
   ) async {
@@ -275,7 +244,6 @@ class NotificationService {
           .select()
           .eq('user_id', userId)
           .order('delivered_at', ascending: false);
-      print('Fetched notification history for user: $userId');
       return response;
     } catch (e) {
       print('Error fetching notification history: $e');
@@ -283,22 +251,22 @@ class NotificationService {
     }
   }
 
-  // Fetch health tips from Supabase
   Future<List<Map<String, dynamic>>> _fetchHealthTips() async {
     try {
       final response = await Supabase.instance.client
           .from('health_tips')
-          .select()
+          .select('id, day, title, body, relevance')
           .order('day', ascending: true);
-      print('Fetched ${response.length} health tips');
       return response;
     } catch (e) {
       print('Error fetching health tips: $e');
       return List.generate(
-        280,
+        70, // 280 days / 4 = 70 tips
         (index) => {
-          'day': index,
-          'tip': 'Day ${index + 1}: Consult your doctor for advice.',
+          'id': index,
+          'day': index * 4,
+          'title': 'Tip ${index + 1}',
+          'body': 'Consult your doctor for advice.',
         },
       );
     }

@@ -1,3 +1,4 @@
+import 'package:adde/auth/change_password_page.dart';
 import 'package:adde/pages/welcome_page.dart';
 import 'package:flutter/material.dart';
 import 'package:adde/pages/bottom_page_navigation.dart';
@@ -219,21 +220,15 @@ class _LoginPageState extends State<LoginPage> {
                     SizedBox(height: 10),
 
                     // Forget Password Link
+                    // In LoginPage.dart
                     Padding(
                       padding: const EdgeInsets.only(left: 220, top: 10),
                       child: GestureDetector(
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                "Forget Password feature coming soon!",
-                              ),
-                              backgroundColor: Colors.blue.shade200,
-                              behavior: SnackBarBehavior.floating,
-                              margin: EdgeInsets.all(16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ChangePasswordPage(),
                             ),
                           );
                         },

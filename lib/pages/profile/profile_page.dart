@@ -1,13 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:adde/pages/profile/profile_edit_page.dart';
 import 'package:adde/theme/theme_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -21,7 +17,6 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController ageController = TextEditingController();
   String? profileImageBase64;
   final supabase = Supabase.instance.client;
-  final _picker = ImagePicker();
   bool _isLoading = false;
 
   @override
@@ -31,6 +26,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadProfileData() async {
+    setState(() => _isLoading = true);
     try {
       final user = supabase.auth.currentUser;
       if (user == null) {
@@ -50,114 +46,16 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         nameController.text = response['full_name'] ?? '';
         ageController.text = response['age']?.toString() ?? '';
-        profileImageBase64 = response['profile_image'];
+        profileImageBase64 =
+            response['profile_url']; // Fetch image from Supabase
       });
     } catch (e) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to load profile: $e')));
-    }
-  }
-
-  Future<void> _updateProfile() async {
-    setState(() => _isLoading = true);
-    try {
-      final user = supabase.auth.currentUser;
-      if (user == null) throw Exception('No user logged in');
-
-      final updates = {
-        'email': user.email,
-        'user_id': user.id,
-        'full_name': nameController.text,
-        'age': int.tryParse(ageController.text) ?? 0,
-        if (profileImageBase64 != null) 'profile_url': profileImageBase64,
-      };
-
-      await supabase.from('mothers').upsert(updates);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully!')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to update profile: $e')));
     } finally {
       setState(() => _isLoading = false);
     }
-  }
-
-  Future<void> pickImage(ImageSource source) async {
-    PermissionStatus status;
-
-    if (source == ImageSource.camera) {
-      status = await Permission.camera.request();
-    } else {
-      // Handle gallery permissions based on Android version
-      final androidVersion =
-          Platform.isAndroid ? await _getAndroidVersion() : 0;
-      if (Platform.isAndroid && androidVersion >= 33) {
-        status = await Permission.photos.request(); // Android 13+
-      } else {
-        status = await Permission.storage.request(); // Older Android
-      }
-    }
-
-    if (!status.isGranted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${source == ImageSource.camera ? 'Camera' : 'Gallery'} permission denied',
-          ),
-        ),
-      );
-      if (status.isPermanentlyDenied) {
-        openAppSettings(); // Guide user to settings if permanently denied
-      }
-      return;
-    }
-
-    try {
-      final pickedImage = await _picker.pickImage(
-        source: source,
-        maxHeight: 300,
-        maxWidth: 300,
-      );
-      if (pickedImage == null) return;
-
-      final file = File(pickedImage.path);
-      final bytes = await file.readAsBytes();
-      if (bytes.length > 500 * 1024) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Image too large, please select a smaller one'),
-          ),
-        );
-        return;
-      }
-
-      final base64Image = base64Encode(bytes);
-      setState(() {
-        profileImageBase64 = base64Image;
-      });
-      await _updateProfile();
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
-    }
-  }
-
-  Future<int> _getAndroidVersion() async {
-    try {
-      if (Platform.isAndroid) {
-        final deviceInfo = DeviceInfoPlugin();
-        final androidInfo = await deviceInfo.androidInfo;
-        return androidInfo.version.sdkInt ?? 0;
-      }
-    } catch (e) {
-      print('Error getting Android version: $e');
-    }
-    return 0; // Default to 0 for non-Android or error cases
   }
 
   @override
@@ -187,51 +85,17 @@ class _ProfilePageState extends State<ProfilePage> {
                       Center(
                         child: Column(
                           children: [
-                            GestureDetector(
-                              onTap:
-                                  () => showModalBottomSheet(
-                                    context: context,
-                                    builder:
-                                        (context) => Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            ListTile(
-                                              leading: const Icon(
-                                                Icons.photo_library,
-                                              ),
-                                              title: const Text(
-                                                'Choose from Gallery',
-                                              ),
-                                              onTap: () {
-                                                pickImage(ImageSource.gallery);
-                                                Navigator.pop(context);
-                                              },
-                                            ),
-                                            ListTile(
-                                              leading: const Icon(
-                                                Icons.camera_alt,
-                                              ),
-                                              title: const Text('Take a Photo'),
-                                              onTap: () {
-                                                pickImage(ImageSource.camera);
-                                                Navigator.pop(context);
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                  ),
-                              child: CircleAvatar(
-                                radius: 70,
-                                backgroundImage:
-                                    profileImageBase64 != null
-                                        ? MemoryImage(
-                                          base64Decode(profileImageBase64!),
-                                        )
-                                        : const AssetImage('assets/user.png')
-                                            as ImageProvider,
-                                backgroundColor:
-                                    Theme.of(context).colorScheme.surface,
-                              ),
+                            CircleAvatar(
+                              radius: 70,
+                              backgroundImage:
+                                  profileImageBase64 != null
+                                      ? MemoryImage(
+                                        base64Decode(profileImageBase64!),
+                                      )
+                                      : const AssetImage('assets/user.png')
+                                          as ImageProvider,
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.surface,
                             ),
                             const SizedBox(height: 8),
                             Text(
@@ -254,11 +118,16 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         child: InkWell(
                           onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => ProfileEditPage(),
-                              ),
-                            );
+                            Navigator.of(context)
+                                .push(
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => const ProfileEditPage(),
+                                  ),
+                                )
+                                .then(
+                                  (_) => _loadProfileData(),
+                                ); // Refresh data after edit
                           },
                           borderRadius: BorderRadius.circular(12),
                           child: Padding(
