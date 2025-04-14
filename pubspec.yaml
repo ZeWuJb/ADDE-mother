@@ -53,6 +53,7 @@ dependencies:
   flutter_gemini: ^3.0.0
   flutter_animate: ^4.5.2
   timeago: ^3.2.2
+  google_fonts: ^6.2.1
   
 
 dev_dependencies:

@@ -6,100 +6,164 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'create_post_screen.dart';
 
-class PostCard extends StatelessWidget {
+class PostCard extends StatefulWidget {
   final Post post;
   final VoidCallback onTap;
 
   const PostCard({super.key, required this.post, required this.onTap});
 
   @override
+  _PostCardState createState() => _PostCardState();
+}
+
+class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final postProvider = Provider.of<PostProvider>(context, listen: false);
     final currentMotherId = Supabase.instance.client.auth.currentUser?.id;
 
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) => _controller.reverse(),
+      onTapCancel: () => _controller.reverse(),
+      onTap: widget.onTap,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
-                    child: Text(post.fullName[0]),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(post.fullName, style: Theme.of(context).textTheme.titleLarge),
-                        Text(
-                          timeago.format(post.createdAt),
-                          style: Theme.of(context).textTheme.bodySmall,
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Theme.of(context).colorScheme.secondary,
+                        child: Text(
+                          widget.post.fullName.isNotEmpty ? widget.post.fullName[0] : '?',
+                          style: const TextStyle(color: Colors.white),
                         ),
-                      ],
-                    ),
-                  ),
-                  if (currentMotherId != null && post.motherId == currentMotherId)
-                    PopupMenuButton(
-                      itemBuilder: (_) => [
-                        const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                        const PopupMenuItem(value: 'delete', child: Text('Delete')),
-                      ],
-                      onSelected: (value) async {
-                        if (value == 'edit') {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => CreatePostScreen(post: post),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.post.fullName.isNotEmpty ? widget.post.fullName : 'Unknown',
+                              style: Theme.of(context).textTheme.titleLarge,
                             ),
-                          );
-                          await postProvider.fetchPosts(currentMotherId);
-                        } else if (value == 'delete') {
-                          await postProvider.deletePost(post.id);
-                        }
-                      },
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(post.title, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 4),
-              Text(
-                post.content,
-                style: Theme.of(context).textTheme.bodyMedium,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      post.isLiked ? Icons.favorite : Icons.favorite_border,
-                      color: post.isLiked ? Colors.red : null,
-                    ),
-                    onPressed: currentMotherId != null
-                        ? () async {
-                            await postProvider.toggleLike(post.id, currentMotherId, post.isLiked);
-                          }
-                        : null,
+                            Text(
+                              timeago.format(widget.post.createdAt),
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (currentMotherId != null && widget.post.motherId == currentMotherId)
+                        PopupMenuButton(
+                          icon: const Icon(Icons.more_horiz),
+                          itemBuilder: (_) => [
+                            const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                            const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                          ],
+                          onSelected: (value) async {
+                            if (value == 'edit') {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) => CreatePostScreen(post: widget.post),
+                              ).then((_) => postProvider.fetchPosts(currentMotherId));
+                            } else if (value == 'delete') {
+                              await postProvider.deletePost(widget.post.id);
+                            }
+                          },
+                        ),
+                    ],
                   ),
-                  Text('${post.likesCount}'),
-                  const SizedBox(width: 16),
-                  const Icon(Icons.comment),
-                  const SizedBox(width: 8),
-                  const Text('Comment'),
+                  const SizedBox(height: 12),
+                  Text(
+                    widget.post.title,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 20),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.post.content,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (widget.post.imageUrl != null) ...[
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        widget.post.imageUrl!,
+                        height: 200,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 50),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              widget.post.isLiked ? Icons.favorite : Icons.favorite_border,
+                              color: widget.post.isLiked ? Colors.red : Colors.grey,
+                            ),
+                            onPressed: currentMotherId != null
+                                ? () async {
+                                    await postProvider.toggleLike(
+                                      widget.post.id,
+                                      currentMotherId,
+                                      widget.post.isLiked,
+                                    );
+                                  }
+                                : null,
+                          ),
+                          Text('${widget.post.likesCount}'),
+                        ],
+                      ),
+                      TextButton(
+                        onPressed: widget.onTap,
+                        child: const Text('Comment'),
+                      ),
+                    ],
+                  ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'post_model.dart';
@@ -5,8 +6,16 @@ import 'post_model.dart';
 class PostProvider with ChangeNotifier {
   List<Post> _posts = [];
   List<Post> get posts => _posts;
+  DateTime? _lastFetch;
 
   Future<void> fetchPosts(String currentMotherId) async {
+    final now = DateTime.now();
+    if (_lastFetch != null && now.difference(_lastFetch!).inSeconds < 1) {
+      print('fetchPosts skipped: too soon');
+      return;
+    }
+    _lastFetch = now;
+
     try {
       print('Starting fetchPosts for motherId: $currentMotherId');
       final response = await Supabase.instance.client
@@ -54,13 +63,30 @@ class PostProvider with ChangeNotifier {
     }
   }
 
-  Future<void> createPost(String motherId, String fullName, String title, String content) async {
+  Future<void> createPost(String motherId, String fullName, String title, String content, {File? imageFile}) async {
     try {
-      final response = await Supabase.instance.client.from('posts').insert({
+      String? imageUrl;
+      if (imageFile != null) {
+        final fileName = '${DateTime.now().millisecondsSinceEpoch}_${motherId}.jpg';
+        final response = await Supabase.instance.client.storage
+            .from('post_images')
+            .upload(fileName, imageFile);
+        imageUrl = Supabase.instance.client.storage.from('post_images').getPublicUrl(fileName);
+        print('Uploaded image: $imageUrl');
+      }
+
+      final postData = {
         'mother_id': motherId,
         'title': title,
         'content': content,
-      }).select('*, mothers(full_name)').single();
+        if (imageUrl != null) 'image_url': imageUrl,
+      };
+
+      final response = await Supabase.instance.client
+          .from('posts')
+          .insert(postData)
+          .select('*, mothers(full_name)')
+          .single();
 
       print('Created post: $response');
 
@@ -75,12 +101,25 @@ class PostProvider with ChangeNotifier {
     }
   }
 
-  Future<void> updatePost(String postId, String title, String content) async {
+  Future<void> updatePost(String postId, String title, String content, {File? imageFile}) async {
     try {
-      await Supabase.instance.client
-          .from('posts')
-          .update({'title': title, 'content': content})
-          .eq('id', postId);
+      String? imageUrl;
+      if (imageFile != null) {
+        final fileName = '${DateTime.now().millisecondsSinceEpoch}_$postId.jpg';
+        await Supabase.instance.client.storage
+            .from('post_images')
+            .upload(fileName, imageFile, fileOptions: const FileOptions(upsert: true));
+        imageUrl = Supabase.instance.client.storage.from('post_images').getPublicUrl(fileName);
+        print('Updated image: $imageUrl');
+      }
+
+      final postData = {
+        'title': title,
+        'content': content,
+        if (imageFile != null) 'image_url': imageUrl,
+      };
+
+      await Supabase.instance.client.from('posts').update(postData).eq('id', postId);
 
       final index = _posts.indexWhere((post) => post.id == postId);
       if (index != -1) {
@@ -90,6 +129,7 @@ class PostProvider with ChangeNotifier {
           fullName: _posts[index].fullName,
           title: title,
           content: content,
+          imageUrl: imageUrl ?? _posts[index].imageUrl,
           likesCount: _posts[index].likesCount,
           createdAt: _posts[index].createdAt,
           isLiked: _posts[index].isLiked,
@@ -104,6 +144,12 @@ class PostProvider with ChangeNotifier {
 
   Future<void> deletePost(String postId) async {
     try {
+      final post = _posts.firstWhere((post) => post.id == postId, orElse: () => Post(id: '', motherId: '', fullName: '', title: '', content: '', likesCount: 0, createdAt: DateTime.now()));
+      if (post.imageUrl != null) {
+        final fileName = post.imageUrl!.split('/').last;
+        await Supabase.instance.client.storage.from('post_images').remove([fileName]);
+        print('Deleted image: $fileName');
+      }
       await Supabase.instance.client.from('posts').delete().eq('id', postId);
       _posts.removeWhere((post) => post.id == postId);
       notifyListeners();

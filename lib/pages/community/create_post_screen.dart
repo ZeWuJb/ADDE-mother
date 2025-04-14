@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:adde/pages/community/post_model.dart';
 import 'package:adde/pages/community/post_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -19,6 +22,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   String? motherId;
   String? fullName;
   bool _isLoading = true;
+  File? _imageFile;
+  final _picker = ImagePicker();
 
   @override
   void initState() {
@@ -49,10 +54,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           .single();
       setState(() {
         motherId = user.id;
-        fullName = response['full_name'];
+        fullName = response['full_name']?.toString() ?? 'Unknown';
         _isLoading = false;
       });
+      print('CreatePostScreen motherId: $motherId');
     } catch (e) {
+      print('Error fetching user data: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error fetching user data: $e')),
       );
@@ -62,7 +69,29 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
   }
 
-  Future<void> _submit(BuildContext context) async {
+  Future<void> _pickImage() async {
+    try {
+      final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        final size = await File(pickedFile.path).length();
+        if (size > 5 * 1024 * 1024) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Image must be under 5MB')),
+          );
+          return;
+        }
+        setState(() {
+          _imageFile = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error picking image: $e')),
+      );
+    }
+  }
+
+  Future<void> _submit() async {
     final postProvider = Provider.of<PostProvider>(context, listen: false);
 
     if (_titleController.text.isEmpty || _contentController.text.isEmpty) {
@@ -86,16 +115,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           fullName!,
           _titleController.text,
           _contentController.text,
+          imageFile: _imageFile,
         );
       } else {
         await postProvider.updatePost(
           widget.post!.id,
           _titleController.text,
           _contentController.text,
+          imageFile: _imageFile,
         );
       }
       Navigator.pop(context);
     } catch (e) {
+      print('Error saving post: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error saving post: $e')),
       );
@@ -104,34 +136,162 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.post == null ? 'Create Post' : 'Edit Post'),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
+    return DraggableScrollableSheet(
+      initialChildSize: 0.9,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (_, controller) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
                 children: [
-                  TextField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(labelText: 'Title'),
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        Text(
+                          widget.post == null ? 'Create Post' : 'Edit Post',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        TextButton(
+                          onPressed: _submit,
+                          child: Text(
+                            widget.post == null ? 'Post' : 'Update',
+                            style: GoogleFonts.poppins(
+                              color: Theme.of(context).primaryColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _contentController,
-                    decoration: const InputDecoration(labelText: 'Content'),
-                    maxLines: 5,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => _submit(context),
-                    child: Text(widget.post == null ? 'Post' : 'Update'),
+                  Expanded(
+                    child: ListView(
+                      controller: controller,
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: Theme.of(context).colorScheme.secondary,
+                              child: Text(fullName?.isNotEmpty == true ? fullName![0] : '?'),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              fullName ?? 'Unknown',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _titleController,
+                          decoration: InputDecoration(
+                            hintText: 'Title',
+                            hintStyle: GoogleFonts.roboto(color: Colors.grey[500]),
+                            border: InputBorder.none,
+                          ),
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        TextField(
+                          controller: _contentController,
+                          decoration: InputDecoration(
+                            hintText: "What's on your mind?",
+                            hintStyle: GoogleFonts.roboto(color: Colors.grey[500]),
+                            border: InputBorder.none,
+                          ),
+                          maxLines: null,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 16),
+                        if (_imageFile != null)
+                          Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.file(
+                                  _imageFile!,
+                                  height: 200,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned(
+                                right: 8,
+                                top: 8,
+                                child: IconButton(
+                                  icon: const Icon(Icons.cancel, color: Colors.white),
+                                  onPressed: () => setState(() => _imageFile = null),
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: Colors.black.withOpacity(0.5),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        else if (widget.post?.imageUrl != null)
+                          Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  widget.post!.imageUrl!,
+                                  height: 200,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+                                ),
+                              ),
+                              Positioned(
+                                right: 8,
+                                top: 8,
+                                child: IconButton(
+                                  icon: const Icon(Icons.cancel, color: Colors.white),
+                                  onPressed: () => setState(() => _imageFile = null),
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: Colors.black.withOpacity(0.5),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.image, color: Color(0xFFa1c4f7)),
+                              onPressed: _pickImage,
+                            ),
+                            // TODO: Add more options (e.g., video, poll)
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-            ),
+      ),
     );
   }
 }

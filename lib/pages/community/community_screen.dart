@@ -16,15 +16,15 @@ class CommunityScreen extends StatefulWidget {
 class _CommunityScreenState extends State<CommunityScreen> {
   String? motherId;
   bool _isLoading = true;
-  Future<void>? _fetchFuture; // Store the Future to prevent restarts
+  Future<void>? _fetchFuture;
 
   @override
   void initState() {
     super.initState();
-    _fetchUserData();
+    _initialize();
   }
 
-  Future<void> _fetchUserData() async {
+  Future<void> _initialize() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) {
@@ -36,13 +36,14 @@ class _CommunityScreenState extends State<CommunityScreen> {
         });
         return;
       }
+      motherId = user.id;
+      print('Initialized motherId: $motherId');
       setState(() {
-        motherId = user.id;
         _isLoading = false;
-        _fetchFuture = Provider.of<PostProvider>(context, listen: false).fetchPosts(motherId!);
+        _fetchFuture ??= Provider.of<PostProvider>(context, listen: false).fetchPosts(motherId!);
       });
-      print('Initiated fetch for motherId: $motherId');
     } catch (e) {
+      print('Error initializing: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error fetching user: $e')),
       );
@@ -52,9 +53,28 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
   }
 
+  Future<void> _refreshPosts() async {
+    if (motherId != null) {
+      final postProvider = Provider.of<PostProvider>(context, listen: false);
+      setState(() {
+        _fetchFuture = postProvider.fetchPosts(motherId!);
+      });
+      await _fetchFuture;
+    }
+  }
+
+  void _showCreatePostDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const CreatePostScreen(),
+    ).then((_) => _refreshPosts());
+  }
+
   @override
   Widget build(BuildContext context) {
-    final postProvider = Provider.of<PostProvider>(context);
+    final postProvider = Provider.of<PostProvider>(context, listen: true);
 
     if (_isLoading || motherId == null) {
       return const Scaffold(
@@ -65,61 +85,87 @@ class _CommunityScreenState extends State<CommunityScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Community'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              // TODO: Implement search
+            },
+          ),
+        ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          setState(() {
-            _fetchFuture = postProvider.fetchPosts(motherId!);
-          });
-          await _fetchFuture;
-        },
-        child: FutureBuilder<void>(
-          future: _fetchFuture,
-          builder: (context, snapshot) {
-            print('FutureBuilder state: ${snapshot.connectionState}');
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              print('FutureBuilder error: ${snapshot.error}');
-              return Center(child: Text('Error: ${snapshot.error}'));
-            }
-            if (postProvider.posts.isEmpty) {
-              return const Center(child: Text('No posts available. Create one!'));
-            }
-            return ListView.builder(
-              padding: const EdgeInsets.all(8),
-              itemCount: postProvider.posts.length,
-              itemBuilder: (context, index) {
-                final post = postProvider.posts[index];
-                print('Rendering post: ${post.title}');
-                return PostCard(
-                  post: post,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => PostDetailScreen(post: post),
+        onRefresh: _refreshPosts,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: GestureDetector(
+                  onTap: _showCreatePostDialog,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: Theme.of(context).colorScheme.secondary,
+                          child: Text(motherId![0].toUpperCase()),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          "What's on your mind?",
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
-            );
-          },
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const CreatePostScreen(),
+                ),
+              ),
             ),
-          );
-          setState(() {
-            _fetchFuture = postProvider.fetchPosts(motherId!);
-          });
-        },
-        child: const Icon(Icons.add),
+            SliverToBoxAdapter(
+              child: FutureBuilder<void>(
+                future: _fetchFuture,
+                builder: (context, snapshot) {
+                  print('FutureBuilder state: ${snapshot.connectionState}');
+                  if (snapshot.connectionState == ConnectionState.waiting && postProvider.posts.isEmpty) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    print('FutureBuilder error: ${snapshot.error}');
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+                  if (postProvider.posts.isEmpty) {
+                    return const Center(child: Text('No posts available. Create one!'));
+                  }
+                  return Column(
+                    children: postProvider.posts.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final post = entry.value;
+                      return AnimatedOpacity(
+                        opacity: 1.0,
+                        duration: Duration(milliseconds: 300 + index * 100),
+                        child: PostCard(
+                          post: post,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PostDetailScreen(post: post),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
