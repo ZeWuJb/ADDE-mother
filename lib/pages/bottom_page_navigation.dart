@@ -1,7 +1,7 @@
+import 'package:adde/pages/community/community_screen.dart';
 import 'package:adde/pages/weekly_tips/weeklytip_add_page.dart';
 import 'package:flutter/material.dart';
 import 'package:adde/pages/home_screen.dart';
-import 'package:adde/pages/Community_page.dart';
 import 'package:adde/pages/education/Education_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -122,7 +122,7 @@ class _HomePageState extends State<HomePage> {
             pregnancyStartDate: pregnancyStartDate!,
           )
           : const Center(child: Text("Failed to load user data")),
-      const CommunityPage(),
+      const CommunityScreen(),
       const EducationPage(),
       const WeeklyTipAddPage(),
       // const TeleConseltationPage(),
