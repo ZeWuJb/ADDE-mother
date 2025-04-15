@@ -34,25 +34,28 @@ class PostProvider with ChangeNotifier {
       final likedPostIds = likeResponse.map((e) => e['post_id']).toSet();
       print('Liked post IDs: $likedPostIds');
 
-      _posts = response.map<Post>((map) {
-        try {
-          final post = Post.fromMap(map, map['mothers']['full_name'] ?? 'Unknown')
-            ..isLiked = likedPostIds.contains(map['id']);
-          print('Mapped post: ${post.title}');
-          return post;
-        } catch (e) {
-          print('Error mapping post: $map, error: $e');
-          return Post(
-            id: map['id']?.toString() ?? '',
-            motherId: map['mother_id']?.toString() ?? '',
-            fullName: 'Unknown',
-            title: 'Invalid Post',
-            content: 'Error loading post',
-            likesCount: 0,
-            createdAt: DateTime.now(),
-          );
-        }
-      }).toList();
+      _posts =
+          response.map<Post>((map) {
+            try {
+              final post = Post.fromMap(
+                map,
+                map['mothers']['full_name'] ?? 'Unknown',
+              )..isLiked = likedPostIds.contains(map['id']);
+              print('Mapped post: ${post.title}');
+              return post;
+            } catch (e) {
+              print('Error mapping post: $map, error: $e');
+              return Post(
+                id: map['id']?.toString() ?? '',
+                motherId: map['mother_id']?.toString() ?? '',
+                fullName: 'Unknown',
+                title: 'Invalid Post',
+                content: 'Error loading post',
+                likesCount: 0,
+                createdAt: DateTime.now(),
+              );
+            }
+          }).toList();
 
       print('Total mapped posts: ${_posts.length}');
       notifyListeners();
@@ -63,15 +66,24 @@ class PostProvider with ChangeNotifier {
     }
   }
 
-  Future<void> createPost(String motherId, String fullName, String title, String content, {File? imageFile}) async {
+  Future<void> createPost(
+    String motherId,
+    String fullName,
+    String title,
+    String content, {
+    File? imageFile,
+  }) async {
     try {
       String? imageUrl;
       if (imageFile != null) {
-        final fileName = '${DateTime.now().millisecondsSinceEpoch}_${motherId}.jpg';
+        final fileName =
+            '${DateTime.now().millisecondsSinceEpoch}_${motherId}.jpg';
         final response = await Supabase.instance.client.storage
             .from('post_images')
             .upload(fileName, imageFile);
-        imageUrl = Supabase.instance.client.storage.from('post_images').getPublicUrl(fileName);
+        imageUrl = Supabase.instance.client.storage
+            .from('post_images')
+            .getPublicUrl(fileName);
         print('Uploaded image: $imageUrl');
       }
 
@@ -82,18 +94,16 @@ class PostProvider with ChangeNotifier {
         if (imageUrl != null) 'image_url': imageUrl,
       };
 
-      final response = await Supabase.instance.client
-          .from('posts')
-          .insert(postData)
-          .select('*, mothers(full_name)')
-          .single();
+      final response =
+          await Supabase.instance.client
+              .from('posts')
+              .insert(postData)
+              .select('*, mothers(full_name)')
+              .single();
 
       print('Created post: $response');
 
-      _posts.insert(
-        0,
-        Post.fromMap(response, fullName)..isLiked = false,
-      );
+      _posts.insert(0, Post.fromMap(response, fullName)..isLiked = false);
       notifyListeners();
     } catch (e) {
       print('Error creating post: $e');
@@ -101,15 +111,26 @@ class PostProvider with ChangeNotifier {
     }
   }
 
-  Future<void> updatePost(String postId, String title, String content, {File? imageFile}) async {
+  Future<void> updatePost(
+    String postId,
+    String title,
+    String content, {
+    File? imageFile,
+  }) async {
     try {
       String? imageUrl;
       if (imageFile != null) {
         final fileName = '${DateTime.now().millisecondsSinceEpoch}_$postId.jpg';
         await Supabase.instance.client.storage
             .from('post_images')
-            .upload(fileName, imageFile, fileOptions: const FileOptions(upsert: true));
-        imageUrl = Supabase.instance.client.storage.from('post_images').getPublicUrl(fileName);
+            .upload(
+              fileName,
+              imageFile,
+              fileOptions: const FileOptions(upsert: true),
+            );
+        imageUrl = Supabase.instance.client.storage
+            .from('post_images')
+            .getPublicUrl(fileName);
         print('Updated image: $imageUrl');
       }
 
@@ -119,7 +140,10 @@ class PostProvider with ChangeNotifier {
         if (imageFile != null) 'image_url': imageUrl,
       };
 
-      await Supabase.instance.client.from('posts').update(postData).eq('id', postId);
+      await Supabase.instance.client
+          .from('posts')
+          .update(postData)
+          .eq('id', postId);
 
       final index = _posts.indexWhere((post) => post.id == postId);
       if (index != -1) {
@@ -144,10 +168,24 @@ class PostProvider with ChangeNotifier {
 
   Future<void> deletePost(String postId) async {
     try {
-      final post = _posts.firstWhere((post) => post.id == postId, orElse: () => Post(id: '', motherId: '', fullName: '', title: '', content: '', likesCount: 0, createdAt: DateTime.now()));
+      final post = _posts.firstWhere(
+        (post) => post.id == postId,
+        orElse:
+            () => Post(
+              id: '',
+              motherId: '',
+              fullName: '',
+              title: '',
+              content: '',
+              likesCount: 0,
+              createdAt: DateTime.now(),
+            ),
+      );
       if (post.imageUrl != null) {
         final fileName = post.imageUrl!.split('/').last;
-        await Supabase.instance.client.storage.from('post_images').remove([fileName]);
+        await Supabase.instance.client.storage.from('post_images').remove([
+          fileName,
+        ]);
         print('Deleted image: $fileName');
       }
       await Supabase.instance.client.from('posts').delete().eq('id', postId);
@@ -167,13 +205,19 @@ class PostProvider with ChangeNotifier {
             .delete()
             .eq('post_id', postId)
             .eq('mother_id', motherId);
-        await Supabase.instance.client.rpc('decrement_likes', params: {'row_id': postId});
+        await Supabase.instance.client.rpc(
+          'decrement_likes',
+          params: {'row_id': postId},
+        );
       } else {
         await Supabase.instance.client.from('likes').insert({
           'post_id': postId,
           'mother_id': motherId,
         });
-        await Supabase.instance.client.rpc('increment_likes', params: {'row_id': postId});
+        await Supabase.instance.client.rpc(
+          'increment_likes',
+          params: {'row_id': postId},
+        );
       }
 
       final index = _posts.indexWhere((post) => post.id == postId);

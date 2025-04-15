@@ -1,3 +1,4 @@
+import 'package:adde/pages/community/chat_provider.dart';
 import 'package:adde/pages/community/post_provider.dart';
 import 'package:adde/pages/notification/notification_service.dart';
 import 'package:flutter/material.dart';
@@ -8,8 +9,6 @@ import 'package:adde/auth/authentication_gate.dart';
 import 'package:adde/pages/bottom_page_navigation.dart';
 import 'package:adde/theme/theme_data.dart';
 import 'package:adde/theme/theme_provider.dart';
-
-
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +25,7 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => PostProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
         Provider(create: (context) => NotificationService()),
       ],
       child: MyApp(session: session),

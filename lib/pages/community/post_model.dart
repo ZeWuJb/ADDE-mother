@@ -5,7 +5,7 @@ class Post {
   final String title;
   final String content;
   final String? imageUrl;
-       int likesCount;
+  int likesCount;
   final DateTime createdAt;
   bool isLiked;
 
@@ -31,7 +31,9 @@ class Post {
       content: map['content']?.toString() ?? '',
       imageUrl: map['image_url']?.toString(),
       likesCount: map['likes_count'] is int ? map['likes_count'] : 0,
-      createdAt: DateTime.tryParse(map['created_at']?.toString() ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(map['created_at']?.toString() ?? '') ??
+          DateTime.now(),
     );
   }
 }

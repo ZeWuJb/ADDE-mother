@@ -39,7 +39,10 @@ ThemeData appTheme() {
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 2,
-        textStyle: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500),
+        textStyle: GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(

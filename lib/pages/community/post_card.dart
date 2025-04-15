@@ -9,14 +9,21 @@ import 'create_post_screen.dart';
 class PostCard extends StatefulWidget {
   final Post post;
   final VoidCallback onTap;
+  final VoidCallback onProfileTap;
 
-  const PostCard({super.key, required this.post, required this.onTap});
+  const PostCard({
+    super.key,
+    required this.post,
+    required this.onTap,
+    required this.onProfileTap,
+  });
 
   @override
   _PostCardState createState() => _PostCardState();
 }
 
-class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin {
+class _PostCardState extends State<PostCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -27,9 +34,10 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.98,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -60,12 +68,18 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                 children: [
                   Row(
                     children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Theme.of(context).colorScheme.secondary,
-                        child: Text(
-                          widget.post.fullName.isNotEmpty ? widget.post.fullName[0] : '?',
-                          style: const TextStyle(color: Colors.white),
+                      GestureDetector(
+                        onTap: widget.onProfileTap,
+                        child: CircleAvatar(
+                          radius: 24,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.secondary,
+                          child: Text(
+                            widget.post.fullName.isNotEmpty
+                                ? widget.post.fullName[0]
+                                : '?',
+                            style: const TextStyle(color: Colors.white),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -74,7 +88,9 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.post.fullName.isNotEmpty ? widget.post.fullName : 'Unknown',
+                              widget.post.fullName.isNotEmpty
+                                  ? widget.post.fullName
+                                  : 'Unknown',
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                             Text(
@@ -84,21 +100,32 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                           ],
                         ),
                       ),
-                      if (currentMotherId != null && widget.post.motherId == currentMotherId)
+                      if (currentMotherId != null &&
+                          widget.post.motherId == currentMotherId)
                         PopupMenuButton(
                           icon: const Icon(Icons.more_horiz),
-                          itemBuilder: (_) => [
-                            const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                            const PopupMenuItem(value: 'delete', child: Text('Delete')),
-                          ],
+                          itemBuilder:
+                              (_) => [
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text('Edit'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text('Delete'),
+                                ),
+                              ],
                           onSelected: (value) async {
                             if (value == 'edit') {
                               showModalBottomSheet(
                                 context: context,
                                 isScrollControlled: true,
                                 backgroundColor: Colors.transparent,
-                                builder: (_) => CreatePostScreen(post: widget.post),
-                              ).then((_) => postProvider.fetchPosts(currentMotherId));
+                                builder:
+                                    (_) => CreatePostScreen(post: widget.post),
+                              ).then(
+                                (_) => postProvider.fetchPosts(currentMotherId),
+                              );
                             } else if (value == 'delete') {
                               await postProvider.deletePost(widget.post.id);
                             }
@@ -109,7 +136,9 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                   const SizedBox(height: 12),
                   Text(
                     widget.post.title,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 20),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.headlineMedium?.copyWith(fontSize: 20),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -127,7 +156,9 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                         height: 200,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 50),
+                        errorBuilder:
+                            (_, __, ___) =>
+                                const Icon(Icons.broken_image, size: 50),
                       ),
                     ),
                   ],
@@ -139,18 +170,24 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                         children: [
                           IconButton(
                             icon: Icon(
-                              widget.post.isLiked ? Icons.favorite : Icons.favorite_border,
-                              color: widget.post.isLiked ? Colors.red : Colors.grey,
+                              widget.post.isLiked
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              color:
+                                  widget.post.isLiked
+                                      ? Colors.red
+                                      : Colors.grey,
                             ),
-                            onPressed: currentMotherId != null
-                                ? () async {
-                                    await postProvider.toggleLike(
-                                      widget.post.id,
-                                      currentMotherId,
-                                      widget.post.isLiked,
-                                    );
-                                  }
-                                : null,
+                            onPressed:
+                                currentMotherId != null
+                                    ? () async {
+                                      await postProvider.toggleLike(
+                                        widget.post.id,
+                                        currentMotherId,
+                                        widget.post.isLiked,
+                                      );
+                                    }
+                                    : null,
                           ),
                           Text('${widget.post.likesCount}'),
                         ],

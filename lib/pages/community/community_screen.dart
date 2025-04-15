@@ -1,5 +1,6 @@
 import 'package:adde/pages/community/post_card.dart';
 import 'package:adde/pages/community/post_provider.dart';
+import 'package:adde/pages/community/user_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -28,9 +29,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please log in')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Please log in')));
         setState(() {
           _isLoading = false;
         });
@@ -40,13 +41,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
       print('Initialized motherId: $motherId');
       setState(() {
         _isLoading = false;
-        _fetchFuture ??= Provider.of<PostProvider>(context, listen: false).fetchPosts(motherId!);
+        _fetchFuture ??= Provider.of<PostProvider>(
+          context,
+          listen: false,
+        ).fetchPosts(motherId!);
       });
     } catch (e) {
       print('Error initializing: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching user: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error fetching user: $e')));
       setState(() {
         _isLoading = false;
       });
@@ -77,9 +81,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final postProvider = Provider.of<PostProvider>(context, listen: true);
 
     if (_isLoading || motherId == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -104,7 +106,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 child: GestureDetector(
                   onTap: _showCreatePostDialog,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -113,13 +118,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     child: Row(
                       children: [
                         CircleAvatar(
-                          backgroundColor: Theme.of(context).colorScheme.secondary,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.secondary,
                           child: Text(motherId![0].toUpperCase()),
                         ),
                         const SizedBox(width: 12),
                         Text(
                           "What's on your mind?",
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: Colors.grey[600]),
                         ),
                       ],
                     ),
@@ -132,7 +139,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 future: _fetchFuture,
                 builder: (context, snapshot) {
                   print('FutureBuilder state: ${snapshot.connectionState}');
-                  if (snapshot.connectionState == ConnectionState.waiting && postProvider.posts.isEmpty) {
+                  if (snapshot.connectionState == ConnectionState.waiting &&
+                      postProvider.posts.isEmpty) {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (snapshot.hasError) {
@@ -140,26 +148,42 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   }
                   if (postProvider.posts.isEmpty) {
-                    return const Center(child: Text('No posts available. Create one!'));
+                    return const Center(
+                      child: Text('No posts available. Create one!'),
+                    );
                   }
                   return Column(
-                    children: postProvider.posts.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final post = entry.value;
-                      return AnimatedOpacity(
-                        opacity: 1.0,
-                        duration: Duration(milliseconds: 300 + index * 100),
-                        child: PostCard(
-                          post: post,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PostDetailScreen(post: post),
+                    children:
+                        postProvider.posts.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final post = entry.value;
+                          return AnimatedOpacity(
+                            opacity: 1.0,
+                            duration: Duration(milliseconds: 300 + index * 100),
+                            child: PostCard(
+                              post: post,
+                              onTap:
+                                  () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => PostDetailScreen(post: post),
+                                    ),
+                                  ),
+                              onProfileTap:
+                                  () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => UserProfileScreen(
+                                            motherId: post.motherId,
+                                            fullName: post.fullName,
+                                          ),
+                                    ),
+                                  ),
                             ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                          );
+                        }).toList(),
                   );
                 },
               ),
