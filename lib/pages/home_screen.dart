@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:adde/pages/chatbot/chat_screen.dart';
+import 'package:adde/pages/note/journal_screen.dart';
 import 'package:adde/pages/notification/notificatio_history_page.dart';
 import 'package:adde/pages/notification/notification_service.dart';
 import 'package:adde/pages/weekly_tips/weeklytip_page.dart';
@@ -550,7 +551,7 @@ class _HomeScreenState extends State<HomeScreen> {
         "navigation":
             () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => JournalPage()),
+              MaterialPageRoute(builder: (_) => JournalScreen()),
             ),
       },
       {

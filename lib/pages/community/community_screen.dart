@@ -64,6 +64,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         _fetchFuture = postProvider.fetchPosts(motherId!);
       });
       await _fetchFuture;
+      print('Refreshed posts for motherId: $motherId');
     }
   }
 
@@ -85,13 +86,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
 
     return Scaffold(
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
         title: const Text('Community'),
+        backgroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
-              // TODO: Implement search
+              print('Search icon pressed');
             },
           ),
         ],
@@ -113,7 +116,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[200]!),
+                      border: Border.all(color: Colors.grey[300]!),
                     ),
                     child: Row(
                       children: [
@@ -162,25 +165,31 @@ class _CommunityScreenState extends State<CommunityScreen> {
                             duration: Duration(milliseconds: 300 + index * 100),
                             child: PostCard(
                               post: post,
-                              onTap:
-                                  () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (_) => PostDetailScreen(post: post),
-                                    ),
+                              onTap: () {
+                                print('Tapped post ID: ${post.id}');
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => PostDetailScreen(post: post),
                                   ),
-                              onProfileTap:
-                                  () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (_) => UserProfileScreen(
-                                            motherId: post.motherId,
-                                            fullName: post.fullName,
-                                          ),
-                                    ),
+                                );
+                              },
+                              onProfileTap: () {
+                                print(
+                                  'Tapped profile for motherId: ${post.motherId}',
+                                );
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => UserProfileScreen(
+                                          motherId: post.motherId,
+                                          fullName: post.fullName,
+                                        ),
                                   ),
+                                );
+                              },
                             ),
                           );
                         }).toList(),

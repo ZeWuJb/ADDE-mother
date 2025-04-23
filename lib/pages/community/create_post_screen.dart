@@ -17,7 +17,6 @@ class CreatePostScreen extends StatefulWidget {
 }
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
-  final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   String? motherId;
   String? fullName;
@@ -29,7 +28,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   void initState() {
     super.initState();
     if (widget.post != null) {
-      _titleController.text = widget.post!.title;
       _contentController.text = widget.post!.content;
     }
     _fetchUserData();
@@ -57,8 +55,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         motherId = user.id;
         fullName = response['full_name']?.toString() ?? 'Unknown';
         _isLoading = false;
+        print('CreatePostScreen motherId: $motherId');
       });
-      print('CreatePostScreen motherId: $motherId');
     } catch (e) {
       print('Error fetching user data: $e');
       ScaffoldMessenger.of(
@@ -83,9 +81,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         }
         setState(() {
           _imageFile = File(pickedFile.path);
+          print('Picked image: ${pickedFile.path}');
         });
       }
     } catch (e) {
+      print('Error picking image: $e');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
@@ -95,10 +95,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Future<void> _submit() async {
     final postProvider = Provider.of<PostProvider>(context, listen: false);
 
-    if (_titleController.text.isEmpty || _contentController.text.isEmpty) {
+    if (_contentController.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
+      ).showSnackBar(const SnackBar(content: Text('Please enter content')));
       return;
     }
 
@@ -114,17 +114,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         await postProvider.createPost(
           motherId!,
           fullName!,
-          _titleController.text,
+          '', // Title removed
           _contentController.text,
           imageFile: _imageFile,
         );
+        print('Created post for motherId: $motherId');
       } else {
         await postProvider.updatePost(
           widget.post!.id,
-          _titleController.text,
+          '', // Title removed
           _contentController.text,
           imageFile: _imageFile,
         );
+        print('Updated post ID: ${widget.post!.id}');
       }
       Navigator.pop(context);
     } catch (e) {
@@ -180,7 +182,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                 widget.post == null
                                     ? 'Create Post'
                                     : 'Edit Post',
-                                style: Theme.of(context).textTheme.titleLarge,
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(color: Colors.black),
                               ),
                               TextButton(
                                 onPressed: _submit,
@@ -214,23 +217,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                   const SizedBox(width: 12),
                                   Text(
                                     fullName ?? 'Unknown',
-                                    style:
-                                        Theme.of(context).textTheme.titleLarge,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(color: Colors.black),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 16),
-                              TextField(
-                                controller: _titleController,
-                                decoration: InputDecoration(
-                                  hintText: 'Title',
-                                  hintStyle: GoogleFonts.roboto(
-                                    color: Colors.grey[500],
-                                  ),
-                                  border: InputBorder.none,
-                                ),
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
                               TextField(
                                 controller: _contentController,
                                 decoration: InputDecoration(
@@ -241,7 +235,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                   border: InputBorder.none,
                                 ),
                                 maxLines: null,
-                                style: Theme.of(context).textTheme.bodyMedium,
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: Colors.black87),
                               ),
                               const SizedBox(height: 16),
                               if (_imageFile != null)
@@ -321,7 +316,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                     ),
                                     onPressed: _pickImage,
                                   ),
-                                  // TODO: Add more options (e.g., video, poll)
                                 ],
                               ),
                             ],

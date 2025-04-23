@@ -61,6 +61,11 @@ class _PostCardState extends State<PostCard>
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Card(
+            color: Colors.white,
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -91,11 +96,13 @@ class _PostCardState extends State<PostCard>
                               widget.post.fullName.isNotEmpty
                                   ? widget.post.fullName
                                   : 'Unknown',
-                              style: Theme.of(context).textTheme.titleLarge,
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(color: Colors.black),
                             ),
                             Text(
                               timeago.format(widget.post.createdAt),
-                              style: Theme.of(context).textTheme.bodySmall,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: Colors.grey[600]),
                             ),
                           ],
                         ),
@@ -103,7 +110,10 @@ class _PostCardState extends State<PostCard>
                       if (currentMotherId != null &&
                           widget.post.motherId == currentMotherId)
                         PopupMenuButton(
-                          icon: const Icon(Icons.more_horiz),
+                          icon: const Icon(
+                            Icons.more_horiz,
+                            color: Colors.grey,
+                          ),
                           itemBuilder:
                               (_) => [
                                 const PopupMenuItem(
@@ -128,6 +138,7 @@ class _PostCardState extends State<PostCard>
                               );
                             } else if (value == 'delete') {
                               await postProvider.deletePost(widget.post.id);
+                              print('Deleted post ID: ${widget.post.id}');
                             }
                           },
                         ),
@@ -135,15 +146,10 @@ class _PostCardState extends State<PostCard>
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    widget.post.title,
+                    widget.post.content,
                     style: Theme.of(
                       context,
-                    ).textTheme.headlineMedium?.copyWith(fontSize: 20),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.post.content,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    ).textTheme.bodyMedium?.copyWith(color: Colors.black87),
                     maxLines: 4,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -181,6 +187,9 @@ class _PostCardState extends State<PostCard>
                             onPressed:
                                 currentMotherId != null
                                     ? () async {
+                                      print(
+                                        'Toggling like for post ID: ${widget.post.id}, isLiked: ${widget.post.isLiked}',
+                                      );
                                       await postProvider.toggleLike(
                                         widget.post.id,
                                         currentMotherId,
@@ -189,12 +198,20 @@ class _PostCardState extends State<PostCard>
                                     }
                                     : null,
                           ),
-                          Text('${widget.post.likesCount}'),
+                          Text(
+                            '${widget.post.likesCount}',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: Colors.black87),
+                          ),
                         ],
                       ),
                       TextButton(
                         onPressed: widget.onTap,
-                        child: const Text('Comment'),
+                        child: Text(
+                          'Comment',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: Theme.of(context).primaryColor),
+                        ),
                       ),
                     ],
                   ),

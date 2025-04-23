@@ -1,3 +1,4 @@
+// lib/pages/community/chat_provider.dart
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'message_model.dart';
@@ -10,7 +11,7 @@ class ChatProvider with ChangeNotifier {
   Future<void> fetchMessages(String currentUserId, String otherUserId) async {
     try {
       final response = await Supabase.instance.client
-          .from('communityMessages')
+          .from('communitymessages')
           .select()
           .or(
             'sender_id.eq.$currentUserId,receiver_id.eq.$otherUserId,sender_id.eq.$otherUserId,receiver_id.eq.$currentUserId',
@@ -33,7 +34,7 @@ class ChatProvider with ChangeNotifier {
     try {
       final response =
           await Supabase.instance.client
-              .from('communityMessages')
+              .from('communitymessages')
               .insert({
                 'sender_id': senderId,
                 'receiver_id': receiverId,
@@ -42,7 +43,7 @@ class ChatProvider with ChangeNotifier {
               .select()
               .single();
 
-      _messages.insert(0, Message.fromMap(response));
+      _messages.add(Message.fromMap(response));
       notifyListeners();
     } catch (e) {
       print('Error sending message: $e');
@@ -53,7 +54,7 @@ class ChatProvider with ChangeNotifier {
   Future<void> markAsSeen(String messageId) async {
     try {
       await Supabase.instance.client
-          .from('communityMessages')
+          .from('communitymessages')
           .update({'is_seen': true})
           .eq('id', messageId);
 
@@ -70,11 +71,11 @@ class ChatProvider with ChangeNotifier {
   void subscribeToMessages(String currentUserId, String otherUserId) {
     _subscription =
         Supabase.instance.client
-            .channel('communityMessages')
+            .channel('communitymessages')
             .onPostgresChanges(
               event: PostgresChangeEvent.insert,
               schema: 'public',
-              table: 'communityMessages',
+              table: 'communitymessages',
               filter: PostgresChangeFilter(
                 type: PostgresChangeFilterType.eq,
                 column: 'sender_id',
@@ -83,7 +84,7 @@ class ChatProvider with ChangeNotifier {
               callback: (payload) {
                 final message = Message.fromMap(payload.newRecord!);
                 if (message.receiverId == currentUserId) {
-                  _messages.insert(0, message);
+                  _messages.add(message);
                   markAsSeen(message.id);
                   notifyListeners();
                 }

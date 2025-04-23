@@ -49,6 +49,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         motherId = user.id;
         fullName = response['full_name']?.toString() ?? 'Unknown';
         _isLoading = false;
+        print('Fetched user data: motherId=$motherId, fullName=$fullName');
       });
     } catch (e) {
       print('Error fetching user data: $e');
@@ -79,6 +80,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   ),
                 )
                 .toList();
+        print(
+          'Fetched ${_comments.length} comments for post ID: ${widget.post.id}',
+        );
       });
     } catch (e) {
       print('Error fetching comments: $e');
@@ -113,6 +117,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       setState(() {
         _comments.add(Comment.fromMap(response, fullName!));
         _commentController.clear();
+        print('Added comment to post ID: ${widget.post.id}');
       });
     } catch (e) {
       print('Error adding comment: $e');
@@ -130,6 +135,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           .eq('id', commentId);
       setState(() {
         _comments.removeWhere((comment) => comment.id == commentId);
+        print('Deleted comment ID: $commentId');
       });
     } catch (e) {
       print('Error deleting comment: $e');
@@ -142,6 +148,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(title: const Text('Post'), backgroundColor: Colors.white),
       body:
           _isLoading
@@ -152,112 +159,122 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     child: CustomScrollView(
                       slivers: [
                         SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
+                          child: Container(
+                            margin: const EdgeInsets.all(16.0),
+                            child: Card(
+                              color: Colors.white,
+                              elevation: 4,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    CircleAvatar(
-                                      radius: 24,
-                                      backgroundColor:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.secondary,
-                                      child: Text(
-                                        widget.post.fullName.isNotEmpty
-                                            ? widget.post.fullName[0]
-                                            : '?',
-                                        style: const TextStyle(
-                                          color: Colors.white,
+                                    Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 24,
+                                          backgroundColor:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.secondary,
+                                          child: Text(
+                                            widget.post.fullName.isNotEmpty
+                                                ? widget.post.fullName[0]
+                                                : '?',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                widget.post.fullName.isNotEmpty
+                                                    ? widget.post.fullName
+                                                    : 'Unknown',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .titleLarge
+                                                    ?.copyWith(
+                                                      color: Colors.black,
+                                                    ),
+                                              ),
+                                              Text(
+                                                timeago.format(
+                                                  widget.post.createdAt,
+                                                ),
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.bodySmall?.copyWith(
+                                                  color: Colors.grey[600],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      widget.post.content,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(color: Colors.black87),
+                                    ),
+                                    if (widget.post.imageUrl != null) ...[
+                                      const SizedBox(height: 12),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Image.network(
+                                          widget.post.imageUrl!,
+                                          height: 250,
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (_, __, ___) => const Icon(
+                                                Icons.broken_image,
+                                                size: 50,
+                                              ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            widget.post.fullName.isNotEmpty
-                                                ? widget.post.fullName
-                                                : 'Unknown',
-                                            style:
-                                                Theme.of(
-                                                  context,
-                                                ).textTheme.titleLarge,
+                                    ],
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          '${widget.post.likesCount} Likes',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall?.copyWith(
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black87,
                                           ),
-                                          Text(
-                                            timeago.format(
-                                              widget.post.createdAt,
-                                            ),
-                                            style:
-                                                Theme.of(
-                                                  context,
-                                                ).textTheme.bodySmall,
+                                        ),
+                                        Text(
+                                          '${_comments.length} Comments',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall?.copyWith(
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black87,
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
+                                    const Divider(),
                                   ],
                                 ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  widget.post.title,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineMedium
-                                      ?.copyWith(fontSize: 20),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  widget.post.content,
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
-                                if (widget.post.imageUrl != null) ...[
-                                  const SizedBox(height: 12),
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Image.network(
-                                      widget.post.imageUrl!,
-                                      height: 250,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (_, __, ___) => const Icon(
-                                            Icons.broken_image,
-                                            size: 50,
-                                          ),
-                                    ),
-                                  ),
-                                ],
-                                const SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      '${widget.post.likesCount} Likes',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall?.copyWith(
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Text(
-                                      '${_comments.length} Comments',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall?.copyWith(
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const Divider(),
-                              ],
+                              ),
                             ),
                           ),
                         ),
@@ -308,7 +325,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .titleLarge
-                                                    ?.copyWith(fontSize: 16),
+                                                    ?.copyWith(
+                                                      fontSize: 16,
+                                                      color: Colors.black,
+                                                    ),
                                               ),
                                               if (comment.motherId == motherId)
                                                 IconButton(
@@ -326,10 +346,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                           ),
                                           Text(
                                             comment.content,
-                                            style:
-                                                Theme.of(
-                                                  context,
-                                                ).textTheme.bodyMedium,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium?.copyWith(
+                                              color: Colors.black87,
+                                            ),
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
@@ -394,6 +415,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                 vertical: 10,
                               ),
                             ),
+                            style: const TextStyle(color: Colors.black87),
                           ),
                         ),
                         const SizedBox(width: 8),

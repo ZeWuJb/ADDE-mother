@@ -79,10 +79,10 @@ class PostProvider with ChangeNotifier {
         final fileName =
             '${DateTime.now().millisecondsSinceEpoch}_${motherId}.jpg';
         final response = await Supabase.instance.client.storage
-            .from('post_images')
+            .from('post.images')
             .upload(fileName, imageFile);
         imageUrl = Supabase.instance.client.storage
-            .from('post_images')
+            .from('post.images')
             .getPublicUrl(fileName);
         print('Uploaded image: $imageUrl');
       }

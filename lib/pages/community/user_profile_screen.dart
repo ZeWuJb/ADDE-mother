@@ -40,10 +40,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       setState(() {
         _userPosts =
             response.map<Post>((map) {
-              return Post.fromMap(map, widget.fullName)
-                ..isLiked = false; // Simplified for profile
+              return Post.fromMap(map, widget.fullName)..isLiked = false;
             }).toList();
         _isLoading = false;
+        print(
+          'Fetched ${_userPosts.length} posts for motherId: ${widget.motherId}',
+        );
       });
     } catch (e) {
       print('Error fetching user posts: $e');
@@ -61,6 +63,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
 
     return Scaffold(
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
         title: Text(widget.fullName),
         backgroundColor: Colors.white,
@@ -92,12 +95,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           const SizedBox(height: 12),
                           Text(
                             widget.fullName,
-                            style: Theme.of(context).textTheme.headlineMedium,
+                            style: Theme.of(context).textTheme.headlineMedium
+                                ?.copyWith(color: Colors.black),
                           ),
                           const SizedBox(height: 16),
                           if (currentUserId != widget.motherId)
                             ElevatedButton.icon(
                               onPressed: () {
+                                print(
+                                  'Navigating to chat with receiverId: ${widget.motherId}',
+                                );
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -113,6 +120,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               label: const Text('Message'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Theme.of(context).primaryColor,
+                                foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 24,
                                   vertical: 12,
@@ -131,7 +139,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Text(
                         'Posts',
-                        style: Theme.of(context).textTheme.titleLarge,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleLarge?.copyWith(color: Colors.black),
                       ),
                     ),
                   ),
@@ -151,14 +161,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           duration: Duration(milliseconds: 300 + index * 100),
                           child: PostCard(
                             post: post,
-                            onTap:
-                                () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (_) => PostDetailScreen(post: post),
-                                  ),
+                            onTap: () {
+                              print('Tapped post ID: ${post.id} from profile');
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PostDetailScreen(post: post),
                                 ),
+                              );
+                            },
                             onProfileTap: () {}, // Prevent recursive navigation
                           ),
                         );
