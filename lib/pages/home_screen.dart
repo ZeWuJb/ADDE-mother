@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:adde/pages/chatbot/chat_screen.dart';
+import 'package:adde/pages/name_suggestion/name_suggestion_page.dart';
 import 'package:adde/pages/note/journal_screen.dart';
 import 'package:adde/pages/notification/notificatio_history_page.dart';
 import 'package:adde/pages/notification/notification_service.dart';
@@ -10,8 +11,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:adde/auth/login_page.dart';
 import 'package:adde/pages/appointmentPages/calander_page.dart';
 import 'package:adde/pages/health_matrics_page.dart';
-import 'package:adde/pages/journal_page.dart';
-import 'package:adde/pages/name_suggation_page.dart';
 import 'package:adde/pages/profile/profile_page.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -561,7 +560,7 @@ class _HomeScreenState extends State<HomeScreen> {
         "navigation":
             () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => NameSuggationPage()),
+              MaterialPageRoute(builder: (_) => NameSuggestionPage()),
             ),
       },
     ];

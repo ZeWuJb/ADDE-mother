@@ -1,5 +1,6 @@
 import 'package:adde/pages/community/chat_provider.dart';
 import 'package:adde/pages/community/post_provider.dart';
+import 'package:adde/pages/name_suggestion/name_provider.dart';
 import 'package:adde/pages/note/note_provider.dart';
 import 'package:adde/pages/notification/notification_service.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +29,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => PostProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => NoteProvider()),
+        ChangeNotifierProvider(create: (_) => NameProvider()),
         Provider(create: (context) => NotificationService()),
       ],
       child: MyApp(session: session),
