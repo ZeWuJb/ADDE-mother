@@ -405,8 +405,9 @@ class _MotherFormPageState extends State<MotherFormPage> {
                   textInputAction: TextInputAction.next,
                   validator: (value) {
                     if (value!.trim().isEmpty) return "Height is required";
-                    if (double.tryParse(value.trim()) == null)
+                    if (double.tryParse(value.trim()) == null) {
                       return "Enter a valid number";
+                    }
                     return null;
                   },
                   onFieldSubmitted:
@@ -516,8 +517,9 @@ class _MotherFormPageState extends State<MotherFormPage> {
                   textInputAction: TextInputAction.next,
                   validator: (value) {
                     if (value!.trim().isEmpty) return "Weight is required";
-                    if (double.tryParse(value.trim()) == null)
+                    if (double.tryParse(value.trim()) == null) {
                       return "Enter a valid number";
+                    }
                     return null;
                   },
                   onFieldSubmitted:
