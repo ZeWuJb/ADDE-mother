@@ -82,7 +82,7 @@ class ChatProvider with ChangeNotifier {
                 value: otherUserId,
               ),
               callback: (payload) {
-                final message = Message.fromMap(payload.newRecord!);
+                final message = Message.fromMap(payload.newRecord);
                 if (message.receiverId == currentUserId) {
                   _messages.add(message);
                   markAsSeen(message.id);

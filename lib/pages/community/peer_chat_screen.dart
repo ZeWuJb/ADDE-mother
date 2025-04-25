@@ -97,8 +97,9 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
   }
 
   Future<void> _sendMessage() async {
-    if (_messageController.text.trim().isEmpty || _currentUserId == null)
+    if (_messageController.text.trim().isEmpty || _currentUserId == null) {
       return;
+    }
 
     try {
       print('Sending message: "${_messageController.text}"');

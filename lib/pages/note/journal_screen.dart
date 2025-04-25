@@ -4,7 +4,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'add_note_screen.dart';
-import 'note_model.dart';
 import 'note_provider.dart';
 
 class JournalScreen extends StatefulWidget {
