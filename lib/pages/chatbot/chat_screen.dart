@@ -16,89 +16,42 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final List<ChatMessage> _messages = [];
   final TextEditingController _controller = TextEditingController();
-  final SupabaseClient supabase = Supabase.instance.client;
+  final SupabaseClient _supabase = Supabase.instance.client;
+  final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
-  Map<String, dynamic>? _motherData; // Store data from 'mothers' table
-  List<Map<String, dynamic>> _healthMetrics =
-      []; // Store data from 'health_metrics'
 
-  // Dynamic system prompt incorporating mother and health data
-  String getSystemPrompt() {
-    String bioInfo =
-        _motherData != null
-            ? "The user's name is ${_motherData!['full_name'] ?? 'unknown'}, age ${_motherData!['age'] ?? 'unknown'}, ${_motherData!['pregnancy_weeks'] ?? 0} weeks pregnant (started ${_motherData!['pregnancy_start_date'] ?? 'unknown'}). Baseline weight: ${_motherData!['weight'] ?? 0} ${_motherData!['weight_unit'] ?? 'kg'}, baseline BP: ${_motherData!['blood_pressure'] ?? 'unknown'} mmHg."
-            : "No biography data available for the user.";
-
-    String healthInfo =
-        _healthMetrics.isNotEmpty
-            ? "Latest health metrics (recorded ${_healthMetrics.last['created_at'] ?? 'unknown'}): BP ${_healthMetrics.last['bp_systolic']}/${_healthMetrics.last['bp_diastolic']} mmHg, HR ${_healthMetrics.last['heart_rate']} bpm, Temp ${_healthMetrics.last['body_temp']}°C, Weight ${_healthMetrics.last['weight']} kg."
-            : "No recent health metrics available.";
-
-    return """
-You are Adde, a friendly and knowledgeable assistant specializing in pregnancy and child care. Provide accurate, supportive advice on topics like prenatal health, nutrition, baby milestones, postpartum care, and parenting tips. Keep responses concise, empathetic, and tailored to the user's needs. Use the following user data to personalize your responses:
-- $bioInfo
-- $healthInfo
+  // System prompt with "adde"
+  static const String _systemPrompt = """
+You are adde, a friendly and knowledgeable assistant specializing in pregnancy and child care. Provide accurate, supportive advice on topics like prenatal health, nutrition, baby milestones, postpartum care, and parenting tips. Keep responses concise, empathetic, and tailored to the user's needs.
 """;
-  }
 
   @override
   void initState() {
     super.initState();
     Gemini.init(apiKey: Config.geminiApiKey);
-    _fetchMotherData(); // Fetch data on initialization
     _addWelcomeMessage();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0); // Ensure top is visible on load
+      }
+    });
   }
 
   @override
   void dispose() {
     _saveCurrentChatOnExit();
     _controller.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  // Fetch mother data from 'mothers' and 'health_metrics' tables
-  Future<void> _fetchMotherData() async {
-    try {
-      final userId = supabase.auth.currentUser?.id;
-      if (userId == null) return;
-
-      // Fetch from 'mothers' table
-      final motherResponse =
-          await supabase
-              .from('mothers')
-              .select()
-              .eq('user_id', userId)
-              .maybeSingle(); // Assumes one row per user
-
-      // Fetch from 'health_metrics' table
-      final healthResponse = await supabase
-          .from('health_metrics')
-          .select()
-          .eq('user_id', userId)
-          .order('created_at', ascending: true);
-
-      setState(() {
-        _motherData =
-            motherResponse != null
-                ? Map<String, dynamic>.from(motherResponse)
-                : null;
-        _healthMetrics = List<Map<String, dynamic>>.from(healthResponse);
-      });
-    } catch (e) {
-      debugPrint("Error fetching mother data: $e");
-    }
-  }
-
-  // Add a welcome message from Hiwot
+  // Add a welcome message from adde
   void _addWelcomeMessage() {
     setState(() {
-      String welcomeText =
-          _motherData != null
-              ? "Hello ${_motherData!['full_name'] ?? ''}! I’m Adde, your pregnancy and child care companion. You’re ${_motherData!['pregnancy_weeks'] ?? 0} weeks along—how can I assist you today?"
-              : "Hello! I’m Adde, your pregnancy and child care companion. How can I assist you today?";
       _messages.add(
         ChatMessage(
-          text: welcomeText,
+          text:
+              "Hello! I’m adde, your pregnancy and child care companion. How can I assist you today?",
           isUser: false,
           timestamp: DateTime.now(),
         ),
@@ -108,49 +61,81 @@ You are Adde, a friendly and knowledgeable assistant specializing in pregnancy a
 
   // Send message asynchronously with streaming
   Future<void> _sendMessage(String userInput) async {
-    if (userInput.isEmpty || _isLoading) return;
+    if (userInput.trim().isEmpty || _isLoading) return;
+
+    final userMessage = ChatMessage(
+      text: userInput.trim(),
+      isUser: true,
+      timestamp: DateTime.now(),
+    );
 
     setState(() {
-      _messages.add(
-        ChatMessage(text: userInput, isUser: true, timestamp: DateTime.now()),
-      );
+      _messages.add(userMessage);
       _isLoading = true;
     });
 
-    // Add a placeholder for the streaming response
+    // Scroll to bottom
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+
+    // Add placeholder for streaming response
     int streamMessageIndex = _messages.length;
     _messages.add(
       ChatMessage(text: "", isUser: false, timestamp: DateTime.now()),
     );
 
     StringBuffer responseBuffer = StringBuffer();
-    await for (final chunk in _getGeminiResponse(userInput)) {
+    try {
+      await for (final chunk in _getGeminiResponse(userInput)) {
+        setState(() {
+          responseBuffer.write(chunk);
+          _messages[streamMessageIndex] = ChatMessage(
+            text: responseBuffer.toString(),
+            isUser: false,
+            timestamp: DateTime.now(),
+          );
+        });
+        // Scroll during streaming
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 100),
+              curve: Curves.easeOut,
+            );
+          }
+        });
+      }
+
+      if (responseBuffer.isNotEmpty) {
+        await _saveToSupabase(userMessage.text, responseBuffer.toString());
+      }
+    } catch (e) {
       setState(() {
-        responseBuffer.write(chunk);
         _messages[streamMessageIndex] = ChatMessage(
-          text: responseBuffer.toString(),
+          text: "Error: Failed to get response - $e",
           isUser: false,
           timestamp: DateTime.now(),
         );
       });
+    } finally {
+      setState(() => _isLoading = false);
+      _controller.clear();
     }
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    _saveToSupabase(userInput, responseBuffer.toString());
-    _controller.clear();
   }
 
   // Gemini API call using promptStream
   Stream<String> _getGeminiResponse(String userInput) async* {
     try {
       final stream = Gemini.instance.promptStream(
-        parts: [
-          TextPart(getSystemPrompt()), // Updated system prompt with data
-          TextPart("User: $userInput"),
-        ],
+        parts: [TextPart(_systemPrompt), TextPart("User: $userInput")],
       );
       await for (final response in stream) {
         final content = response?.content;
@@ -158,9 +143,14 @@ You are Adde, a friendly and knowledgeable assistant specializing in pregnancy a
           yield "Error: No response content from Gemini";
           return;
         }
-        final text = content.parts!
-            .map((part) => part is TextPart ? part.text ?? "" : part.toString())
-            .join(" ");
+        final text =
+            content.parts!
+                .map(
+                  (part) =>
+                      part is TextPart ? part.text ?? "" : part.toString(),
+                )
+                .join(" ")
+                .trim();
         if (text.isEmpty) {
           yield "Error: Empty response from Gemini";
           return;
@@ -176,10 +166,10 @@ You are Adde, a friendly and knowledgeable assistant specializing in pregnancy a
   // Save chat to Supabase
   Future<void> _saveToSupabase(String userMessage, String botResponse) async {
     try {
-      final userId = supabase.auth.currentUser?.id;
+      final userId = _supabase.auth.currentUser?.id;
       if (userId == null) throw Exception("User not authenticated");
 
-      await supabase.from("chat_history").insert({
+      await _supabase.from("chat_history").insert({
         "user_id": userId,
         "message": userMessage,
         "response": botResponse,
@@ -187,6 +177,7 @@ You are Adde, a friendly and knowledgeable assistant specializing in pregnancy a
       });
     } catch (e) {
       debugPrint("Supabase save error: $e");
+      _showSnackBar("Failed to save chat: $e");
     }
   }
 
@@ -207,11 +198,40 @@ You are Adde, a friendly and knowledgeable assistant specializing in pregnancy a
     });
   }
 
+  void _showSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            message,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onError,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Adde - Your Pregnancy Companion"),
+        title: Text(
+          "adde - Your Pregnancy Companion",
+          style: theme.appBarTheme.titleTextStyle?.copyWith(
+            color: theme.appBarTheme.foregroundColor,
+          ),
+        ),
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        elevation: theme.appBarTheme.elevation,
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
@@ -219,91 +239,128 @@ You are Adde, a friendly and knowledgeable assistant specializing in pregnancy a
                 () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ChatHistoryScreen(supabase: supabase),
+                    builder:
+                        (context) => ChatHistoryScreen(supabase: _supabase),
                   ),
                 ),
+            tooltip: "View Chat History",
           ),
-          IconButton(icon: const Icon(Icons.delete), onPressed: _clearChat),
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: _clearChat,
+            tooltip: "Clear Chat",
+          ),
         ],
       ),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
+              controller: _scrollController,
+              padding: EdgeInsets.all(screenHeight * 0.01),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
                 final message = _messages[index];
-                return ListTile(
-                  title: Align(
-                    alignment:
-                        message.isUser
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                    child: Container(
-                      padding: const EdgeInsets.all(8.0),
-                      decoration: BoxDecoration(
-                        color:
-                            message.isUser
-                                ? Colors.pink[100]
-                                : Colors.grey[200],
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(message.text),
-                          Text(
-                            message.timestamp != null
-                                ? DateFormat('HH:mm').format(message.timestamp)
-                                : "Time unavailable",
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Colors.black54,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
+                return _buildMessageTile(message, theme);
               },
             ),
           ),
           if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(8.0),
+            Padding(
+              padding: EdgeInsets.all(screenHeight * 0.01),
               child: Row(
                 children: [
-                  SizedBox(width: 10),
+                  SizedBox(width: screenHeight * 0.01),
                   Text(
-                    "Adde is typing...",
-                    style: TextStyle(color: Colors.grey),
+                    "adde is typing...",
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: "Ask Adde anything...",
-                      border: OutlineInputBorder(),
-                    ),
-                    onSubmitted: _sendMessage,
-                    enabled: !_isLoading,
-                  ),
+          _buildInputArea(theme, screenHeight),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageTile(ChatMessage message, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+      child: Align(
+        alignment:
+            message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.75,
+          ),
+          padding: const EdgeInsets.all(10.0),
+          decoration: BoxDecoration(
+            color:
+                message.isUser
+                    ? theme.colorScheme.primary.withOpacity(0.2)
+                    : theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12.0),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.shadow.withOpacity(0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                message.text,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface,
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed:
-                      _isLoading ? null : () => _sendMessage(_controller.text),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                message.timestamp != null
+                    ? DateFormat('HH:mm').format(message.timestamp)
+                    : "Time unavailable",
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
-              ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputArea(ThemeData theme, double screenHeight) {
+    return Padding(
+      padding: EdgeInsets.all(screenHeight * 0.01),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              decoration: InputDecoration(
+                hintText: "Ask adde anything...",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onSubmitted: _sendMessage,
+              enabled: !_isLoading,
+              style: theme.textTheme.bodyMedium,
+              textInputAction: TextInputAction.send,
             ),
+          ),
+          SizedBox(width: screenHeight * 0.01),
+          IconButton(
+            icon: Icon(Icons.send, color: theme.colorScheme.primary),
+            onPressed: _isLoading ? null : () => _sendMessage(_controller.text),
+            tooltip: "Send Message",
           ),
         ],
       ),

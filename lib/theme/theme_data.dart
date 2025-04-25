@@ -5,11 +5,11 @@ class ThemeModes {
     brightness: Brightness.light,
     colorScheme: ColorScheme(
       brightness: Brightness.light,
-      primary: Color(0xFFff8fab), // Soft pink for primary actions
+      primary: Color(0xFFfb6f92), // Soft pink for primary actions
       onPrimary: Colors.white,
       secondary: Color(0xFFffb3c6), // Lighter pink for secondary actions
       onSecondary: Colors.black87,
-      tertiary: Color(0xFFffcad4), // Soft green for highlights
+      tertiary: Color(0xFFffcad4), // Soft pink for highlights
       onTertiary: Colors.black87,
       error: Colors.redAccent,
       onError: Colors.white,
@@ -20,7 +20,6 @@ class ThemeModes {
       surfaceContainerHighest: Color(0xFFFCE4EC),
       onSurfaceVariant: Colors.black54,
     ),
-    // Typography
     textTheme: TextTheme(
       displayLarge: TextStyle(
         fontSize: 32,
@@ -40,7 +39,6 @@ class ThemeModes {
       bodyLarge: TextStyle(fontSize: 18, color: Colors.black87),
       bodyMedium: TextStyle(fontSize: 16, color: Colors.black87),
     ),
-    // AppBar Theme
     appBarTheme: AppBarTheme(
       backgroundColor: Color(0xFFff8fab),
       foregroundColor: Colors.black87,
@@ -51,7 +49,6 @@ class ThemeModes {
         color: Colors.black87,
       ),
     ),
-    // Button Theme
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: Color(0xFFff8fab),
@@ -61,7 +58,6 @@ class ThemeModes {
         elevation: 3,
       ),
     ),
-    // Input Decoration Theme
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: Colors.white,
@@ -70,7 +66,6 @@ class ThemeModes {
         borderSide: BorderSide(color: Color(0xFFff8fab), width: 2),
       ),
     ),
-    // Card Theme
     cardTheme: CardTheme(
       color: Color(0xFFFDE2E4),
       elevation: 3,
@@ -82,45 +77,43 @@ class ThemeModes {
     brightness: Brightness.dark,
     colorScheme: ColorScheme(
       brightness: Brightness.dark,
-      primary: Color(0xFF8A2BE2), // Purple for primary actions
-      onPrimary: Colors.white,
-      secondary: Color(0xFF6A5ACD), // Light purple for secondary actions
-      onSecondary: Colors.white,
-      tertiary: Color(0xFF3CB371), // Green for highlights
-      onTertiary: Colors.white,
-      error: Colors.redAccent,
+      primary: Colors.white, // White for primary actions
+      onPrimary: Colors.black, // Black for contrast on primary
+      secondary: Colors.white70, // Slightly dimmed white for secondary actions
+      onSecondary: Colors.black87, // Dark gray for readability
+      tertiary: Colors.black54, // Dark gray for highlights
+      onTertiary: Colors.white, // White for contrast
+      error: Colors.redAccent, // Kept for standard error visibility
       onError: Colors.white,
-      surface: Color(0xFF1C1C1C), // Dark surface
-      onSurface: Colors.white70,
+      surface: Colors.black87, // Dark surface for background
+      onSurface: Colors.white, // White for text/icons on surface
       outline: Colors.grey[700]!,
       shadow: Colors.black38,
-      surfaceContainerHighest: Color(0xFF2C2C2C),
-      onSurfaceVariant: Colors.white60,
+      surfaceContainerHighest: Colors.black54, // Slightly lighter for cards
+      onSurfaceVariant: Colors.white70, // Dimmed white for secondary text
     ),
-    // Typography
     textTheme: TextTheme(
       displayLarge: TextStyle(
         fontSize: 32,
         fontWeight: FontWeight.bold,
-        color: Colors.white70,
+        color: Colors.white,
       ),
       displayMedium: TextStyle(
         fontSize: 28,
         fontWeight: FontWeight.bold,
-        color: Colors.white70,
+        color: Colors.white,
       ),
       titleLarge: TextStyle(
         fontSize: 22,
         fontWeight: FontWeight.w600,
-        color: Colors.white70,
+        color: Colors.white,
       ),
-      bodyLarge: TextStyle(fontSize: 18, color: Colors.white70),
+      bodyLarge: TextStyle(fontSize: 18, color: Colors.white),
       bodyMedium: TextStyle(fontSize: 16, color: Colors.white70),
     ),
-    // AppBar Theme
     appBarTheme: AppBarTheme(
-      backgroundColor: Color(0xFF8A2BE2),
-      foregroundColor: Colors.white,
+      backgroundColor: Colors.black, // Pure black for app bar
+      foregroundColor: Colors.white, // White for icons/text
       elevation: 4,
       titleTextStyle: TextStyle(
         fontSize: 22,
@@ -128,28 +121,28 @@ class ThemeModes {
         color: Colors.white,
       ),
     ),
-    // Button Theme
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: Color(0xFF8A2BE2),
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white, // White for buttons
+        foregroundColor: Colors.black, // Black for button text/icons
         padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 3,
       ),
     ),
-    // Input Decoration Theme
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.grey[850],
+      fillColor: Colors.black54, // Dark gray for input fields
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: Color(0xFF8A2BE2), width: 2),
+        borderSide: BorderSide(
+          color: Colors.white,
+          width: 2,
+        ), // White for focus
       ),
     ),
-    // Card Theme
     cardTheme: CardTheme(
-      color: Color(0xFF2C2C2C),
+      color: Colors.black54, // Dark gray for cards
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),

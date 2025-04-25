@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:adde/pages/education/favorite_edu_page.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -38,15 +37,17 @@ class _EducationPageState extends State<EducationPage> {
         _entries = List<Map<String, dynamic>>.from(response);
       });
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error loading entries: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading entries: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
-  
   Future<void> _toggleFavorite(String entryId, bool currentStatus) async {
     try {
       final supabase = Supabase.instance.client;
@@ -57,7 +58,6 @@ class _EducationPageState extends State<EducationPage> {
           .update({'is_favorite': newStatus})
           .eq('id', entryId);
 
-     
       setState(() {
         final entryIndex = _entries.indexWhere(
           (entry) => entry['id'] == entryId,
@@ -66,30 +66,65 @@ class _EducationPageState extends State<EducationPage> {
           _entries[entryIndex]['is_favorite'] = newStatus;
         }
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            newStatus ? 'Added to favorites!' : 'Removed from favorites!',
+          ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        ),
+      );
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error updating favorite: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error updating favorite: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: const Text(
-          'My Day',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        title: Text(
+          'Health Article',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(context).colorScheme.primary,
+          ),
         ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        elevation: 0,
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.light
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onPrimary,
+        elevation: Theme.of(context).appBarTheme.elevation,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: Icon(
+              Icons.refresh,
+              color:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Theme.of(context).colorScheme.onPrimary
+                      : Theme.of(context).colorScheme.primary,
+            ),
             onPressed: _fetchDiaryEntries,
           ),
           IconButton(
-            icon: const Icon(Icons.favorite, color: Colors.white),
+            icon: Icon(
+              Icons.favorite,
+              color:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Theme.of(context).colorScheme.onPrimary
+                      : Theme.of(context).colorScheme.primary,
+            ),
             onPressed: () {
               Navigator.push(
                 context,
@@ -108,7 +143,7 @@ class _EducationPageState extends State<EducationPage> {
                 gradient: LinearGradient(
                   colors: [
                     Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                    Colors.white,
+                    Theme.of(context).colorScheme.surface,
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -119,11 +154,13 @@ class _EducationPageState extends State<EducationPage> {
           // Main Content
           RefreshIndicator(
             onRefresh: _fetchDiaryEntries,
+            color: Theme.of(context).colorScheme.primary,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             child:
                 _isLoading
                     ? Center(
                       child: CircularProgressIndicator(
-                        color: Theme.of(context).colorScheme.onSurface,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     )
                     : _entries.isEmpty
@@ -134,18 +171,18 @@ class _EducationPageState extends State<EducationPage> {
                           Icon(
                             Icons.book_outlined,
                             size: 60,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.5),
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(height: 10),
                           Text(
                             'No diary entries yet.',
                             style: TextStyle(
                               fontSize: 18,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.7),
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -175,10 +212,9 @@ class _EducationPageState extends State<EducationPage> {
 
                         return Card(
                           margin: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 4,
+                          shape: Theme.of(context).cardTheme.shape,
+                          elevation: Theme.of(context).cardTheme.elevation,
+                          color: Theme.of(context).cardTheme.color,
                           child: InkWell(
                             onTap: () {
                               setState(() {
@@ -189,6 +225,7 @@ class _EducationPageState extends State<EducationPage> {
                                 }
                               });
                             },
+                            borderRadius: BorderRadius.circular(12),
                             child: Padding(
                               padding: const EdgeInsets.all(16),
                               child: Column(
@@ -231,8 +268,12 @@ class _EducationPageState extends State<EducationPage> {
                                               : Icons.favorite_border,
                                           color:
                                               isFavorite
-                                                  ? Colors.red
-                                                  : Colors.grey,
+                                                  ? Theme.of(
+                                                    context,
+                                                  ).colorScheme.primary
+                                                  : Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
                                         ),
                                         onPressed:
                                             () => _toggleFavorite(
@@ -248,9 +289,12 @@ class _EducationPageState extends State<EducationPage> {
                                     duration: const Duration(milliseconds: 300),
                                     child: Text(
                                       entry['text'] ?? 'No Content',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 16,
-                                        color: Colors.black87,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
                                       ),
                                       maxLines: isExpanded ? null : 3,
                                       overflow:
@@ -279,6 +323,7 @@ class _EducationPageState extends State<EducationPage> {
                                               Theme.of(
                                                 context,
                                               ).colorScheme.primary,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ),
@@ -288,7 +333,10 @@ class _EducationPageState extends State<EducationPage> {
                                     'Posted At: ${entry['created_at'].toString().split('T').first}',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[600],
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ],

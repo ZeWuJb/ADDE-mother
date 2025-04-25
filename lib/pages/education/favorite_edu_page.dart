@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -38,9 +37,12 @@ class _FavoritesPageState extends State<FavoritesPage> {
         _favoriteEntries = List<Map<String, dynamic>>.from(response);
       });
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error loading favorites: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading favorites: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     } finally {
       setState(() => _isLoading = false);
     }
@@ -49,16 +51,33 @@ class _FavoritesPageState extends State<FavoritesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Favorite Entries',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(context).colorScheme.primary,
+          ),
         ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        elevation: 0,
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.light
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onPrimary,
+        elevation: Theme.of(context).appBarTheme.elevation,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: Icon(
+              Icons.refresh,
+              color:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Theme.of(context).colorScheme.onPrimary
+                      : Theme.of(context).colorScheme.primary,
+            ),
             onPressed: _fetchFavoriteEntries,
           ),
         ],
@@ -72,7 +91,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                 gradient: LinearGradient(
                   colors: [
                     Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                    Colors.white,
+                    Theme.of(context).colorScheme.surface,
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -83,11 +102,13 @@ class _FavoritesPageState extends State<FavoritesPage> {
           // Main Content
           RefreshIndicator(
             onRefresh: _fetchFavoriteEntries,
+            color: Theme.of(context).colorScheme.primary,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             child:
                 _isLoading
                     ? Center(
                       child: CircularProgressIndicator(
-                        color: Theme.of(context).colorScheme.onSurface,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     )
                     : _favoriteEntries.isEmpty
@@ -98,18 +119,18 @@ class _FavoritesPageState extends State<FavoritesPage> {
                           Icon(
                             Icons.favorite_border,
                             size: 60,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.5),
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(height: 10),
                           Text(
                             'No favorite entries yet.',
                             style: TextStyle(
                               fontSize: 18,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.7),
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -138,10 +159,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
                         return Card(
                           margin: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 4,
+                          shape: Theme.of(context).cardTheme.shape,
+                          elevation: Theme.of(context).cardTheme.elevation,
+                          color: Theme.of(context).cardTheme.color,
                           child: InkWell(
                             onTap: () {
                               setState(() {
@@ -152,6 +172,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                 }
                               });
                             },
+                            borderRadius: BorderRadius.circular(12),
                             child: Padding(
                               padding: const EdgeInsets.all(16),
                               child: Column(
@@ -187,9 +208,12 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                     duration: const Duration(milliseconds: 300),
                                     child: Text(
                                       entry['text'] ?? 'No Content',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 16,
-                                        color: Colors.black87,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
                                       ),
                                       maxLines: isExpanded ? null : 3,
                                       overflow:
@@ -218,6 +242,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                               Theme.of(
                                                 context,
                                               ).colorScheme.primary,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ),
@@ -227,7 +252,10 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                     'Posted At: ${entry['created_at'].toString().split('T').first}',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[600],
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ],

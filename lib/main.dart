@@ -10,6 +10,8 @@ import 'package:adde/auth/authentication_gate.dart';
 import 'package:adde/pages/bottom_page_navigation.dart';
 import 'package:adde/theme/theme_data.dart';
 import 'package:adde/theme/theme_provider.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:io';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,44 +54,148 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder:
-              (context) =>
-                  widget.session != null
-                      ? HomePage(
-                        user_id: Supabase.instance.client.auth.currentUser!.id,
-                        email: Supabase.instance.client.auth.currentUser?.email,
-                      )
-                      : const AuthenticationGate(),
-        ),
-      );
-    });
+    _checkConnectivityAndProceed();
+  }
+
+  Future<bool> _hasInternetConnection() async {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      return false;
+    }
+
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } on SocketException catch (_) {
+      return false;
+    }
+  }
+
+  void _showNoInternetDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => AlertDialog(
+            title: Text(
+              'No Internet Connection',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color:
+                    Theme.of(
+                      context,
+                    ).colorScheme.onSurface, // #fb6f92 (light), white (dark)
+              ),
+            ),
+            content: Text(
+              'Please check your internet connection and try again.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color:
+                    Theme.of(context)
+                        .colorScheme
+                        .onSurfaceVariant, // black54 (light), white70 (dark)
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _checkConnectivityAndProceed();
+                },
+                child: Text(
+                  'Retry',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context)
+                                .colorScheme
+                                .onPrimary, // #fb6f92 (light), white (dark)
+                  ),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _checkConnectivityAndProceed() async {
+    bool hasInternet = await _hasInternetConnection();
+    if (!hasInternet) {
+      _showNoInternetDialog();
+    } else {
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) =>
+                      widget.session != null
+                          ? HomePage(
+                            user_id:
+                                Supabase.instance.client.auth.currentUser!.id,
+                            email:
+                                Supabase
+                                    .instance
+                                    .client
+                                    .auth
+                                    .currentUser
+                                    ?.email,
+                          )
+                          : const AuthenticationGate(),
+            ),
+          );
+        }
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.pink.shade300,
+      backgroundColor:
+          Theme.of(context).brightness == Brightness.light
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(
+                context,
+              ).colorScheme.onPrimary, // #fb6f92 (light), white (dark)
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.assistant, size: 100, color: Colors.white),
+            Icon(
+              Icons.assistant,
+              size: 100,
+              color:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Theme.of(context).colorScheme.onPrimary
+                      : Theme.of(
+                        context,
+                      ).colorScheme.primary, // white (light), black (dark)
+            ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'Adde Assistance',
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+              style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                color:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Theme.of(
+                          context,
+                        ).colorScheme.primary, // white (light), black (dark)
               ),
             ),
             const SizedBox(height: 20),
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Theme.of(context).brightness == Brightness.light
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(
+                      context,
+                    ).colorScheme.primary, // white (light), black (dark)
+              ),
             ),
           ],
         ),

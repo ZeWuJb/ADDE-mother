@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:adde/auth/register_page.dart';
+import 'package:flutter/material.dart';
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
@@ -9,9 +9,10 @@ class WelcomePage extends StatefulWidget {
 }
 
 class _WelcomePageState extends State<WelcomePage> {
-  int current_page = 0;
+  int _currentPage = 0;
+  final PageController _pageController = PageController();
 
-  final image_content = [
+  static const List<Map<String, String>> _imageContent = [
     {
       "title": "Adey Pregnancy And Child Care App",
       "image": "assets/woman.png",
@@ -21,29 +22,45 @@ class _WelcomePageState extends State<WelcomePage> {
     {
       "image": "assets/woman-1.png",
       "content":
-          "The app will provide tracking tools to help users monitor their pregnancy and postpartum progress, including weight tracking, contraction timing, and breastfeeding tracker.",
+          "Track your pregnancy and postpartum progress with tools for weight tracking, contraction timing, and breastfeeding.",
     },
     {
       "image": "assets/notebook.png",
       "content":
-          "The app will provide educational resources to help users learn about maternal health, including articles, videos, and podcasts.",
+          "Access educational resources on maternal health, including articles, videos, and podcasts.",
     },
     {
       "image": "assets/notebook.png",
       "content":
-          "The app will provide a community support feature to help users connect with other users, share experiences, and receive support.",
+          "Connect with a community of users, share experiences, and receive support.",
     },
     {
       "image": "assets/chatbot-1.png",
       "content":
-          "The app will provide a chatbot feature to assist users with pregnancy and child care-related queries, offering instant responses, guidance, and support based on user concerns and frequently asked questions.",
+          "Use our chatbot for instant responses and guidance on pregnancy and child care queries.",
     },
   ];
 
   @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _navigateToRegister() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const RegisterPage()),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: theme.colorScheme.surface,
       body: Stack(
         children: [
           // Gradient Background
@@ -52,8 +69,8 @@ class _WelcomePageState extends State<WelcomePage> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                    Colors.white,
+                    theme.colorScheme.primary.withOpacity(0.2),
+                    theme.colorScheme.surface,
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -62,149 +79,160 @@ class _WelcomePageState extends State<WelcomePage> {
             ),
           ),
           // Main Content
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Top Section: Title, Image, and Content
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          image_content[current_page]["title"] ?? "",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 24,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
+          Column(
+            children: [
+              // Carousel Section
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: _imageContent.length,
+                  onPageChanged:
+                      (index) => setState(() => _currentPage = index),
+                  itemBuilder:
+                      (context, index) => _buildPageContent(
+                        theme,
+                        _imageContent[index],
+                        screenHeight,
+                      ),
+                ),
+              ),
+              // Bottom Section: Pagination Dots and Buttons
+              Padding(
+                padding: EdgeInsets.all(screenHeight * 0.02),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Skip Button
+                    TextButton(
+                      onPressed: _navigateToRegister,
+                      style: theme.textButtonTheme.style?.copyWith(
+                        foregroundColor: WidgetStatePropertyAll(
+                          theme.colorScheme.primary,
                         ),
-                        const SizedBox(height: 20),
-                        Container(
-                          height: 250,
-                          width: 300,
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: AssetImage(
-                                image_content[current_page]["image"]!,
-                              ),
-                              fit: BoxFit.cover,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
+                      ),
+                      child: Text(
+                        "Skip",
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(height: 20),
-                        Text(
-                          image_content[current_page]["content"]!,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w400,
-                            fontSize: 16,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.8),
-                          ),
-                        ),
-                      ],
+                        semanticsLabel: "Skip onboarding",
+                      ),
                     ),
-                  ),
-                ),
-
-                // Bottom Section: Pagination Dots and Buttons
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Skip Button
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => RegisterPage(),
+                    // Pagination Dots
+                    Row(
+                      children: List.generate(
+                        _imageContent.length,
+                        (index) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            height: 8,
+                            width: _currentPage == index ? 24 : 8,
+                            decoration: BoxDecoration(
+                              color:
+                                  _currentPage == index
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.onSurface.withOpacity(
+                                        0.5,
+                                      ),
+                              borderRadius: BorderRadius.circular(4),
                             ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Next Button
+                    TextButton(
+                      onPressed: () {
+                        if (_currentPage < _imageContent.length - 1) {
+                          _pageController.nextPage(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
                           );
-                        },
-                        child: Text(
-                          "Skip",
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        } else {
+                          _navigateToRegister();
+                        }
+                      },
+                      style: theme.textButtonTheme.style?.copyWith(
+                        foregroundColor: WidgetStatePropertyAll(
+                          theme.colorScheme.primary,
                         ),
                       ),
-
-                      // Pagination Dots
-                      Row(
-                        children: List.generate(
-                          image_content.length,
-                          (index) => Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 4.0,
-                            ),
-                            child: AnimatedContainer(
-                              duration: Duration(milliseconds: 300),
-                              height: 8,
-                              width: current_page == index ? 24 : 8,
-                              decoration: BoxDecoration(
-                                color:
-                                    current_page == index
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withOpacity(0.5),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                          ),
+                      child: Text(
+                        _currentPage == _imageContent.length - 1
+                            ? "Get Started"
+                            : "Next",
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
+                        semanticsLabel:
+                            _currentPage == _imageContent.length - 1
+                                ? "Get started"
+                                : "Next page",
                       ),
-
-                      // Next Button
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            if (current_page < image_content.length - 1) {
-                              current_page++;
-                            } else {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => RegisterPage(),
-                                ),
-                              );
-                            }
-                          });
-                        },
-                        child: Text(
-                          "Next",
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPageContent(
+    ThemeData theme,
+    Map<String, String> content,
+    double screenHeight,
+  ) {
+    return Semantics(
+      label: "Onboarding page ${_currentPage + 1}",
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: screenHeight * 0.02),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (content["title"] != null) ...[
+              Text(
+                content["title"]!,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              SizedBox(height: screenHeight * 0.03),
+            ],
+            Container(
+              height: screenHeight * 0.35,
+              width: screenHeight * 0.4,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage(content["image"]!),
+                  fit: BoxFit.cover,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.shadow.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: screenHeight * 0.03),
+            Text(
+              content["content"]!,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w400,
+                color: theme.colorScheme.onSurface.withOpacity(0.8),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

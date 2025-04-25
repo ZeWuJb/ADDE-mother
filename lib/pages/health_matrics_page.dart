@@ -80,7 +80,15 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
 
   Widget buildLineChart() {
     if (healthData.isEmpty) {
-      return Text("No data available.");
+      return Text(
+        "No data available.",
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color:
+              Theme.of(
+                context,
+              ).colorScheme.onSurfaceVariant, // black54 (light), white70 (dark)
+        ),
+      );
     }
 
     final List<FlSpot> bpSysSpots =
@@ -98,7 +106,7 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
     final List<FlSpot> tempSpots =
         healthData.asMap().entries.map((e) {
           final value = (e.value['body_temp'] as num?)?.toDouble() ?? 0.0;
-          return FlSpot(e.key.toDouble(), value * 5); // Scale temperature
+          return FlSpot(e.key.toDouble(), value * 5);
         }).toList();
 
     final List<FlSpot> weightSpots =
@@ -107,23 +115,55 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
           return FlSpot(e.key.toDouble(), value);
         }).toList();
 
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return SizedBox(
       height: 300,
       child: LineChart(
         LineChartData(
-          gridData: FlGridData(show: true),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: true,
+            getDrawingHorizontalLine:
+                (value) => FlLine(
+                  color: Theme.of(context).colorScheme.outline.withOpacity(
+                    0.5,
+                  ), // grey[400] (light), grey[700] (dark)
+                  strokeWidth: 1,
+                ),
+            getDrawingVerticalLine:
+                (value) => FlLine(
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                  strokeWidth: 1,
+                ),
+          ),
           titlesData: FlTitlesData(
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) {
-                  if (value == 0) return Text("0");
-                  if (value == 50) return Text("50");
-                  if (value == 100) return Text("100");
-                  if (value == 150) return Text("150");
-                  if (value == 200) return Text("200");
-                  return Text("");
+                  final text =
+                      value == 0
+                          ? "0"
+                          : value == 50
+                          ? "50"
+                          : value == 100
+                          ? "100"
+                          : value == 150
+                          ? "150"
+                          : value == 200
+                          ? "200"
+                          : "";
+                  return Text(
+                    text,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color:
+                          Theme.of(context)
+                              .colorScheme
+                              .onSurface, // #fb6f92 (light), white (dark)
+                    ),
+                  );
                 },
               ),
             ),
@@ -131,21 +171,36 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
               sideTitles: SideTitles(
                 showTitles: true,
                 getTitlesWidget: (value, meta) {
-                  return Text(value.toInt().toString());
+                  return Text(
+                    value.toInt().toString(),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  );
                 },
               ),
             ),
             rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
-          borderData: FlBorderData(show: true),
+          borderData: FlBorderData(
+            show: true,
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline,
+            ), // grey[400] (light), grey[700] (dark)
+          ),
           minY: 0,
           maxY: 200,
           lineBarsData: [
             LineChartBarData(
               spots: bpSysSpots,
               isCurved: true,
-              color: Colors.blue,
+              color:
+                  isDarkMode
+                      ? Colors.blue.shade300
+                      : Colors
+                          .blue
+                          .shade700, // Lighter blue in dark, darker in light
               barWidth: 2,
               dotData: FlDotData(show: true),
               belowBarData: BarAreaData(show: false),
@@ -153,7 +208,12 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
             LineChartBarData(
               spots: hrSpots,
               isCurved: true,
-              color: Colors.red,
+              color:
+                  isDarkMode
+                      ? Colors.red.shade300
+                      : Colors
+                          .red
+                          .shade700, // Lighter red in dark, darker in light
               barWidth: 2,
               dotData: FlDotData(show: true),
               belowBarData: BarAreaData(show: false),
@@ -161,7 +221,12 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
             LineChartBarData(
               spots: tempSpots,
               isCurved: true,
-              color: Colors.green,
+              color:
+                  isDarkMode
+                      ? Colors.green.shade300
+                      : Colors
+                          .green
+                          .shade700, // Lighter green in dark, darker in light
               barWidth: 2,
               dotData: FlDotData(show: true),
               belowBarData: BarAreaData(show: false),
@@ -169,7 +234,12 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
             LineChartBarData(
               spots: weightSpots,
               isCurved: true,
-              color: Colors.orange,
+              color:
+                  isDarkMode
+                      ? Colors.orange.shade300
+                      : Colors
+                          .orange
+                          .shade700, // Lighter orange in dark, darker in light
               barWidth: 2,
               dotData: FlDotData(show: true),
               belowBarData: BarAreaData(show: false),
@@ -193,7 +263,16 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
                     label =
                         'Weight: ${(data['weight'] as num).toStringAsFixed(1)} kg';
                   }
-                  return LineTooltipItem(label, TextStyle(color: Colors.white));
+                  return LineTooltipItem(
+                    label,
+                    Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color:
+                              Theme.of(context)
+                                  .colorScheme
+                                  .onPrimary, // white (light), black (dark)
+                        ) ??
+                        TextStyle(color: Colors.white),
+                  );
                 }).toList();
               },
             ),
@@ -307,10 +386,28 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Health Metrics", style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.pink,
+        title: Text(
+          "Health Metrics",
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            color:
+                Theme.of(
+                  context,
+                ).colorScheme.onPrimary, // white (light), black (dark)
+          ),
+        ),
+        backgroundColor:
+            Theme.of(
+              context,
+            ).appBarTheme.backgroundColor, // #ff8fab (light), black (dark)
+        foregroundColor:
+            Theme.of(
+              context,
+            ).appBarTheme.foregroundColor, // black87 (light), white (dark)
+        elevation: Theme.of(context).appBarTheme.elevation,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -320,53 +417,161 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
             children: [
               Text(
                 "Enter Health Data:",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color:
+                      Theme.of(
+                        context,
+                      ).colorScheme.onSurface, // #fb6f92 (light), white (dark)
+                ),
               ),
+              const SizedBox(height: 10),
               TextField(
                 controller: bpSysController,
-                decoration: InputDecoration(labelText: "BP Systolic (mmHg)"),
+                decoration: InputDecoration(
+                  labelText: "BP Systolic (mmHg)",
+                  border: Theme.of(context).inputDecorationTheme.border,
+                  focusedBorder:
+                      Theme.of(context).inputDecorationTheme.focusedBorder,
+                  filled: true,
+                  fillColor:
+                      Theme.of(context)
+                          .inputDecorationTheme
+                          .fillColor, // white (light), black54 (dark)
+                  labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color:
+                        Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant, // black54 (light), white70 (dark)
+                  ),
+                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                keyboardType: TextInputType.number,
               ),
+              const SizedBox(height: 10),
               TextField(
                 controller: bpDiaController,
-                decoration: InputDecoration(labelText: "BP Diastolic (mmHg)"),
+                decoration: InputDecoration(
+                  labelText: "BP Diastolic (mmHg)",
+                  border: Theme.of(context).inputDecorationTheme.border,
+                  focusedBorder:
+                      Theme.of(context).inputDecorationTheme.focusedBorder,
+                  filled: true,
+                  fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                  labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                keyboardType: TextInputType.number,
               ),
+              const SizedBox(height: 10),
               TextField(
                 controller: hrController,
-                decoration: InputDecoration(labelText: "Heart Rate (bpm)"),
+                decoration: InputDecoration(
+                  labelText: "Heart Rate (bpm)",
+                  border: Theme.of(context).inputDecorationTheme.border,
+                  focusedBorder:
+                      Theme.of(context).inputDecorationTheme.focusedBorder,
+                  filled: true,
+                  fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                  labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                keyboardType: TextInputType.number,
               ),
+              const SizedBox(height: 10),
               TextField(
                 controller: tempController,
-                decoration: InputDecoration(labelText: "Body Temperature (°C)"),
+                decoration: InputDecoration(
+                  labelText: "Body Temperature (°C)",
+                  border: Theme.of(context).inputDecorationTheme.border,
+                  focusedBorder:
+                      Theme.of(context).inputDecorationTheme.focusedBorder,
+                  filled: true,
+                  fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                  labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
               ),
+              const SizedBox(height: 10),
               TextField(
                 controller: weightController,
-                decoration: InputDecoration(labelText: "Weight (kg)"),
+                decoration: InputDecoration(
+                  labelText: "Weight (kg)",
+                  border: Theme.of(context).inputDecorationTheme.border,
+                  focusedBorder:
+                      Theme.of(context).inputDecorationTheme.focusedBorder,
+                  filled: true,
+                  fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                  labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: saveHealthData,
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.pink,
-                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                style: Theme.of(context).elevatedButtonTheme.style?.copyWith(
+                  padding: WidgetStateProperty.all(
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                  ),
                 ),
-                child: Text("Save Data", style: TextStyle(fontSize: 16)),
+                child: Text(
+                  "Save Data",
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color:
+                        Theme.of(
+                          context,
+                        ).colorScheme.onPrimary, // white (light), black (dark)
+                    fontSize: 16,
+                  ),
+                ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Text(
                 "Recommendations:",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
+              const SizedBox(height: 10),
               ...generateRecommendations().map(
                 (rec) => Padding(
                   padding: const EdgeInsets.only(bottom: 5.0),
-                  child: Text("• $rec", textAlign: TextAlign.justify),
+                  child: Text(
+                    "• $rec",
+                    textAlign: TextAlign.justify,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Text(
                 "Health Trends:",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
+              const SizedBox(height: 10),
               Wrap(
                 spacing: 10,
                 runSpacing: 5,
@@ -374,38 +579,86 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(width: 20, height: 20, color: Colors.blue),
-                      SizedBox(width: 5),
-                      Text("BP Systolic"),
+                      Container(
+                        width: 20,
+                        height: 20,
+                        color:
+                            isDarkMode
+                                ? Colors.blue.shade300
+                                : Colors.blue.shade700,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        "BP Systolic",
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
                     ],
                   ),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(width: 20, height: 20, color: Colors.red),
-                      SizedBox(width: 5),
-                      Text("Heart Rate"),
+                      Container(
+                        width: 20,
+                        height: 20,
+                        color:
+                            isDarkMode
+                                ? Colors.red.shade300
+                                : Colors.red.shade700,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        "Heart Rate",
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
                     ],
                   ),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(width: 20, height: 20, color: Colors.green),
-                      SizedBox(width: 5),
-                      Text("Temp (°C x 5)"),
+                      Container(
+                        width: 20,
+                        height: 20,
+                        color:
+                            isDarkMode
+                                ? Colors.green.shade300
+                                : Colors.green.shade700,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        "Temp (°C x 5)",
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
                     ],
                   ),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(width: 20, height: 20, color: Colors.orange),
-                      SizedBox(width: 5),
-                      Text("Weight"),
+                      Container(
+                        width: 20,
+                        height: 20,
+                        color:
+                            isDarkMode
+                                ? Colors.orange.shade300
+                                : Colors.orange.shade700,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        "Weight",
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
                     ],
                   ),
                 ],
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               buildLineChart(),
             ],
           ),

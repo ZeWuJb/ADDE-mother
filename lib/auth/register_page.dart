@@ -18,132 +18,133 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
-  final _auth_service = AuthenticationService();
-  final supabase = SupabaseClient(
-    'https://kbqbwdmwzbkbpmayitib.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticWJ3ZG13emJrYnBtYXlpdGliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5NTA0MDQsImV4cCI6MjA1NTUyNjQwNH0.8b0DnlgE5UOlSa4OtMonctmFmDyLAr3zbj6ROrLRj0A',
-  );
+  final AuthenticationService _authService = AuthenticationService();
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0); // Ensure top is visible on load
+      }
+    });
+  }
 
   Future<void> _nativeGoogleSignIn() async {
-    /// TODO: update the Web client ID with your own.
+    setState(() => _isLoading = true);
     const webClientId =
         '455569810410-jjrlbek9hmpi5i9ia9c40ijusmnbrhhj.apps.googleusercontent.com';
 
-    final GoogleSignIn googleSignIn = GoogleSignIn(serverClientId: webClientId);
-    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-
-    if (googleUser == null) {
-      print("Google Sign-Up was canceled by the user.");
-      return;
-    }
-
-    final GoogleSignInAuthentication googleAuth =
-        await googleUser.authentication;
-    final String? accessToken = googleAuth.accessToken;
-    final String? idToken = googleAuth.idToken;
-
-    if (accessToken == null || idToken == null) {
-      print("Google Sign-Up Error: Missing tokens.");
-      return;
-    }
-
     try {
-      final response = await supabase.auth.signInWithIdToken(
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        serverClientId: webClientId,
+      );
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        _showSnackBar('Google Sign-Up cancelled.');
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final String? accessToken = googleAuth.accessToken;
+      final String? idToken = googleAuth.idToken;
+
+      if (accessToken == null || idToken == null) {
+        throw 'Google Sign-Up Error: Missing tokens.';
+      }
+
+      final response = await Supabase.instance.client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
         accessToken: accessToken,
       );
-      if (supabase.auth.currentSession != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => MotherFormPage(
-                  email: googleUser.email,
-                  user_id: googleUser.id,
-                ),
-          ),
-        );
-      }
 
-      print("Google Sign-Up successful!");
-      print("Supabase Session: ${response.session}");
+      if (response.session != null) {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => MotherFormPage(
+                    email: googleUser.email,
+                    user_id: response.user!.id,
+                  ),
+            ),
+          );
+        }
+      } else {
+        _showSnackBar('Google Sign-Up failed. Please try again.');
+      }
     } catch (e) {
-      print("Google Sign-Up Error: $e");
+      _showSnackBar('Google Sign-Up Error: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  signUp(String email, String password) async {
-    if (passwordController.text != confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "Error: Passwords do not match!",
-            style: TextStyle(color: Theme.of(context).colorScheme.onError),
-          ),
-          backgroundColor: Colors.red.shade300,
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
+  Future<void> _signUp(String email, String password) async {
+    if (password != confirmPasswordController.text) {
+      _showSnackBar('Passwords do not match!');
       return;
     }
+
+    setState(() => _isLoading = true);
     try {
-      final response = await _auth_service.signUpWithEmail(email, password);
+      final response = await _authService.signUpWithEmail(email, password);
       if (response.user != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "Signup successful!",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                "Signup successful!",
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              backgroundColor: Colors.green.shade400,
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
-            backgroundColor: Colors.green.shade400,
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) =>
+                      MotherFormPage(email: email, user_id: response.user!.id),
             ),
-          ),
-        );
-        // Navigate to home page
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) =>
-                    MotherFormPage(email: email, user_id: response.user!.id),
-          ),
-        );
+          );
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "Signup failed. Please try again.",
-              style: TextStyle(color: Theme.of(context).colorScheme.onError),
-            ),
-            backgroundColor: Colors.red.shade300,
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        _showSnackBar('Signup failed. Please try again.');
       }
     } catch (e) {
+      _showSnackBar('Error: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showSnackBar(String message) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            "Error: $e",
-            style: TextStyle(color: Theme.of(context).colorScheme.onError),
+            message,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onError,
+            ),
           ),
-          backgroundColor: Colors.red.shade300,
+          backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.all(16),
+          margin: const EdgeInsets.all(16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
@@ -155,11 +156,15 @@ class _RegisterPageState extends State<RegisterPage> {
     emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       body: Stack(
         children: [
@@ -169,8 +174,8 @@ class _RegisterPageState extends State<RegisterPage> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                    Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                    theme.colorScheme.primary.withOpacity(0.2),
+                    theme.colorScheme.secondary.withOpacity(0.2),
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -180,193 +185,203 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
           // Main Content
           SingleChildScrollView(
+            controller: _scrollController,
             child: Center(
               child: Padding(
-                padding: const EdgeInsets.only(top: 70),
-                child: Column(
-                  children: [
-                    // Profile Image
-                    Container(
-                      height: 120,
-                      width: 120,
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: AssetImage("assets/user.png"),
-                          fit: BoxFit.cover,
-                        ),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
+                padding: EdgeInsets.only(top: screenHeight * 0.1, bottom: 20),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Column(
+                    children: [
+                      // Profile Image
+                      _buildProfileImage(theme),
+                      SizedBox(height: screenHeight * 0.03),
+
+                      // Welcome Text
+                      _buildWelcomeText(theme),
+                      SizedBox(height: screenHeight * 0.03),
+
+                      // Email Input Field
+                      InputFiled(
+                        controller: emailController,
+                        hintText: "Email Address",
+                        email: true,
                       ),
-                    ),
-                    SizedBox(height: 25),
+                      SizedBox(height: screenHeight * 0.02),
 
-                    // Welcome Text
-                    Text(
-                      "WELCOME",
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
+                      // Password Input Field
+                      InputFiled(
+                        controller: passwordController,
+                        hintText: "Password",
+                        obscure: true,
                       ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      "We Are Here, To Assist You!!!",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.7),
+                      SizedBox(height: screenHeight * 0.02),
+
+                      // Confirm Password Input Field
+                      InputFiled(
+                        controller: confirmPasswordController,
+                        hintText: "Confirm Password",
+                        obscure: true,
                       ),
-                    ),
-                    SizedBox(height: 25),
+                      SizedBox(height: screenHeight * 0.03),
 
-                    // Email Input Field
-                    InputFiled(
-                      controller: emailController,
-                      hintText: "Email Address",
-                      email: true,
-                    ),
-                    SizedBox(height: 15),
+                      // SignUp Button
+                      _buildSignUpButton(theme),
+                      SizedBox(height: screenHeight * 0.02),
 
-                    // Password Input Field
-                    InputFiled(
-                      controller: passwordController,
-                      hintText: "Password",
-                      obscure: true,
-                    ),
-                    SizedBox(height: 15),
+                      // Login Link
+                      _buildLoginLink(theme),
+                      SizedBox(height: screenHeight * 0.06),
 
-                    // Confirm Password Input Field
-                    InputFiled(
-                      controller: confirmPasswordController,
-                      hintText: "Confirm Password",
-                      obscure: true,
-                    ),
-                    SizedBox(height: 20),
-
-                    // SignUp Button
-                    ElevatedButton(
-                      onPressed: () {
-                        signUp(emailController.text, passwordController.text);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: Size(double.infinity, 50),
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: 4,
-                      ),
-                      child: Text(
-                        "Sign Up",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                      ),
-                    ),
-
-                    // Login Link
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Already have an account? ",
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.7),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => LoginPage(),
-                                ),
-                              );
-                            },
-                            child: Text(
-                              "Login",
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    SizedBox(height: 50),
-
-                    // Google Sign-In Button
-                    GestureDetector(
-                      onTap: _nativeGoogleSignIn,
-                      child: Container(
-                        width: 225,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            width: 1,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.5),
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                          color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 5,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 16,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Image.asset("assets/google.png", width: 24),
-                              SizedBox(width: 10),
-                              Text(
-                                "Sign Up with Google",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                      // Google Sign-In Button
+                      _buildGoogleSignInButton(theme),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
+          if (_isLoading)
+            Positioned.fill(
+              child: Container(
+                color: theme.colorScheme.shadow.withOpacity(0.3),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProfileImage(ThemeData theme) {
+    return Container(
+      height: 120,
+      width: 120,
+      decoration: BoxDecoration(
+        image: const DecorationImage(
+          image: AssetImage("assets/user.png"),
+          fit: BoxFit.cover,
+        ),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWelcomeText(ThemeData theme) {
+    return Column(
+      children: [
+        Text(
+          "WELCOME",
+          style: theme.textTheme.displayMedium?.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "We Are Here, To Assist You!!!",
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSignUpButton(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ElevatedButton(
+        onPressed:
+            _isLoading
+                ? null
+                : () => _signUp(emailController.text, passwordController.text),
+        style: theme.elevatedButtonTheme.style?.copyWith(
+          minimumSize: const WidgetStatePropertyAll(Size(double.infinity, 50)),
+        ),
+        child: Text(
+          "Sign Up",
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onPrimary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginLink(ThemeData theme) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          "Already have an account? ",
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        GestureDetector(
+          onTap:
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginPage()),
+              ),
+          child: Text(
+            "Login",
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGoogleSignInButton(ThemeData theme) {
+    return GestureDetector(
+      onTap: _isLoading ? null : _nativeGoogleSignIn,
+      child: Container(
+        width: 225,
+        decoration: BoxDecoration(
+          border: Border.all(width: 1, color: theme.colorScheme.outline),
+          borderRadius: BorderRadius.circular(10),
+          color: theme.colorScheme.surfaceContainerHighest,
+          boxShadow: [
+            BoxShadow(
+              color: theme.colorScheme.shadow,
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset("assets/google.png", width: 24),
+              const SizedBox(width: 10),
+              Text(
+                "Sign Up with Google",
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -13,12 +13,16 @@ class NotificationDetailPage extends StatelessWidget {
     ).toLocal().toString().substring(0, 16);
 
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.pink.shade100, Colors.white],
+            colors: [
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              Theme.of(context).colorScheme.surface,
+            ],
           ),
         ),
         child: CustomScrollView(
@@ -27,13 +31,10 @@ class NotificationDetailPage extends StatelessWidget {
               expandedHeight: 200,
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Colors.pink.shade400, Colors.purple.shade300],
-                    ),
-                  ),
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onPrimary,
                   child: Stack(
                     children: [
                       Positioned(
@@ -44,7 +45,10 @@ class NotificationDetailPage extends StatelessWidget {
                           child: Icon(
                             Icons.notifications,
                             size: 200,
-                            color: Colors.white,
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Theme.of(context).colorScheme.onPrimary
+                                    : Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ),
@@ -56,24 +60,48 @@ class NotificationDetailPage extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color:
+                                    Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary
+                                            .withValues(alpha: 0.2)
+                                        : Theme.of(context).colorScheme.primary
+                                            .withValues(alpha: 0.2),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.notifications_active,
                                 size: 40,
-                                color: Colors.white,
+                                color:
+                                    Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? Theme.of(
+                                          context,
+                                        ).colorScheme.onPrimary
+                                        : Theme.of(context).colorScheme.primary,
                               ),
                             ),
                             const SizedBox(height: 16),
                             Text(
                               notification['title'] ?? 'No Title',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color:
+                                    Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? Theme.of(
+                                          context,
+                                        ).colorScheme.onPrimary
+                                        : Theme.of(context).colorScheme.primary,
                                 shadows: [
-                                  Shadow(color: Colors.black26, blurRadius: 4),
+                                  Shadow(
+                                    color: Theme.of(context).colorScheme.surface
+                                        .withValues(alpha: 0.3),
+                                    blurRadius: 4,
+                                  ),
                                 ],
                               ),
                             ),
@@ -85,64 +113,79 @@ class NotificationDetailPage extends StatelessWidget {
                 ),
               ),
               pinned: true,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
+              backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.onPrimary,
+              elevation: Theme.of(context).appBarTheme.elevation,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                icon: Icon(
+                  Icons.arrow_back_ios,
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.primary,
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
             SliverToBoxAdapter(
               child: Container(
                 padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildInfoChip(
+                      context: context, // Pass context
                       icon: Icons.calendar_today,
                       label: 'Delivered: $deliveredAt',
-                      color: Colors.blue.shade100,
-                      textColor: Colors.blue.shade700,
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                      textColor: Theme.of(context).colorScheme.onSecondary,
                     ),
                     const SizedBox(height: 8),
                     _buildInfoChip(
+                      context: context, // Pass context
                       icon: isSeen ? Icons.check_circle : Icons.circle,
                       label: isSeen ? 'Seen' : 'Unread',
-                      color:
+                      backgroundColor:
                           isSeen
-                              ? Colors.green.shade100
-                              : Colors.orange.shade100,
+                              ? Theme.of(context).colorScheme.secondary
+                              : Theme.of(context).colorScheme.tertiary,
                       textColor:
                           isSeen
-                              ? Colors.green.shade700
-                              : Colors.orange.shade700,
+                              ? Theme.of(context).colorScheme.onSecondary
+                              : Theme.of(context).colorScheme.onTertiary,
                     ),
                     const SizedBox(height: 20),
-                    const Text(
+                    Text(
                       'Message',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: Colors.grey.shade200),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
                       ),
                       child: Text(
                         notification['body'] ?? 'No Content',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.grey.shade800,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           height: 1.5,
                         ),
                       ),
@@ -150,10 +193,13 @@ class NotificationDetailPage extends StatelessWidget {
                     if (notification['relevance'] != null) ...[
                       const SizedBox(height: 20),
                       _buildDetailCard(
+                        context: context, // Pass context
                         title: 'Relevance',
                         value: notification['relevance'],
                         icon: Icons.info,
-                        color: Colors.pink.shade100,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.2),
                       ),
                     ],
                   ],
@@ -167,15 +213,16 @@ class NotificationDetailPage extends StatelessWidget {
   }
 
   Widget _buildInfoChip({
+    required BuildContext context, // Add context parameter
     required IconData icon,
     required String label,
-    required Color color,
+    required Color backgroundColor,
     required Color textColor,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color,
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -197,15 +244,16 @@ class NotificationDetailPage extends StatelessWidget {
   }
 
   Widget _buildDetailCard({
+    required BuildContext context, // Add context parameter
     required String title,
     required String value,
     required IconData icon,
-    required Color color,
+    required Color backgroundColor,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color,
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
@@ -213,10 +261,16 @@ class NotificationDetailPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.surface.withValues(alpha: 0.5),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 24, color: Colors.grey),
+            child: Icon(
+              icon,
+              size: 24,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(width: 12),
           Column(
@@ -224,14 +278,17 @@ class NotificationDetailPage extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
               Text(
                 value,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],

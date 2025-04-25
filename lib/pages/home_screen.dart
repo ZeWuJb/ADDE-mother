@@ -10,7 +10,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:adde/auth/login_page.dart';
 import 'package:adde/pages/appointmentPages/calander_page.dart';
 import 'package:adde/pages/health_matrics_page.dart';
-import 'package:adde/pages/journal_page.dart';
 import 'package:adde/pages/name_suggation_page.dart';
 import 'package:adde/pages/profile/profile_page.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -63,7 +62,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _checkAndShowTodaysTip();
     });
 
-    // Periodic update for pregnancy progress (once a day)
     Future.delayed(const Duration(days: 1), () {
       if (mounted) _updatePregnancyProgress();
     });
@@ -187,7 +185,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ).then((_) => _loadProfileImage()),
             child: CircleAvatar(
               radius: 20,
-              backgroundColor: Colors.white.withOpacity(0.3),
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.3),
               backgroundImage:
                   _profileImageBase64 != null
                       ? MemoryImage(base64Decode(_profileImageBase64!))
@@ -201,7 +201,10 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onPrimary,
+                color:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Theme.of(context).colorScheme.primary,
                 shadows: [
                   Shadow(
                     color: Theme.of(context).colorScheme.shadow,
@@ -233,7 +236,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 IconButton(
                   icon: Icon(
                     Icons.notifications,
-                    color: Theme.of(context).colorScheme.onPrimary,
+                    color:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : Theme.of(context).colorScheme.primary,
                     size: 28,
                   ),
                   onPressed: () async {
@@ -275,7 +281,10 @@ class _HomeScreenState extends State<HomeScreen> {
         IconButton(
           icon: Icon(
             Icons.logout,
-            color: Theme.of(context).colorScheme.onPrimary,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(context).colorScheme.primary,
             size: 28,
           ),
           onPressed:
@@ -295,9 +304,13 @@ class _HomeScreenState extends State<HomeScreen> {
             context,
             MaterialPageRoute(builder: (_) => ChatScreen()),
           ),
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       elevation: 6,
-      child: const Icon(Icons.chat, color: Colors.pink, size: 28),
+      child: Icon(
+        Icons.chat,
+        color: Theme.of(context).colorScheme.primary,
+        size: 28,
+      ),
     ).animate().fadeIn(duration: 600.ms).scale(delay: 400.ms);
   }
 
@@ -306,7 +319,10 @@ class _HomeScreenState extends State<HomeScreen> {
       gradient: LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Colors.pink.shade100, Colors.purple.shade50],
+        colors: [
+          Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+          Theme.of(context).colorScheme.surface,
+        ],
       ),
     );
   }
@@ -318,7 +334,14 @@ class _HomeScreenState extends State<HomeScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.pink.shade400, Colors.purple.shade400],
+          colors: [
+            Theme.of(context).brightness == Brightness.light
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onPrimary,
+            Theme.of(context).brightness == Brightness.light
+                ? Theme.of(context).colorScheme.secondary
+                : Theme.of(context).colorScheme.onSecondary,
+          ],
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(40),
@@ -326,7 +349,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.shadow,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -334,12 +357,15 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Column(
         children: [
-          const Text(
+          Text(
             "Pregnancy Journey",
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Theme.of(context).colorScheme.onPrimary
+                      : Theme.of(context).colorScheme.primary,
               letterSpacing: 1.2,
             ),
           ).animate().fadeIn(duration: 800.ms),
@@ -351,7 +377,9 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 20),
               CircleAvatar(
                 radius: 70,
-                backgroundColor: Colors.white.withOpacity(0.9),
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.9),
                 child: ClipOval(
                   child: Image.asset(
                     "assets/embryo.gif",
@@ -373,7 +401,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   height: 10,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(5),
                   ),
                 ),
@@ -382,9 +412,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Container(
                     height: 10,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.white, Colors.pink.shade200],
-                      ),
+                      color: Theme.of(context).colorScheme.onPrimary,
                       borderRadius: BorderRadius.circular(5),
                     ),
                   ).animate().fadeIn(duration: 1000.ms),
@@ -401,12 +429,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           "Weekly Tips",
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: Colors.purple,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         const SizedBox(height: 12),
@@ -418,7 +446,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Text(
                       "No tips yet—add some!",
                       style: TextStyle(
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 16,
                       ),
                     ),
@@ -446,11 +474,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Container(
                             width: 200,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.shadow.withValues(alpha: 0.2),
                                   blurRadius: 8,
                                   offset: const Offset(0, 4),
                                 ),
@@ -473,11 +506,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                           )
                                           : Container(
                                             height: 100,
-                                            color: Colors.grey.shade200,
-                                            child: const Icon(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withValues(alpha: 0.1),
+                                            child: Icon(
                                               Icons.image,
                                               size: 40,
-                                              color: Colors.grey,
+                                              color:
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
                                             ),
                                           ),
                                 ),
@@ -489,10 +528,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                     children: [
                                       Text(
                                         "Week ${tip['week']}",
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.pink,
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.primary,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
@@ -500,7 +542,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                         tip['title'] ?? 'No Title',
                                         style: TextStyle(
                                           fontSize: 14,
-                                          color: Colors.grey.shade700,
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.onSurfaceVariant,
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -569,12 +614,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           "Explore Features",
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: Colors.purple,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         const SizedBox(height: 12),
@@ -594,27 +639,40 @@ class _HomeScreenState extends State<HomeScreen> {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.3),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4),
+              BoxShadow(
+                color: Theme.of(
+                  context,
+                ).colorScheme.shadow.withValues(alpha: 0.2),
+                blurRadius: 4,
+              ),
             ],
           ),
           child: Text(
             "$value",
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Theme.of(context).colorScheme.onPrimary
+                      : Theme.of(context).colorScheme.primary,
             ),
           ),
         ),
         const SizedBox(height: 8),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
-            color: Colors.white,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(context).colorScheme.primary,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -632,7 +690,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
@@ -640,14 +698,16 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.pink.shade50,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.secondary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Image.asset(
                   feature["icon"],
                   width: 40,
                   height: 40,
-                  color: Colors.pink.shade400,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               const SizedBox(width: 16),
@@ -657,10 +717,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       feature["name"],
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.purple,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -668,13 +728,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       feature["description"],
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.pink),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 18,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ],
           ),
         ),

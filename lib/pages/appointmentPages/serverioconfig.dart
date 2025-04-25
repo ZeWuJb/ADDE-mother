@@ -1,568 +1,484 @@
-import 'dart:async';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'dart:math';
-import 'dart:convert';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'dart:async';
 
 class SocketService {
-  late IO.Socket socket;
-  bool isConnected = false;
-  int reconnectAttempts = 0;
-  final int maxReconnectAttempts = 5;
-  Timer? pingTimer;
-  Timer? reconnectTimer;
+  // Singleton pattern
+  static final SocketService _instance = SocketService._internal();
+  factory SocketService() => _instance;
+  SocketService._internal();
 
-  // Add a set to track processed appointment IDs
-  final Set<String> processedAppointments = {};
+  // Storage keys for appointments
+  static const pendingAppointmentsKey = 'pending_appointments';
+  static const acceptedAppointmentsKey = 'accepted_appointments';
+  static const declinedAppointmentsKey = 'declined_appointments';
 
-  // Callback functions for appointment status updates
-  Function(Map<String, dynamic>)? onAppointmentAccepted;
-  Function(Map<String, dynamic>)? onAppointmentDeclined;
+  // Supabase client
+  final supabase = Supabase.instance.client;
+
+  // Realtime channels
+  RealtimeChannel? _appointmentsChannel;
+  RealtimeChannel? _tempAppointmentsChannel;
+
+  // Connection status
+  bool _isConnected = false;
+  bool get isConnected => _isConnected;
+
+  // Callbacks
   Function(bool)? onConnectionChange;
   Function(String)? onError;
   Function(List<Map<String, dynamic>>)? onAppointmentHistoryReceived;
+  Function(Map<String, dynamic>)? onAppointmentAccepted;
+  Function(Map<String, dynamic>)? onAppointmentDeclined;
 
-  // Constants for storage
-  static const String PENDING_APPOINTMENTS_KEY = 'pending_appointments';
-  static const String ACCEPTED_APPOINTMENTS_KEY = 'accepted_appointments';
-  static const String DECLINED_APPOINTMENTS_KEY = 'declined_appointments';
-
-  // Update the connect method to improve connection persistence
-  void connect(String userId) {
-    // Make sure userId is not null or empty
-    if (userId.isEmpty) {
-      print('Error: userId is empty');
-      if (onError != null) {
-        onError!('User ID is empty');
-      }
-      return;
-    }
-
-    print('Connecting socket for user_id: $userId');
-
+  // Connect to Supabase realtime
+  void connect(String userId) async {
     try {
-      // Disconnect any existing connection
-      disconnect();
-
-      // Create new socket with improved options for persistence
-      socket = IO.io('http://192.168.127.180:3000', <String, dynamic>{
-        'transports': ['websocket', 'polling'],
-        'autoConnect': true,
-        'reconnection': true,
-        'reconnectionAttempts': 10, // Increased from 5
-        'reconnectionDelay': 1000, // Start with shorter delay
-        'reconnectionDelayMax': 5000, // Maximum delay
-        'timeout': 30000, // Increased timeout
-        'query': {'userId': userId},
-        'forceNew': true, // Force a new connection to prevent duplicates
-      });
-
-      // Set up connection event handlers
-      socket.onConnect((_) {
-        print('Connected to socket server with ID: ${socket.id}');
-        isConnected = true;
-        reconnectAttempts = 0;
-
-        if (onConnectionChange != null) {
-          onConnectionChange!(true);
-        }
-
-        // Join the room with the userId
-        socket.emit('join', userId);
-        print('Joined room: $userId');
-
-        // Start ping timer
-        startPingTimer();
-
-        // Request appointment history
-        requestAppointmentHistory(userId, 'mother');
-      });
-
-      socket.onDisconnect((reason) {
-        print('Disconnected from socket server: $reason');
-        isConnected = false;
-
-        if (onConnectionChange != null) {
-          onConnectionChange!(false);
-        }
-
-        // Try to reconnect manually
-        attemptReconnect(userId);
-      });
-
-      socket.onConnectError((error) {
-        print('Connection error: $error');
-        isConnected = false;
-
-        if (onConnectionChange != null) {
-          onConnectionChange!(false);
-        }
-
-        if (onError != null) {
-          onError!('Connection error: $error');
-        }
-
-        // Try to reconnect manually
-        attemptReconnect(userId);
-      });
-
-      // Set up all other event handlers
-      _setupEventHandlers(userId);
-    } catch (e) {
-      print('Exception during socket connection: $e');
-      if (onError != null) {
-        onError!('Failed to connect: $e');
-      }
-    }
-  }
-
-  // Update the event handlers to handle heartbeat and deduplication
-  void _setupEventHandlers(String userId) {
-    // Confirmation events
-    socket.on('connection_established', (data) {
-      print('Connection confirmed by server: $data');
-    });
-
-    socket.on('joined_room', (data) {
-      print('Successfully joined room: $data');
-    });
-
-    socket.on('pong', (data) {
-      print('Received pong from server: ${data['timestamp']}');
-    });
-
-    // Handle server heartbeat
-    socket.on('heartbeat', (data) {
-      print('Received heartbeat from server: ${data['timestamp']}');
-      // Respond to heartbeat to confirm client is still alive
-      socket.emit('heartbeat_response', {
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-      });
-    });
-
-    // Set up listeners for appointment status updates with deduplication
-    socket.on('appointment_accepted', (data) async {
-      print('Appointment accepted: $data');
-
-      // Check if we've already processed this appointment
-      final appointmentId = data['appointmentId']?.toString() ?? '';
-      if (appointmentId.isNotEmpty) {
-        if (processedAppointments.contains('accepted-$appointmentId')) {
-          print('Skipping duplicate accepted appointment: $appointmentId');
-          return;
-        }
-
-        // Add to processed set
-        processedAppointments.add('accepted-$appointmentId');
-      }
-
-      // Save to persistent storage
-      await _saveAppointmentToStorage(data, 'accepted');
-
-      if (onAppointmentAccepted != null) {
-        onAppointmentAccepted!(data);
-      }
-    });
-
-    socket.on('appointment_declined', (data) async {
-      print('Appointment declined: $data');
-
-      // Check if we've already processed this appointment
-      final appointmentId = data['appointmentId']?.toString() ?? '';
-      if (appointmentId.isNotEmpty) {
-        if (processedAppointments.contains('declined-$appointmentId')) {
-          print('Skipping duplicate declined appointment: $appointmentId');
-          return;
-        }
-
-        // Add to processed set
-        processedAppointments.add('declined-$appointmentId');
-      }
-
-      // Save to persistent storage
-      await _saveAppointmentToStorage(data, 'declined');
-
-      if (onAppointmentDeclined != null) {
-        onAppointmentDeclined!(data);
-      }
-    });
-
-    // Error handling
-    socket.on('error', (data) {
-      print('Server error: $data');
-      if (onError != null) {
-        onError!(data['message'] ?? 'Unknown server error');
-      }
-    });
-
-    // Confirmation events
-    socket.on('appointment_requested', (data) async {
-      print('Appointment request confirmation: $data');
-
-      // If the request was successful and not a duplicate, save it
-      if (data['success'] == true && data['duplicate'] != true) {
-        // Create appointment data structure
-        final appointmentData = {
-          'appointmentId': data['appointmentId'],
-          'status': 'pending',
-          'requested_time':
-              DateTime.now()
-                  .toIso8601String(), // This should come from the server
-          'doctor_id': '', // This should be filled with actual data
-          'mother_id': userId,
-          'mother_name': '', // This should be filled with actual data
-          'payment_status': 'unpaid',
-        };
-
-        // Save to persistent storage
-        await _saveAppointmentToStorage(appointmentData, 'pending');
-      }
-    });
-
-    // Handle appointment history response
-    socket.on('appointment_history', (data) {
-      print('Received appointment history: $data');
-
-      if (data != null && data['appointments'] != null) {
-        List<dynamic> appointments = data['appointments'];
-        List<Map<String, dynamic>> typedAppointments =
-            appointments
-                .map((appt) => Map<String, dynamic>.from(appt))
-                .toList();
-
-        // Process and save appointments by status
-        _processAppointmentHistory(typedAppointments);
-
-        // Notify listeners
-        if (onAppointmentHistoryReceived != null) {
-          onAppointmentHistoryReceived!(typedAppointments);
-        }
-      }
-    });
-  }
-
-  // Process and save appointment history by status
-  void _processAppointmentHistory(
-    List<Map<String, dynamic>> appointments,
-  ) async {
-    List<Map<String, dynamic>> pendingAppointments = [];
-    List<Map<String, dynamic>> acceptedAppointments = [];
-    List<Map<String, dynamic>> declinedAppointments = [];
-
-    for (var appointment in appointments) {
-      String status = appointment['status'] ?? 'pending';
-
-      if (status == 'pending') {
-        pendingAppointments.add(appointment);
-      } else if (status == 'accepted') {
-        acceptedAppointments.add(appointment);
-      } else if (status == 'declined') {
-        declinedAppointments.add(appointment);
-      }
-    }
-
-    // Save to storage by status
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    if (pendingAppointments.isNotEmpty) {
-      await prefs.setString(
-        PENDING_APPOINTMENTS_KEY,
-        jsonEncode(pendingAppointments),
-      );
-    }
-
-    if (acceptedAppointments.isNotEmpty) {
-      await prefs.setString(
-        ACCEPTED_APPOINTMENTS_KEY,
-        jsonEncode(acceptedAppointments),
-      );
-    }
-
-    if (declinedAppointments.isNotEmpty) {
-      await prefs.setString(
-        DECLINED_APPOINTMENTS_KEY,
-        jsonEncode(declinedAppointments),
-      );
-    }
-  }
-
-  // Save appointment to SharedPreferences
-  Future<void> _saveAppointmentToStorage(
-    Map<String, dynamic> appointment,
-    String status,
-  ) async {
-    try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String storageKey;
-
-      // Determine which storage key to use based on status
-      if (status == 'pending') {
-        storageKey = PENDING_APPOINTMENTS_KEY;
-      } else if (status == 'accepted') {
-        storageKey = ACCEPTED_APPOINTMENTS_KEY;
-      } else if (status == 'declined') {
-        storageKey = DECLINED_APPOINTMENTS_KEY;
-      } else {
-        print('Invalid status: $status');
+      // Check if already connected
+      if (_isConnected) {
         return;
       }
 
-      // Get existing appointments
-      List<Map<String, dynamic>> appointments = [];
-      String? existingData = prefs.getString(storageKey);
+      // Set up realtime subscription for appointments
+      _appointmentsChannel =
+          supabase
+              .channel('appointments-$userId')
+              .onPostgresChanges(
+                event: PostgresChangeEvent.insert,
+                schema: 'public',
+                table: 'appointments',
+                callback: (payload) {
+                  // Handle new appointment
+                  final appointment = payload.newRecord;
+                  // Check if this is an accepted appointment
+                  if (appointment['status'] == 'accepted') {
+                    if (onAppointmentAccepted != null) {
+                      onAppointmentAccepted!({
+                        'appointmentId': appointment['id'],
+                        'doctorId': appointment['doctor_id'],
+                        'requestedTime': appointment['requested_time'],
+                        'videoLink': appointment['video_conference_link'],
+                      });
+                    }
+                  }
+                },
+              )
+              .onPostgresChanges(
+                event: PostgresChangeEvent.update,
+                schema: 'public',
+                table: 'appointments',
+                callback: (payload) {
+                  // Handle updated appointment
+                  final appointment = payload.newRecord;
+                  // Check if this is a declined appointment
+                  if (appointment['status'] == 'declined') {
+                    if (onAppointmentDeclined != null) {
+                      onAppointmentDeclined!({
+                        'appointmentId': appointment['id'],
+                        'doctorId': appointment['doctor_id'],
+                        'requestedTime': appointment['requested_time'],
+                      });
+                    }
+                  }
+                },
+              )
+              .subscribe();
 
-      if (existingData != null && existingData.isNotEmpty) {
-        List<dynamic> decoded = jsonDecode(existingData);
-        appointments =
-            decoded.map((item) => Map<String, dynamic>.from(item)).toList();
+      // Set up realtime subscription for temporary appointments
+      _tempAppointmentsChannel =
+          supabase
+              .channel('temp-appointments-$userId')
+              .onPostgresChanges(
+                event: PostgresChangeEvent.delete,
+                schema: 'public',
+                table: 'temporary_appointments',
+                callback: (payload) {
+                  // A temporary appointment was deleted
+                  // This could mean it was accepted, rejected, or timed out
+                  // We'll refresh the appointment list
+                  requestAppointmentHistory(userId, 'mother');
+                },
+              )
+              .subscribe();
+
+      // Update connection status
+      _isConnected = true;
+      if (onConnectionChange != null) {
+        onConnectionChange!(true);
       }
 
-      // Check if appointment already exists
-      bool exists = appointments.any(
-        (a) => a['appointmentId'] == appointment['appointmentId'],
-      );
-
-      if (!exists) {
-        // Add new appointment
-        appointments.add(appointment);
-
-        // Save back to storage
-        await prefs.setString(storageKey, jsonEncode(appointments));
-        print(
-          'Saved appointment to $storageKey: ${appointment['appointmentId']}',
-        );
+      // Load initial appointment history
+      requestAppointmentHistory(userId, 'mother');
+    } catch (error) {
+      _isConnected = false;
+      if (onConnectionChange != null) {
+        onConnectionChange!(false);
       }
-    } catch (e) {
-      print('Error saving appointment to storage: $e');
+      if (onError != null) {
+        onError!(error.toString());
+      }
     }
   }
 
-  // Load appointments from SharedPreferences
+  // Disconnect from Supabase realtime
+  void disconnect() {
+    _appointmentsChannel?.unsubscribe();
+    _tempAppointmentsChannel?.unsubscribe();
+    _isConnected = false;
+    if (onConnectionChange != null) {
+      onConnectionChange!(false);
+    }
+  }
+
+  // Request appointment history
+  Future<void> requestAppointmentHistory(String userId, String userType) async {
+    try {
+      List<Map<String, dynamic>> appointments = [];
+
+      if (userType == 'mother') {
+        // Fetch temporary appointments
+        final tempAppointments = await supabase
+            .from('temporary_appointments')
+            .select('''
+              id,
+              mother_id,
+              doctor_id,
+              requested_time,
+              created_at,
+              expires_at,
+              status,
+              doctors:doctor_id (
+                id,
+                full_name,
+                speciality,
+                profile_url
+              )
+            ''')
+            .eq('mother_id', userId);
+
+        // Add temporary appointments as pending
+        for (var appointment in tempAppointments) {
+          final Map<String, dynamic> appointmentData = {
+            'appointmentId': appointment['id'],
+            'motherId': appointment['mother_id'],
+            'doctorId': appointment['doctor_id'],
+            'requestedTime': appointment['requested_time'],
+            'createdAt': appointment['created_at'],
+            'expiresAt': appointment['expires_at'],
+            'status': appointment['status'],
+            'doctor_name':
+                appointment['doctors'] != null
+                    ? appointment['doctors']['full_name']
+                    : 'Unknown Doctor',
+          };
+          appointments.add(appointmentData);
+        }
+
+        // Fetch regular appointments
+        final regularAppointments = await supabase
+            .from('appointments')
+            .select('''
+              id,
+              mother_id,
+              doctor_id,
+              requested_time,
+              status,
+              payment_status,
+              video_conference_link,
+              created_at,
+              updated_at,
+              doctors:doctor_id (
+                id,
+                full_name,
+                speciality,
+                profile_url
+              )
+            ''')
+            .eq('mother_id', userId);
+
+        // Add regular appointments
+        for (var appointment in regularAppointments) {
+          final Map<String, dynamic> appointmentData = {
+            'appointmentId': appointment['id'],
+            'motherId': appointment['mother_id'],
+            'doctorId': appointment['doctor_id'],
+            'requestedTime': appointment['requested_time'],
+            'createdAt': appointment['created_at'],
+            'updatedAt': appointment['updated_at'],
+            'status': appointment['status'],
+            'paymentStatus': appointment['payment_status'],
+            'videoLink': appointment['video_conference_link'],
+            'doctor_name':
+                appointment['doctors'] != null
+                    ? appointment['doctors']['full_name']
+                    : 'Unknown Doctor',
+          };
+          appointments.add(appointmentData);
+        }
+      } else if (userType == 'doctor') {
+        // Fetch temporary appointments for doctor
+        final tempAppointments = await supabase
+            .from('temporary_appointments')
+            .select('''
+              id,
+              mother_id,
+              doctor_id,
+              requested_time,
+              created_at,
+              expires_at,
+              status,
+              mothers:mother_id (
+                user_id,
+                full_name,
+                profile_url
+              )
+            ''')
+            .eq('doctor_id', userId);
+
+        // Add temporary appointments as pending
+        for (var appointment in tempAppointments) {
+          final Map<String, dynamic> appointmentData = {
+            'appointmentId': appointment['id'],
+            'motherId': appointment['mother_id'],
+            'doctorId': appointment['doctor_id'],
+            'requestedTime': appointment['requested_time'],
+            'createdAt': appointment['created_at'],
+            'expiresAt': appointment['expires_at'],
+            'status': appointment['status'],
+            'mother_name':
+                appointment['mothers'] != null
+                    ? appointment['mothers']['full_name']
+                    : 'Unknown Mother',
+          };
+          appointments.add(appointmentData);
+        }
+
+        // Fetch regular appointments for doctor
+        final regularAppointments = await supabase
+            .from('appointments')
+            .select('''
+              id,
+              mother_id,
+              doctor_id,
+              requested_time,
+              status,
+              payment_status,
+              video_conference_link,
+              created_at,
+              updated_at,
+              mothers:mother_id (
+                user_id,
+                full_name,
+                profile_url
+              )
+            ''')
+            .eq('doctor_id', userId);
+
+        // Add regular appointments
+        for (var appointment in regularAppointments) {
+          final Map<String, dynamic> appointmentData = {
+            'appointmentId': appointment['id'],
+            'motherId': appointment['mother_id'],
+            'doctorId': appointment['doctor_id'],
+            'requestedTime': appointment['requested_time'],
+            'createdAt': appointment['created_at'],
+            'updatedAt': appointment['updated_at'],
+            'status': appointment['status'],
+            'paymentStatus': appointment['payment_status'],
+            'videoLink': appointment['video_conference_link'],
+            'mother_name':
+                appointment['mothers'] != null
+                    ? appointment['mothers']['full_name']
+                    : 'Unknown Mother',
+          };
+          appointments.add(appointmentData);
+        }
+      }
+
+      // Save to local storage
+      await _saveAppointmentsToStorage(appointments);
+
+      // Notify listeners
+      if (onAppointmentHistoryReceived != null) {
+        onAppointmentHistoryReceived!(appointments);
+      }
+    } catch (error) {
+      if (onError != null) {
+        onError!('Failed to fetch appointments: $error');
+      }
+    }
+  }
+
+  // Request an appointment
+  Future<Map<String, dynamic>> requestAppointment(
+    String motherId,
+    String doctorId,
+    String requestedTime,
+  ) async {
+    try {
+      // Calculate expires_at (20 minutes from now)
+      final now = DateTime.now();
+      final expiresAt = now.add(const Duration(minutes: 20));
+
+      // Create a temporary appointment
+      final response =
+          await supabase
+              .from('temporary_appointments')
+              .insert({
+                'mother_id': motherId,
+                'doctor_id': doctorId,
+                'requested_time': requestedTime,
+                'created_at': now.toIso8601String(),
+                'expires_at': expiresAt.toIso8601String(),
+                'status': 'pending',
+              })
+              .select()
+              .single();
+
+      return {
+        'success': true,
+        'appointmentId': response['id'],
+        'message': 'Appointment request sent successfully',
+      };
+    } catch (error) {
+      return {
+        'success': false,
+        'message': 'Failed to request appointment: $error',
+      };
+    }
+  }
+
+  // Accept an appointment (for doctors)
+  Future<Map<String, dynamic>> acceptAppointment(
+    String appointmentId,
+    String videoLink,
+  ) async {
+    try {
+      // First update the temporary appointment status to 'processing'
+      await supabase
+          .from('temporary_appointments')
+          .update({'status': 'processing'})
+          .eq('id', appointmentId);
+
+      // Get the temporary appointment
+      final tempAppointment =
+          await supabase
+              .from('temporary_appointments')
+              .select()
+              .eq('id', appointmentId)
+              .single();
+
+      // Create a permanent appointment
+      await supabase.from('appointments').insert({
+        'mother_id': tempAppointment['mother_id'],
+        'doctor_id': tempAppointment['doctor_id'],
+        'requested_time': tempAppointment['requested_time'],
+        'status': 'accepted',
+        'payment_status': 'pending',
+        'video_conference_link': videoLink,
+      });
+
+      // Delete the temporary appointment
+      await supabase
+          .from('temporary_appointments')
+          .delete()
+          .eq('id', appointmentId);
+
+      return {'success': true, 'message': 'Appointment accepted successfully'};
+    } catch (error) {
+      return {
+        'success': false,
+        'message': 'Failed to accept appointment: $error',
+      };
+    }
+  }
+
+  // Decline an appointment (for doctors)
+  Future<Map<String, dynamic>> declineAppointment(String appointmentId) async {
+    try {
+      // First update the temporary appointment status to 'processing'
+      await supabase
+          .from('temporary_appointments')
+          .update({'status': 'processing'})
+          .eq('id', appointmentId);
+
+      // Delete the temporary appointment
+      await supabase
+          .from('temporary_appointments')
+          .delete()
+          .eq('id', appointmentId);
+
+      return {'success': true, 'message': 'Appointment declined successfully'};
+    } catch (error) {
+      return {
+        'success': false,
+        'message': 'Failed to decline appointment: $error',
+      };
+    }
+  }
+
+  // Save appointments to local storage
+  Future<void> _saveAppointmentsToStorage(
+    List<Map<String, dynamic>> appointments,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Separate appointments by status
+      List<Map<String, dynamic>> pending = [];
+      List<Map<String, dynamic>> accepted = [];
+      List<Map<String, dynamic>> declined = [];
+
+      for (var appointment in appointments) {
+        String status = appointment['status'] ?? 'pending';
+
+        if (status == 'pending' || status == 'processing') {
+          pending.add(appointment);
+        } else if (status == 'accepted') {
+          accepted.add(appointment);
+        } else if (status == 'declined' || status == 'cancelled') {
+          declined.add(appointment);
+        }
+      }
+
+      // Save to SharedPreferences
+      await prefs.setString(pendingAppointmentsKey, jsonEncode(pending));
+      await prefs.setString(acceptedAppointmentsKey, jsonEncode(accepted));
+      await prefs.setString(declinedAppointmentsKey, jsonEncode(declined));
+    } catch (error) {
+      // Ignore storage errors
+    }
+  }
+
+  // Load appointments from local storage
   Future<Map<String, List<Map<String, dynamic>>>>
   loadAppointmentsFromStorage() async {
     try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance();
 
-      // Initialize result map
-      Map<String, List<Map<String, dynamic>>> result = {
-        'pending': [],
-        'accepted': [],
-        'declined': [],
-      };
+      // Get stored appointments
+      final pendingJson = prefs.getString(pendingAppointmentsKey) ?? '[]';
+      final acceptedJson = prefs.getString(acceptedAppointmentsKey) ?? '[]';
+      final declinedJson = prefs.getString(declinedAppointmentsKey) ?? '[]';
 
-      // Load pending appointments
-      String? pendingData = prefs.getString(PENDING_APPOINTMENTS_KEY);
-      if (pendingData != null && pendingData.isNotEmpty) {
-        List<dynamic> decoded = jsonDecode(pendingData);
-        result['pending'] =
-            decoded.map((item) => Map<String, dynamic>.from(item)).toList();
-      }
-
-      // Load accepted appointments
-      String? acceptedData = prefs.getString(ACCEPTED_APPOINTMENTS_KEY);
-      if (acceptedData != null && acceptedData.isNotEmpty) {
-        List<dynamic> decoded = jsonDecode(acceptedData);
-        result['accepted'] =
-            decoded.map((item) => Map<String, dynamic>.from(item)).toList();
-      }
-
-      // Load declined appointments
-      String? declinedData = prefs.getString(DECLINED_APPOINTMENTS_KEY);
-      if (declinedData != null && declinedData.isNotEmpty) {
-        List<dynamic> decoded = jsonDecode(declinedData);
-        result['declined'] =
-            decoded.map((item) => Map<String, dynamic>.from(item)).toList();
-      }
-
-      print(
-        'Loaded appointments from storage: ${result['pending']!.length} pending, ${result['accepted']!.length} accepted, ${result['declined']!.length} declined',
+      // Parse JSON
+      List<Map<String, dynamic>> pending = List<Map<String, dynamic>>.from(
+        jsonDecode(pendingJson).map((item) => Map<String, dynamic>.from(item)),
       );
-      return result;
-    } catch (e) {
-      print('Error loading appointments from storage: $e');
+
+      List<Map<String, dynamic>> accepted = List<Map<String, dynamic>>.from(
+        jsonDecode(acceptedJson).map((item) => Map<String, dynamic>.from(item)),
+      );
+
+      List<Map<String, dynamic>> declined = List<Map<String, dynamic>>.from(
+        jsonDecode(declinedJson).map((item) => Map<String, dynamic>.from(item)),
+      );
+
+      return {'pending': pending, 'accepted': accepted, 'declined': declined};
+    } catch (error) {
+      // Return empty lists on error
       return {'pending': [], 'accepted': [], 'declined': []};
     }
-  }
-
-  // Remove appointment from storage
-  Future<void> removeAppointmentFromStorage(
-    String appointmentId,
-    String status,
-  ) async {
-    try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String storageKey;
-
-      // Determine which storage key to use based on status
-      if (status == 'pending') {
-        storageKey = PENDING_APPOINTMENTS_KEY;
-      } else if (status == 'accepted') {
-        storageKey = ACCEPTED_APPOINTMENTS_KEY;
-      } else if (status == 'declined') {
-        storageKey = DECLINED_APPOINTMENTS_KEY;
-      } else {
-        print('Invalid status: $status');
-        return;
-      }
-
-      // Get existing appointments
-      String? existingData = prefs.getString(storageKey);
-      if (existingData != null && existingData.isNotEmpty) {
-        List<dynamic> decoded = jsonDecode(existingData);
-        List<Map<String, dynamic>> appointments =
-            decoded.map((item) => Map<String, dynamic>.from(item)).toList();
-
-        // Remove the appointment
-        appointments.removeWhere((a) => a['appointmentId'] == appointmentId);
-
-        // Save back to storage
-        await prefs.setString(storageKey, jsonEncode(appointments));
-        print('Removed appointment from $storageKey: $appointmentId');
-      }
-    } catch (e) {
-      print('Error removing appointment from storage: $e');
-    }
-  }
-
-  // Update the ping timer to be more frequent
-  void startPingTimer() {
-    // Cancel any existing timer
-    pingTimer?.cancel();
-
-    // Start a new ping timer - more frequent to keep connection alive
-    pingTimer = Timer.periodic(Duration(seconds: 15), (timer) {
-      if (isConnected) {
-        print('Sending ping to keep connection alive');
-        socket.emit('ping', {
-          'timestamp': DateTime.now().millisecondsSinceEpoch,
-        });
-      } else {
-        print('Not connected, attempting to reconnect in ping timer');
-        socket.connect();
-      }
-    });
-  }
-
-  // Improve the reconnection logic with exponential backoff
-  void attemptReconnect(String userId) {
-    // Cancel any existing reconnect timer
-    reconnectTimer?.cancel();
-
-    if (reconnectAttempts >= maxReconnectAttempts) {
-      print('Maximum reconnection attempts reached, creating new connection');
-      // Instead of giving up, try to create a completely new connection
-      connect(userId);
-      return;
-    }
-
-    reconnectAttempts++;
-    print(
-      'Attempting to reconnect ($reconnectAttempts/$maxReconnectAttempts)...',
-    );
-
-    // Use exponential backoff with a maximum delay
-    final delay = min(1000 * pow(1.5, reconnectAttempts), 10000);
-
-    // Set up reconnect timer with increasing backoff
-    reconnectTimer = Timer(Duration(milliseconds: delay.toInt()), () {
-      if (!isConnected) {
-        print('Trying to reconnect...');
-        socket.connect();
-      }
-    });
-  }
-
-  // Request appointment history from server
-  void requestAppointmentHistory(String userId, String userType) {
-    if (!isConnected) {
-      print('Cannot request history: Socket not connected');
-      return;
-    }
-
-    print('Requesting appointment history for $userType: $userId');
-    // Fix: Pass the data as a single Map instead of multiple arguments
-    socket.emit('get_appointment_history', {
-      'userId': userId,
-      'userType': userType,
-    });
-  }
-
-  // Send appointment request via socket with deduplication
-  void requestAppointment({
-    required String doctorId,
-    required String motherId,
-    required String motherName,
-    required String requestedTime,
-  }) {
-    if (!isConnected) {
-      print('Cannot send request: Socket not connected');
-      if (onError != null) {
-        onError!('Cannot send request: Socket not connected');
-      }
-      return;
-    }
-
-    // Create a unique key for this request to prevent duplicates
-    final requestKey = '$doctorId-$motherId-$requestedTime';
-
-    // Check if we've already sent this request
-    if (processedAppointments.contains(requestKey)) {
-      print('Skipping duplicate appointment request: $requestKey');
-      return;
-    }
-
-    // Add to processed set
-    processedAppointments.add(requestKey);
-
-    print('Sending appointment request:');
-    print('doctor_id: $doctorId');
-    print('mother_id: $motherId');
-    print('mother_name: $motherName');
-    print('requested_time: $requestedTime');
-
-    socket.emit('request_appointment', {
-      'doctor_id': doctorId,
-      'mother_id': motherId,
-      'mother_name': motherName,
-      'requested_time': requestedTime,
-    });
-  }
-
-  void acceptAppointment(String appointmentId) {
-    if (!isConnected) {
-      print('Cannot accept: Socket not connected');
-      return;
-    }
-
-    print('Accepting appointment: $appointmentId');
-    socket.emit('accept_appointment', {'appointmentId': appointmentId});
-  }
-
-  void declineAppointment(String appointmentId) {
-    if (!isConnected) {
-      print('Cannot decline: Socket not connected');
-      return;
-    }
-
-    print('Declining appointment: $appointmentId');
-    socket.emit('decline_appointment', {'appointmentId': appointmentId});
-  }
-
-  // Update the disconnect method to be more robust
-  void disconnect() {
-    pingTimer?.cancel();
-    reconnectTimer?.cancel();
-
-    try {
-      socket.disconnect();
-      socket.dispose();
-      isConnected = false;
-      print('Socket disconnected and disposed');
-    } catch (e) {
-      print('Error during socket disconnect: $e');
-    }
-
-    // Clear the processed appointments set when disconnecting
-    processedAppointments.clear();
   }
 }

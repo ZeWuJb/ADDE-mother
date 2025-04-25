@@ -1,5 +1,4 @@
 import 'package:adde/pages/community/community_screen.dart';
-import 'package:adde/pages/weekly_tips/weeklytip_add_page.dart';
 import 'package:flutter/material.dart';
 import 'package:adde/pages/home_screen.dart';
 import 'package:adde/pages/education/Education_page.dart';
@@ -88,7 +87,10 @@ class _HomePageState extends State<HomePage> {
   void showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(
+          message,
+          style: TextStyle(color: Theme.of(context).colorScheme.onError),
+        ),
         behavior: SnackBarBehavior.floating,
         backgroundColor: Theme.of(context).colorScheme.error,
         margin: const EdgeInsets.all(16),
@@ -107,7 +109,11 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     List<Widget> pages = [
       isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+            child: CircularProgressIndicator(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          )
           : (fullName != null &&
               weight != null &&
               weightUnit != null &&
@@ -121,14 +127,22 @@ class _HomePageState extends State<HomePage> {
             height: height!,
             pregnancyStartDate: pregnancyStartDate!,
           )
-          : const Center(child: Text("Failed to load user data")),
+          : Center(
+            child: Text(
+              "Failed to load user data",
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontSize: 16,
+              ),
+            ),
+          ),
       const CommunityScreen(),
       const EducationPage(),
-      const WeeklyTipAddPage(),
-      // const TeleConseltationPage(),
+      const Center(child: Text("Consult Page (Coming Soon)")),
     ];
 
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Stack(
         children: [
           // Gradient Background
@@ -138,7 +152,7 @@ class _HomePageState extends State<HomePage> {
                 gradient: LinearGradient(
                   colors: [
                     Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                    Colors.white,
+                    Theme.of(context).colorScheme.surface,
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -154,12 +168,18 @@ class _HomePageState extends State<HomePage> {
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Colors.grey,
+        unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
         showUnselectedLabels: true,
         type: BottomNavigationBarType.fixed,
-        elevation: 8,
-        backgroundColor: Colors.white,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
+        elevation: Theme.of(context).bottomNavigationBarTheme.elevation ?? 8,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+        selectedLabelStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        unselectedLabelStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
@@ -177,15 +197,10 @@ class _HomePageState extends State<HomePage> {
             label: "Education",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.add_a_photo),
+            icon: Icon(Icons.video_call_outlined),
             activeIcon: Icon(Icons.video_call),
-            label: "add tips",
+            label: "Consult",
           ),
-          // BottomNavigationBarItem(
-          //   icon: Icon(Icons.video_call_outlined),
-          //   activeIcon: Icon(Icons.video_call),
-          //   label: "Consult",
-          // ),
         ],
       ),
     );

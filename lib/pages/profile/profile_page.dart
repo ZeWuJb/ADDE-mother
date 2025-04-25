@@ -46,8 +46,7 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         nameController.text = response['full_name'] ?? '';
         ageController.text = response['age']?.toString() ?? '';
-        profileImageBase64 =
-            response['profile_url']; // Fetch image from Supabase
+        profileImageBase64 = response['profile_url'];
       });
     } catch (e) {
       ScaffoldMessenger.of(
@@ -62,20 +61,34 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final email = supabase.auth.currentUser?.email ?? 'No email';
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        elevation: 4,
+        backgroundColor:
+            Theme.of(
+              context,
+            ).appBarTheme.backgroundColor, // #ff8fab (light), black (dark)
+        foregroundColor:
+            Theme.of(
+              context,
+            ).appBarTheme.foregroundColor, // black87 (light), white (dark)
+        elevation: Theme.of(context).appBarTheme.elevation,
         actions: [
           IconButton(icon: const Icon(Icons.settings), onPressed: () {}),
         ],
       ),
       body:
           _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(
+                child: CircularProgressIndicator(
+                  color:
+                      Theme.of(
+                        context,
+                      ).colorScheme.primary, // #fb6f92 (light), white (dark)
+                ),
+              )
               : SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -95,16 +108,21 @@ class _ProfilePageState extends State<ProfilePage> {
                                       : const AssetImage('assets/user.png')
                                           as ImageProvider,
                               backgroundColor:
-                                  Theme.of(context).colorScheme.surface,
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .surface, // #ffe5ec (light), black87 (dark)
                             ),
                             const SizedBox(height: 8),
                             Text(
                               email,
                               style: Theme.of(
                                 context,
-                              ).textTheme.bodyMedium!.copyWith(
+                              ).textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface,
+                                color:
+                                    Theme.of(context)
+                                        .colorScheme
+                                        .onSurface, // #fb6f92 (light), white (dark)
                               ),
                             ),
                           ],
@@ -112,10 +130,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                       const SizedBox(height: 20),
                       Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        elevation: Theme.of(context).cardTheme.elevation,
+                        shape: Theme.of(context).cardTheme.shape,
+                        color:
+                            Theme.of(context)
+                                .cardTheme
+                                .color, // #FDE2E4 (light), black54 (dark)
                         child: InkWell(
                           onTap: () {
                             Navigator.of(context)
@@ -125,27 +145,35 @@ class _ProfilePageState extends State<ProfilePage> {
                                         (context) => const ProfileEditPage(),
                                   ),
                                 )
-                                .then(
-                                  (_) => _loadProfileData(),
-                                ); // Refresh data after edit
+                                .then((_) => _loadProfileData());
                           },
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius:
+                              (Theme.of(context).cardTheme.shape
+                                          as RoundedRectangleBorder)
+                                      .borderRadius
+                                  as BorderRadius, // Cast to BorderRadius
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Row(
                               children: [
                                 Icon(
                                   Icons.edit,
-                                  color: Theme.of(context).primaryColor,
+                                  color:
+                                      Theme.of(context)
+                                          .colorScheme
+                                          .primary, // #fb6f92 (light), white (dark)
                                 ),
                                 const SizedBox(width: 16),
                                 Text(
                                   'Edit Profile',
-                                  style: TextStyle(
-                                    fontSize: 16,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.bodyLarge?.copyWith(
                                     fontWeight: FontWeight.w600,
                                     color:
-                                        Theme.of(context).colorScheme.onSurface,
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .onSurface, // #fb6f92 (light), white (dark)
                                   ),
                                 ),
                               ],
@@ -158,9 +186,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         width: double.infinity,
                         height: 2,
                         decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withOpacity(0.2),
+                          color:
+                              Theme.of(context)
+                                  .colorScheme
+                                  .outline, // grey[400] (light), grey[700] (dark)
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -169,22 +198,35 @@ class _ProfilePageState extends State<ProfilePage> {
                           themeProvider.themeMode == ThemeMode.light
                               ? Icons.light_mode
                               : Icons.dark_mode,
-                          color: Theme.of(context).colorScheme.onSurface,
+                          color:
+                              Theme.of(context)
+                                  .colorScheme
+                                  .onSurface, // #fb6f92 (light), white (dark)
                         ),
                         title: Text(
                           'Theme Mode',
                           style: Theme.of(
                             context,
-                          ).textTheme.bodyMedium!.copyWith(
+                          ).textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
+                            color:
+                                Theme.of(context)
+                                    .colorScheme
+                                    .onSurface, // #fb6f92 (light), white (dark)
                           ),
                         ),
                         trailing: Switch(
                           value: themeProvider.themeMode == ThemeMode.dark,
                           onChanged:
                               (value) => themeProvider.toggleTheme(value),
-                          activeColor: Theme.of(context).colorScheme.primary,
+                          activeColor:
+                              Theme.of(context)
+                                  .colorScheme
+                                  .primary, // #fb6f92 (light), white (dark)
+                          inactiveTrackColor:
+                              Theme.of(context)
+                                  .colorScheme
+                                  .outline, // grey[400] (light), grey[700] (dark)
                         ),
                       ),
                     ],

@@ -54,6 +54,8 @@ dependencies:
   flutter_animate: ^4.5.2
   timeago: ^3.2.2
   google_fonts: ^6.2.1
+  jitsi_meet_flutter_sdk: ^11.1.1
+  connectivity_plus: ^6.1.4
   
 
 dev_dependencies:

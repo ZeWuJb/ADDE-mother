@@ -1,5 +1,3 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 /// A model class representing a Note.
 class Note {
   final String id;

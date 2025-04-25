@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'notification_service.dart'; // Adjust import path
-import 'tification_detail.dart'; // Adjust import path
+import 'notification_detail.dart'; // Adjust import path
 
 class NotificationHistoryPage extends StatefulWidget {
   final String userId;
@@ -53,9 +53,15 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error marking as seen: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error marking as seen: $e',
+              style: TextStyle(color: Theme.of(context).colorScheme.onError),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isMarkingAsSeen = false);
@@ -65,24 +71,22 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.pink.shade300,
-        elevation: 0,
-        title: const Text(
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.light
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onPrimary,
+        elevation: Theme.of(context).appBarTheme.elevation,
+        title: Text(
           'Notification History',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Colors.pink.shade300, Colors.purple.shade200],
-            ),
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(context).colorScheme.primary,
           ),
         ),
       ),
@@ -91,21 +95,29 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.pink.shade50, Colors.white],
+            colors: [
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              Theme.of(context).colorScheme.surface,
+            ],
           ),
         ),
         child: FutureBuilder<List<Map<String, dynamic>>>(
           future: _notificationHistoryFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(color: Colors.pink),
+              return Center(
+                child: CircularProgressIndicator(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               );
             } else if (snapshot.hasError) {
               return Center(
                 child: Text(
                   'Error: ${snapshot.error}',
-                  style: const TextStyle(color: Colors.red, fontSize: 16),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 16,
+                  ),
                 ),
               );
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -116,14 +128,14 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
                     Icon(
                       Icons.notifications_off,
                       size: 60,
-                      color: Colors.grey.shade400,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'No notifications yet',
                       style: TextStyle(
                         fontSize: 18,
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -153,9 +165,13 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
                 ),
                 if (_isMarkingAsSeen)
                   Container(
-                    color: Colors.black.withOpacity(0.2),
-                    child: const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surface.withValues(alpha: 0.2),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                   ),
               ],
@@ -172,10 +188,15 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
     String deliveredAt,
   ) {
     return Card(
-      elevation: 2,
+      elevation: Theme.of(context).cardTheme.elevation,
       margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      color: isSeen ? Colors.white : Colors.white.withOpacity(0.95),
+      shape: Theme.of(context).cardTheme.shape,
+      color:
+          isSeen
+              ? Theme.of(context).colorScheme.surfaceContainerHighest
+              : Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.95),
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -195,7 +216,10 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(15),
             border: Border.all(
-              color: isSeen ? Colors.grey.shade200 : Colors.pink.shade200,
+              color:
+                  isSeen
+                      ? Theme.of(context).colorScheme.outline
+                      : Theme.of(context).colorScheme.primary,
               width: 1,
             ),
           ),
@@ -205,12 +229,20 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isSeen ? Colors.grey.shade100 : Colors.pink.shade100,
+                  color:
+                      isSeen
+                          ? Theme.of(context).colorScheme.surface
+                          : Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.notifications,
-                  color: isSeen ? Colors.grey.shade600 : Colors.pink.shade600,
+                  color:
+                      isSeen
+                          ? Theme.of(context).colorScheme.onSurfaceVariant
+                          : Theme.of(context).colorScheme.primary,
                   size: 24,
                 ),
               ),
@@ -225,7 +257,10 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
                         fontSize: 16,
                         fontWeight:
                             isSeen ? FontWeight.normal : FontWeight.bold,
-                        color: isSeen ? Colors.grey.shade700 : Colors.black87,
+                        color:
+                            isSeen
+                                ? Theme.of(context).colorScheme.onSurfaceVariant
+                                : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -233,7 +268,7 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
                       notification['body'] ?? 'No Content',
                       style: TextStyle(
                         fontSize: 14,
-                        color: isSeen ? Colors.grey.shade600 : Colors.black54,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -244,7 +279,7 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
                         'Relevance: ${notification['relevance']}',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.shade500,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -258,8 +293,10 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
                             fontSize: 12,
                             color:
                                 isSeen
-                                    ? Colors.grey.shade500
-                                    : Colors.blue.shade600,
+                                    ? Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant
+                                    : Theme.of(context).colorScheme.secondary,
                           ),
                         ),
                         if (isSeen)
@@ -269,22 +306,26 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.green.shade100,
+                              color: Theme.of(context).colorScheme.secondary,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.check,
                                   size: 14,
-                                  color: Colors.green,
+                                  color:
+                                      Theme.of(context).colorScheme.onSecondary,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   'Seen',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.green.shade700,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSecondary,
                                   ),
                                 ),
                               ],
@@ -297,14 +338,14 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.orange.shade100,
+                              color: Theme.of(context).colorScheme.tertiary,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               'Tap to view',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.orange.shade700,
+                                color: Theme.of(context).colorScheme.onTertiary,
                               ),
                             ),
                           ),

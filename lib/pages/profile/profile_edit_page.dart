@@ -78,18 +78,15 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
             response['pregnancy_start_date'] ?? '',
           );
 
-          // Handle health_conditions dynamically
           final healthConditionsData = response['health_conditions'];
           if (healthConditionsData != null) {
             if (healthConditionsData is String) {
-              // If it's a comma-separated string
               selectedHealthConditions =
                   healthConditionsData
                       .split(',')
                       .where((condition) => condition.isNotEmpty)
                       .toList();
             } else if (healthConditionsData is List<dynamic>) {
-              // If it's a list/array from Supabase
               selectedHealthConditions =
                   healthConditionsData
                       .map((condition) => condition.toString())
@@ -130,7 +127,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
             pregnancyStartDate != null
                 ? DateFormat('yyyy-MM-dd').format(pregnancyStartDate!)
                 : null,
-        'health_conditions': selectedHealthConditions, // Save as List
+        'health_conditions': selectedHealthConditions,
       };
 
       await supabase.from('mothers').upsert(updates);
@@ -156,9 +153,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       final androidVersion =
           Platform.isAndroid ? await _getAndroidVersion() : 0;
       if (Platform.isAndroid && androidVersion >= 33) {
-        status = await Permission.photos.request(); // Android 13+
+        status = await Permission.photos.request();
       } else {
-        status = await Permission.storage.request(); // Older Android
+        status = await Permission.storage.request();
       }
     }
 
@@ -221,37 +218,65 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final email = supabase.auth.currentUser?.email ?? '';
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Edit Profile",
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        elevation: 0,
+        title: const Text("Edit Profile"),
+        backgroundColor:
+            Theme.of(
+              context,
+            ).appBarTheme.backgroundColor, // #ff8fab (light), black (dark)
+        foregroundColor:
+            Theme.of(
+              context,
+            ).appBarTheme.foregroundColor, // black87 (light), white (dark)
+        elevation: Theme.of(context).appBarTheme.elevation,
+        titleTextStyle: Theme.of(context).appBarTheme.titleTextStyle,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white),
+            icon: const Icon(Icons.settings),
+            color:
+                Theme.of(
+                  context,
+                ).appBarTheme.foregroundColor, // black87 (light), white (dark)
             onPressed: () {},
           ),
         ],
       ),
       body:
           _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(
+                child: CircularProgressIndicator(
+                  color:
+                      Theme.of(
+                        context,
+                      ).colorScheme.primary, // #fb6f92 (light), white (dark)
+                ),
+              )
               : Stack(
                 children: [
                   Positioned.fill(
                     child: Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [
-                            Theme.of(
-                              context,
-                            ).colorScheme.primary.withOpacity(0.2),
-                            Colors.white,
-                          ],
+                          colors:
+                              isDarkMode
+                                  ? [
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.surface, // black87
+                                    Theme.of(context)
+                                        .colorScheme
+                                        .surfaceContainerHighest, // black54
+                                  ]
+                                  : [
+                                    Theme.of(context).colorScheme.primary
+                                        .withOpacity(0.2), // #fb6f92
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.surface, // #ffe5ec
+                                  ],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                         ),
@@ -272,11 +297,23 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                     (context) => Wrap(
                                       children: [
                                         ListTile(
-                                          leading: const Icon(
+                                          leading: Icon(
                                             Icons.photo_library,
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.primary,
                                           ),
-                                          title: const Text(
+                                          title: Text(
                                             "Choose from Gallery",
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium?.copyWith(
+                                              color:
+                                                  Theme.of(
+                                                    context,
+                                                  ).colorScheme.onSurface,
+                                            ),
                                           ),
                                           onTap: () {
                                             Navigator.pop(context);
@@ -284,8 +321,24 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                           },
                                         ),
                                         ListTile(
-                                          leading: const Icon(Icons.camera_alt),
-                                          title: const Text("Take a Photo"),
+                                          leading: Icon(
+                                            Icons.camera_alt,
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.primary,
+                                          ),
+                                          title: Text(
+                                            "Take a Photo",
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium?.copyWith(
+                                              color:
+                                                  Theme.of(
+                                                    context,
+                                                  ).colorScheme.onSurface,
+                                            ),
+                                          ),
                                           onTap: () {
                                             Navigator.pop(context);
                                             pickImage(ImageSource.camera);
@@ -311,10 +364,13 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                       Theme.of(context).colorScheme.surface,
                                   child:
                                       profileImageBase64 == null
-                                          ? const Icon(
+                                          ? Icon(
                                             Icons.person,
                                             size: 80,
-                                            color: Colors.grey,
+                                            color:
+                                                Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurfaceVariant, // black54 (light), white70 (dark)
                                           )
                                           : null,
                                 ),
@@ -322,12 +378,17 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
                                     color:
-                                        Theme.of(context).colorScheme.primary,
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .primary, // #fb6f92 (light), white (dark)
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.edit,
-                                    color: Colors.white,
+                                    color:
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary, // white (light), black (dark)
                                     size: 20,
                                   ),
                                 ),
@@ -339,21 +400,26 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                         Center(
                           child: Text(
                             email,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.7),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(
+                              color:
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant, // black54 (light), white70 (dark)
                             ),
                           ),
                         ),
                         const SizedBox(height: 20),
                         Text(
                           "Personal Information",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleLarge?.copyWith(
+                            color:
+                                Theme.of(context)
+                                    .colorScheme
+                                    .onSurface, // #fb6f92 (light), white (dark)
                           ),
                         ),
                         const SizedBox(height: 10),
@@ -361,15 +427,37 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                           controller: nameController,
                           decoration: InputDecoration(
                             labelText: "Full Name",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                            border:
+                                Theme.of(context).inputDecorationTheme.border,
+                            focusedBorder:
+                                Theme.of(
+                                  context,
+                                ).inputDecorationTheme.focusedBorder,
                             filled: true,
-                            fillColor: Theme.of(context).colorScheme.surface,
+                            fillColor:
+                                Theme.of(context)
+                                    .inputDecorationTheme
+                                    .fillColor, // white (light), black54 (dark)
+                            labelStyle: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                            ),
                             prefixIcon: Icon(
                               Icons.person,
-                              color: Theme.of(context).colorScheme.primary,
+                              color:
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .primary, // #fb6f92 (light), white (dark)
                             ),
+                          ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 15),
@@ -378,15 +466,34 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                             labelText: "Age",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                            border:
+                                Theme.of(context).inputDecorationTheme.border,
+                            focusedBorder:
+                                Theme.of(
+                                  context,
+                                ).inputDecorationTheme.focusedBorder,
                             filled: true,
-                            fillColor: Theme.of(context).colorScheme.surface,
+                            fillColor:
+                                Theme.of(
+                                  context,
+                                ).inputDecorationTheme.fillColor,
+                            labelStyle: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                            ),
                             prefixIcon: Icon(
                               Icons.calendar_today,
                               color: Theme.of(context).colorScheme.primary,
                             ),
+                          ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 15),
@@ -398,17 +505,38 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                 keyboardType: TextInputType.number,
                                 decoration: InputDecoration(
                                   labelText: "Weight",
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
+                                  border:
+                                      Theme.of(
+                                        context,
+                                      ).inputDecorationTheme.border,
+                                  focusedBorder:
+                                      Theme.of(
+                                        context,
+                                      ).inputDecorationTheme.focusedBorder,
                                   filled: true,
                                   fillColor:
-                                      Theme.of(context).colorScheme.surface,
+                                      Theme.of(
+                                        context,
+                                      ).inputDecorationTheme.fillColor,
+                                  labelStyle: Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.copyWith(
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                  ),
                                   prefixIcon: Icon(
                                     Icons.scale,
                                     color:
                                         Theme.of(context).colorScheme.primary,
                                   ),
+                                ),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.copyWith(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                             ),
@@ -421,7 +549,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                       value: value,
                                       child: Text(
                                         value,
-                                        style: TextStyle(
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyMedium?.copyWith(
                                           color:
                                               Theme.of(
                                                 context,
@@ -434,6 +564,13 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                   (newValue) => setState(
                                     () => selectedWeightUnit = newValue!,
                                   ),
+                              underline: Container(
+                                height: 2,
+                                color:
+                                    Theme.of(context)
+                                        .colorScheme
+                                        .outline, // grey[400] (light), grey[700] (dark)
+                              ),
                             ),
                           ],
                         ),
@@ -446,17 +583,38 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                 keyboardType: TextInputType.number,
                                 decoration: InputDecoration(
                                   labelText: "Height",
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
+                                  border:
+                                      Theme.of(
+                                        context,
+                                      ).inputDecorationTheme.border,
+                                  focusedBorder:
+                                      Theme.of(
+                                        context,
+                                      ).inputDecorationTheme.focusedBorder,
                                   filled: true,
                                   fillColor:
-                                      Theme.of(context).colorScheme.surface,
+                                      Theme.of(
+                                        context,
+                                      ).inputDecorationTheme.fillColor,
+                                  labelStyle: Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.copyWith(
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                  ),
                                   prefixIcon: Icon(
                                     Icons.height,
                                     color:
                                         Theme.of(context).colorScheme.primary,
                                   ),
+                                ),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.copyWith(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                             ),
@@ -469,7 +627,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                       value: value,
                                       child: Text(
                                         value,
-                                        style: TextStyle(
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyMedium?.copyWith(
                                           color:
                                               Theme.of(
                                                 context,
@@ -482,6 +642,10 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                   (newValue) => setState(
                                     () => selectedHeightUnit = newValue!,
                                   ),
+                              underline: Container(
+                                height: 2,
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
                             ),
                           ],
                         ),
@@ -490,23 +654,42 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                           controller: bloodPressureController,
                           decoration: InputDecoration(
                             labelText: "Blood Pressure (e.g., 120/80)",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                            border:
+                                Theme.of(context).inputDecorationTheme.border,
+                            focusedBorder:
+                                Theme.of(
+                                  context,
+                                ).inputDecorationTheme.focusedBorder,
                             filled: true,
-                            fillColor: Theme.of(context).colorScheme.surface,
+                            fillColor:
+                                Theme.of(
+                                  context,
+                                ).inputDecorationTheme.fillColor,
+                            labelStyle: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                            ),
                             prefixIcon: Icon(
                               Icons.monitor_heart,
                               color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
                         const SizedBox(height: 15),
                         Text(
                           "Select Applicable Health Conditions",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleLarge?.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
@@ -517,7 +700,17 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                           children:
                               healthConditions.map((condition) {
                                 return FilterChip(
-                                  label: Text(condition),
+                                  label: Text(
+                                    condition,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.copyWith(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                    ),
+                                  ),
                                   selected: selectedHealthConditions.contains(
                                     condition,
                                   ),
@@ -537,6 +730,8 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                   ).colorScheme.primary.withOpacity(0.3),
                                   backgroundColor:
                                       Theme.of(context).colorScheme.surface,
+                                  checkmarkColor:
+                                      Theme.of(context).colorScheme.onSurface,
                                 );
                               }).toList(),
                         ),
@@ -547,9 +742,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                               const SizedBox(height: 10),
                               Text(
                                 "Describe Your Health Issue",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.titleLarge?.copyWith(
                                   color:
                                       Theme.of(context).colorScheme.onSurface,
                                 ),
@@ -559,37 +754,66 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                 controller: healthInfoController,
                                 maxLines: null,
                                 decoration: InputDecoration(
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
+                                  border:
+                                      Theme.of(
+                                        context,
+                                      ).inputDecorationTheme.border,
+                                  focusedBorder:
+                                      Theme.of(
+                                        context,
+                                      ).inputDecorationTheme.focusedBorder,
                                   hintText:
                                       "Describe your health background or issues here...",
                                   filled: true,
                                   fillColor:
-                                      Theme.of(context).colorScheme.surface,
+                                      Theme.of(
+                                        context,
+                                      ).inputDecorationTheme.fillColor,
+                                  hintStyle: Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.copyWith(
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                  ),
                                   prefixIcon: Icon(
                                     Icons.health_and_safety,
                                     color:
                                         Theme.of(context).colorScheme.primary,
                                   ),
                                 ),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.copyWith(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
                               ),
                               const SizedBox(height: 20),
                             ],
                           ),
+                        const SizedBox(height: 20),
                         ElevatedButton(
                           onPressed: _updateProfile,
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size(double.infinity, 50),
-                            backgroundColor:
-                                Theme.of(context).colorScheme.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                          style: Theme.of(
+                            context,
+                          ).elevatedButtonTheme.style?.copyWith(
+                            minimumSize: WidgetStateProperty.all(
+                              const Size(double.infinity, 50),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             "Save Profile",
-                            style: TextStyle(fontSize: 18, color: Colors.white),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyLarge?.copyWith(
+                              color:
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .onPrimary, // white (light), black (dark)
+                              fontSize: 18,
+                            ),
                           ),
                         ),
                       ],

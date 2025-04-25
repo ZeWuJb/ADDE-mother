@@ -48,7 +48,6 @@ class _WeeklyTipPageState extends State<WeeklyTipPage> {
         response,
       );
 
-      // Reorder tips: put the current week's tip at the top
       final currentWeekTipIndex = tips.indexWhere(
         (tip) => tip['week'] == _currentWeek,
       );
@@ -71,7 +70,6 @@ class _WeeklyTipPageState extends State<WeeklyTipPage> {
 
   String _cleanBase64(String? base64String) {
     if (base64String == null || base64String.isEmpty) return '';
-
     if (base64String.contains(',')) {
       return base64String.split(',')[1];
     }
@@ -80,20 +78,40 @@ class _WeeklyTipPageState extends State<WeeklyTipPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Weekly Tips"),
-        backgroundColor: Colors.pink.shade300,
-        foregroundColor: Colors.white,
+        backgroundColor:
+            Theme.of(
+              context,
+            ).appBarTheme.backgroundColor, // #ff8fab (light), black (dark)
+        foregroundColor:
+            Theme.of(
+              context,
+            ).appBarTheme.foregroundColor, // black87 (light), white (dark)
       ),
       body:
           _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(
+                child: CircularProgressIndicator(
+                  color:
+                      Theme.of(
+                        context,
+                      ).colorScheme.primary, // #fb6f92 (light), white (dark)
+                ),
+              )
               : _allTips.isEmpty
-              ? const Center(
+              ? Center(
                 child: Text(
                   "No tips available",
-                  style: TextStyle(color: Colors.grey),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color:
+                        Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant, // black54 (light), white70 (dark)
+                  ),
                 ),
               )
               : ListView.builder(
@@ -106,9 +124,14 @@ class _WeeklyTipPageState extends State<WeeklyTipPage> {
                   return Card(
                     elevation: isCurrentWeek ? 8 : 4,
                     margin: const EdgeInsets.only(bottom: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
+                    shape:
+                        Theme.of(
+                          context,
+                        ).cardTheme.shape, // RoundedRectangleBorder
+                    color:
+                        Theme.of(
+                          context,
+                        ).cardTheme.color, // #FDE2E4 (light), black54 (dark)
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
@@ -123,9 +146,16 @@ class _WeeklyTipPageState extends State<WeeklyTipPage> {
                                 height: 150,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
-                                  return const Text(
+                                  return Text(
                                     'Image failed to load',
-                                    style: TextStyle(color: Colors.red),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.copyWith(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.error, // redAccent
+                                    ),
                                   );
                                 },
                               ),
@@ -133,29 +163,41 @@ class _WeeklyTipPageState extends State<WeeklyTipPage> {
                           const SizedBox(height: 10),
                           Text(
                             "Week ${tip['week']}${isCurrentWeek ? ' (Current)' : ''}",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleLarge?.copyWith(
                               color:
                                   isCurrentWeek
-                                      ? Colors.pink
-                                      : Colors.grey.shade700,
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .primary // #fb6f92 (light), white (dark)
+                                      : Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant, // black54 (light), white70 (dark)
                             ),
                           ),
                           const SizedBox(height: 5),
                           Text(
                             tip['title'] ?? 'No Title',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              color: Colors.grey,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyLarge?.copyWith(
+                              color:
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant, // black54 (light), white70 (dark)
                             ),
                           ),
                           const SizedBox(height: 10),
                           Text(
                             tip['description'] ?? 'No Description',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(
+                              color:
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant, // black54 (light), white70 (dark)
                             ),
                           ),
                         ],

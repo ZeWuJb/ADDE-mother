@@ -20,21 +20,37 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
   final AuthenticationService authenticationService = AuthenticationService();
   final supabase = Supabase.instance.client;
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoading = false;
 
-  Future<void> saveSession(String session) async {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0); // Ensure top is visible on load
+      }
+    });
+  }
+
+  Future<void> _saveSession(String session) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('supabase_session', session);
   }
 
   Future<void> _nativeGoogleSignIn() async {
+    setState(() => _isLoading = true);
     const webClientId =
         '455569810410-jjrlbek9hmpi5i9ia9c40ijusmnbrhhj.apps.googleusercontent.com';
 
-    final GoogleSignIn googleSignIn = GoogleSignIn(serverClientId: webClientId);
-    final googleUser = await googleSignIn.signIn();
-    final googleAuth = await googleUser!.authentication;
-
     try {
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        serverClientId: webClientId,
+      );
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) throw 'Google Sign-In cancelled.';
+
+      final googleAuth = await googleUser.authentication;
       if (googleAuth.accessToken == null || googleAuth.idToken == null) {
         throw 'Google authentication failed.';
       }
@@ -46,80 +62,81 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (response.session != null) {
-        await saveSession(response.session!.accessToken);
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => HomePage(
-                  user_id: response.user!.id,
-                  email: response.user?.email,
-                ),
-          ),
-        );
+        await _saveSession(response.session!.accessToken);
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => HomePage(
+                    user_id: response.user!.id,
+                    email: response.user?.email,
+                  ),
+            ),
+          );
+        }
+      } else {
+        _showSnackBar('Google Sign-In failed. Please try again.');
       }
     } catch (e) {
-      print("Google Sign-In Error: $e");
+      _showSnackBar('Google Sign-In Error: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void login() async {
+  Future<void> _login() async {
     final email = userNameController.text.trim();
     final password = passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Please enter both email and password."),
-          backgroundColor: Colors.red.shade300,
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
+      _showSnackBar('Please enter both email and password.');
       return;
     }
 
+    setState(() => _isLoading = true);
     try {
       final response = await authenticationService.signInWithEmailAndPassword(
         email,
         password,
       );
-
       if (response.session != null) {
-        await saveSession(response.session!.accessToken);
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => HomePage(
-                  email: email,
-                  user_id: supabase.auth.currentUser!.id,
-                ),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Login failed. Please try again."),
-            backgroundColor: Colors.red.shade300,
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+        await _saveSession(response.session!.accessToken);
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => HomePage(
+                    email: email,
+                    user_id: supabase.auth.currentUser!.id,
+                  ),
             ),
-          ),
-        );
+          );
+        }
+      } else {
+        _showSnackBar('Login failed. Please try again.');
       }
     } catch (e) {
+      _showSnackBar('Error: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showSnackBar(String message) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Error: $e"),
-          backgroundColor: Colors.red.shade300,
+          content: Text(
+            message,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onError,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.all(16),
+          margin: const EdgeInsets.all(16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
@@ -130,11 +147,15 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     userNameController.dispose();
     passwordController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       body: Stack(
         children: [
@@ -144,8 +165,8 @@ class _LoginPageState extends State<LoginPage> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                    Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                    theme.colorScheme.primary.withOpacity(0.2),
+                    theme.colorScheme.secondary.withOpacity(0.2),
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -155,211 +176,221 @@ class _LoginPageState extends State<LoginPage> {
           ),
           // Main Content
           SingleChildScrollView(
+            controller: _scrollController,
             child: Center(
               child: Padding(
-                padding: const EdgeInsets.only(top: 100),
-                child: Column(
-                  children: [
-                    // Profile Image
-                    Container(
-                      height: 120,
-                      width: 120,
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: AssetImage("assets/profile.png"),
-                          fit: BoxFit.cover,
-                        ),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
+                padding: EdgeInsets.only(top: screenHeight * 0.12, bottom: 20),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Column(
+                    children: [
+                      // Profile Image
+                      _buildProfileImage(theme),
+                      SizedBox(height: screenHeight * 0.03),
+
+                      // Welcome Text
+                      _buildWelcomeText(theme),
+                      SizedBox(height: screenHeight * 0.03),
+
+                      // Email Input Field
+                      InputFiled(
+                        controller: userNameController,
+                        hintText: "Email Address",
+                        email: true,
                       ),
-                    ),
-                    SizedBox(height: 25),
+                      SizedBox(height: screenHeight * 0.02),
 
-                    // Welcome Text
-                    Text(
-                      "WELCOME BACK",
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
+                      // Password Input Field
+                      InputFiled(
+                        controller: passwordController,
+                        hintText: "Password",
+                        obscure: true,
                       ),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      "Adde Assistance App!!",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.7),
-                      ),
-                    ),
-                    SizedBox(height: 25),
+                      SizedBox(height: screenHeight * 0.015),
 
-                    // Email Input Field
-                    InputFiled(
-                      controller: userNameController,
-                      hintText: "Email Address",
-                      email: true,
-                    ),
-                    SizedBox(height: 15),
+                      // Forget Password Link
+                      _buildForgetPasswordLink(theme),
+                      SizedBox(height: screenHeight * 0.015),
 
-                    // Password Input Field
-                    InputFiled(
-                      controller: passwordController,
-                      hintText: "Password",
-                      obscure: true,
-                    ),
-                    SizedBox(height: 10),
+                      // Login Button
+                      _buildLoginButton(theme),
+                      SizedBox(height: screenHeight * 0.02),
 
-                    // Forget Password Link
-                    // In LoginPage.dart
-                    Padding(
-                      padding: const EdgeInsets.only(left: 220, top: 10),
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ChangePasswordPage(),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          "Forget password?",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                    ),
+                      // Register Link
+                      _buildRegisterLink(theme),
+                      SizedBox(height: screenHeight * 0.06),
 
-                    // Login Button
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: ElevatedButton(
-                        onPressed: login,
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: Size(double.infinity, 50),
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          elevation: 4,
-                        ),
-                        child: Text(
-                          "Log In",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Register Link
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Don't have an account? ",
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.7),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const WelcomePage(),
-                                ),
-                              );
-                            },
-                            child: Text(
-                              "Register",
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    SizedBox(height: 50),
-
-                    // Google Sign-In Button
-                    GestureDetector(
-                      onTap: _nativeGoogleSignIn,
-                      child: Container(
-                        width: 225,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            width: 1,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.5),
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                          color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 5,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 16,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Image.asset("assets/google.png", width: 24),
-                              SizedBox(width: 10),
-                              Text(
-                                "Sign in with Google",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                      // Google Sign-In Button
+                      _buildGoogleSignInButton(theme),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
+          if (_isLoading)
+            Positioned.fill(
+              child: Container(
+                color: theme.colorScheme.shadow.withOpacity(0.3),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProfileImage(ThemeData theme) {
+    return Container(
+      height: 120,
+      width: 120,
+      decoration: BoxDecoration(
+        image: const DecorationImage(
+          image: AssetImage("assets/profile.png"),
+          fit: BoxFit.cover,
+        ),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWelcomeText(ThemeData theme) {
+    return Column(
+      children: [
+        Text(
+          "WELCOME BACK",
+          style: theme.textTheme.displayMedium?.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          "Adde Assistance App!!",
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildForgetPasswordLink(ThemeData theme) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 16),
+        child: GestureDetector(
+          onTap:
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ChangePasswordPage(),
+                ),
+              ),
+          child: Text(
+            "Forget password?",
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginButton(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _login,
+        style: theme.elevatedButtonTheme.style?.copyWith(
+          minimumSize: const WidgetStatePropertyAll(Size(double.infinity, 50)),
+        ),
+        child: Text(
+          "Log In",
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onPrimary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRegisterLink(ThemeData theme) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          "Don't have an account? ",
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        GestureDetector(
+          onTap:
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const WelcomePage()),
+              ),
+          child: Text(
+            "Register",
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGoogleSignInButton(ThemeData theme) {
+    return GestureDetector(
+      onTap: _isLoading ? null : _nativeGoogleSignIn,
+      child: Container(
+        width: 225,
+        decoration: BoxDecoration(
+          border: Border.all(width: 1, color: theme.colorScheme.outline),
+          borderRadius: BorderRadius.circular(10),
+          color: theme.colorScheme.surfaceContainerHighest,
+          boxShadow: [
+            BoxShadow(
+              color: theme.colorScheme.shadow,
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset("assets/google.png", width: 24),
+              const SizedBox(width: 10),
+              Text(
+                "Sign in with Google",
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
