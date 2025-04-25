@@ -77,7 +77,7 @@ class PostProvider with ChangeNotifier {
       String? imageUrl;
       if (imageFile != null) {
         final fileName =
-            '${DateTime.now().millisecondsSinceEpoch}_${motherId}.jpg';
+            '${DateTime.now().millisecondsSinceEpoch}_$motherId.jpg';
         final response = await Supabase.instance.client.storage
             .from('post.images')
             .upload(fileName, imageFile);

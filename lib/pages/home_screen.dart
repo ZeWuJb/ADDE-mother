@@ -10,7 +10,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:adde/auth/login_page.dart';
 import 'package:adde/pages/appointmentPages/calander_page.dart';
 import 'package:adde/pages/health_matrics_page.dart';
-import 'package:adde/pages/journal_page.dart';
 import 'package:adde/pages/name_suggation_page.dart';
 import 'package:adde/pages/profile/profile_page.dart';
 import 'package:flutter_animate/flutter_animate.dart';
