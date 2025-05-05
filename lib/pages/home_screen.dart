@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:adde/pages/chatbot/chat_screen.dart';
 import 'package:adde/pages/name_suggestion/name_suggestion_page.dart';
 import 'package:adde/pages/note/journal_screen.dart';
@@ -9,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:adde/auth/login_page.dart';
-import 'package:adde/pages/appointmentPages/calander_page.dart';
 import 'package:adde/pages/health_matrics_page.dart';
 import 'package:adde/pages/profile/profile_page.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -44,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _profileImageBase64;
   late Future<void> _notificationCheckFuture;
   List<Map<String, dynamic>> _weeklyTips = [];
+  bool _hasLoadedWeeklyTips = false; // Track if we've loaded tips
 
   @override
   void initState() {
@@ -52,11 +53,10 @@ class _HomeScreenState extends State<HomeScreen> {
     _updatePregnancyProgress();
     _loadProfileImage();
     _notificationCheckFuture = _checkUnreadNotifications();
-    _loadWeeklyTips();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.jumpTo(0); // Ensure top is visible on load
+        _scrollController.jumpTo(0);
       }
       _scheduleHealthTips();
       _checkAndShowTodaysTip();
@@ -65,6 +65,15 @@ class _HomeScreenState extends State<HomeScreen> {
     Future.delayed(const Duration(days: 1), () {
       if (mounted) _updatePregnancyProgress();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasLoadedWeeklyTips) {
+      _hasLoadedWeeklyTips = true;
+      _loadWeeklyTips();
+    }
   }
 
   void _updatePregnancyProgress() {
@@ -98,8 +107,10 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       listen: false,
     );
+    final locale = AppLocalizations.of(context)!.localeName; // Get the locale
     final history = await notificationService.getNotificationHistory(
       widget.user_id,
+      locale, // Add the locale parameter
     );
     setState(() {
       _hasUnreadNotifications = history.any((n) => n['seen'] == false);
@@ -111,9 +122,14 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       listen: false,
     );
+    final l10n = AppLocalizations.of(context)!; // Access localized strings
+    final locale = l10n.localeName; // Get the locale
     await notificationService.scheduleDailyHealthTips(
       widget.pregnancyStartDate,
       widget.user_id,
+      locale, // Add the locale
+      l10n.notificationChannelName, // Localized channel name ("Daily Tip")
+      l10n.notificationChannelDescription, // Localized description ("Health tips every 4 days")
     );
   }
 
@@ -122,56 +138,100 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       listen: false,
     );
+    final l10n = AppLocalizations.of(context)!; // Access localized strings
+    final locale = l10n.localeName; // Get the locale
     await notificationService.checkAndShowTodaysTip(
       widget.user_id,
       widget.pregnancyStartDate,
+      locale, // Add the locale
+      l10n.notificationChannelName, // Localized channel name ("Daily Tip")
+      l10n.notificationChannelDescription, // Localized description ("Health tips every 4 days")
     );
   }
 
   Future<void> _loadWeeklyTips() async {
+    print('Starting _loadWeeklyTips...');
+    final l10n = AppLocalizations.of(context)!;
+    final currentLocale = Localizations.localeOf(context).languageCode;
+    final titleField = currentLocale == 'am' ? 'title_am' : 'title_en';
+    print('Locale: $currentLocale, Title Field: $titleField');
+
     try {
       final response = await Supabase.instance.client
           .from('weekly_tips')
-          .select()
+          .select('id, week, $titleField, image')
           .order('week', ascending: true)
           .limit(3);
+      print('Supabase response: $response');
+
       setState(() {
-        _weeklyTips = List<Map<String, dynamic>>.from(response);
+        _weeklyTips =
+            List<Map<String, dynamic>>.from(response).map((tip) {
+              return {
+                'id': tip['id'],
+                'week': tip['week'],
+                'title': tip[titleField] ?? tip['title_en'] ?? l10n.noTitle,
+                'image': tip['image'],
+              };
+            }).toList();
+        print('Loaded weekly tips: $_weeklyTips');
       });
     } catch (e) {
       print('Error loading weekly tips: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.errorLoadingEntries(e.toString())),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          action: SnackBarAction(
+            label: l10n.retryButton,
+            onPressed: _loadWeeklyTips,
+            textColor: Theme.of(context).colorScheme.onError,
+          ),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: _buildAppBar(context),
-      floatingActionButton: _buildFloatingActionButton(context),
-      body: Container(
-        decoration: _buildBackgroundGradient(),
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            SliverToBoxAdapter(child: _buildPregnancyJourneySection()),
-            SliverPadding(
-              padding: const EdgeInsets.all(20),
-              sliver: SliverToBoxAdapter(
-                child: _buildWeeklyTipsSection(context),
+    final l10n = AppLocalizations.of(context)!;
+
+    return SafeArea(
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: _buildAppBar(context),
+        floatingActionButton: _buildFloatingActionButton(context),
+        body: Container(
+          decoration: _buildBackgroundGradient(),
+          child: CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              SliverToBoxAdapter(child: _buildPregnancyJourneySection()),
+              SliverPadding(
+                padding: const EdgeInsets.all(20),
+                sliver: SliverToBoxAdapter(
+                  child: _buildWeeklyTipsSection(context),
+                ),
               ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              sliver: SliverToBoxAdapter(child: _buildFeaturesSection(context)),
-            ),
-          ],
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                sliver: SliverToBoxAdapter(
+                  child: _buildFeaturesSection(context),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   AppBar _buildAppBar(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -197,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              "Hi, ${widget.fullName}!",
+              l10n.greeting(widget.fullName),
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -290,7 +350,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onPressed:
               () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => LoginPage()),
+                MaterialPageRoute(builder: (_) => const LoginPage()),
               ),
         ),
       ],
@@ -302,7 +362,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onPressed:
           () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => ChatScreen()),
+            MaterialPageRoute(builder: (_) => const ChatScreen()),
           ),
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       elevation: 6,
@@ -328,6 +388,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPregnancyJourneySection() {
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 100, 20, 40),
       decoration: BoxDecoration(
@@ -358,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         children: [
           Text(
-            "Pregnancy Journey",
+            l10n.pregnancyJourney,
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -373,7 +435,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildCounterBox(_pregnancyWeeks, "Weeks"),
+              _buildCounterBox(_pregnancyWeeks, l10n.weeksLabel),
               const SizedBox(width: 20),
               CircleAvatar(
                 radius: 70,
@@ -390,7 +452,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ).animate().scale(duration: 600.ms, curve: Curves.easeOut),
               const SizedBox(width: 20),
-              _buildCounterBox(_pregnancyDays, "Days"),
+              _buildCounterBox(_pregnancyDays, l10n.daysLabel),
             ],
           ),
           const SizedBox(height: 24),
@@ -426,11 +488,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildWeeklyTipsSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Weekly Tips",
+          l10n.weeklyTips,
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
@@ -444,7 +508,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _weeklyTips.isEmpty
                   ? Center(
                     child: Text(
-                      "No tips yet—add some!",
+                      l10n.noTipsYet,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 16,
@@ -459,18 +523,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       return Padding(
                         padding: const EdgeInsets.only(right: 12),
                         child: GestureDetector(
-                          onTap:
-                              () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (_) => WeeklyTipPage(
-                                        initialTip: tip,
-                                        pregnancyStartDate:
-                                            widget.pregnancyStartDate,
-                                      ),
-                                ),
+                          onTap: () {
+                            print(
+                              'Navigating to WeeklyTipPage with initialTip: $tip',
+                            );
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => WeeklyTipPage(
+                                      initialTip: tip,
+                                      pregnancyStartDate:
+                                          widget.pregnancyStartDate,
+                                    ),
                               ),
+                            );
+                          },
                           child: Container(
                             width: 200,
                             decoration: BoxDecoration(
@@ -527,7 +595,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        "Week ${tip['week']}",
+                                        l10n.weekLabel(tip['week']),
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
@@ -539,7 +607,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        tip['title'] ?? 'No Title',
+                                        tip['title'] ?? l10n.noTitle,
                                         style: TextStyle(
                                           fontSize: 14,
                                           color:
@@ -566,21 +634,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFeaturesSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     final features = [
       {
-        "icon": "assets/calendar.png",
-        "name": "Calendar",
-        "description": "Schedule Appointments",
-        "navigation":
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => CalendarPage()),
-            ),
-      },
-      {
         "icon": "assets/bmi.png",
-        "name": "Health Metrics",
-        "description": "Check your health",
+        "name": l10n.featureHealthMetrics,
+        "description": l10n.featureHealthMetricsDescription,
         "navigation":
             () => Navigator.push(
               context,
@@ -591,22 +651,22 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       {
         "icon": "assets/diary.png",
-        "name": "Journal",
-        "description": "Write your thoughts",
+        "name": l10n.featureJournal,
+        "description": l10n.featureJournalDescription,
         "navigation":
             () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => JournalScreen()),
+              MaterialPageRoute(builder: (_) => const JournalScreen()),
             ),
       },
       {
         "icon": "assets/label.png",
-        "name": "Name Suggestion",
-        "description": "Find baby names",
+        "name": l10n.featureNameSuggestion,
+        "description": l10n.featureNameSuggestionDescription,
         "navigation":
             () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => NameSuggestionPage()),
+              MaterialPageRoute(builder: (_) => const NameSuggestionPage()),
             ),
       },
     ];
@@ -615,7 +675,7 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Explore Features",
+          l10n.exploreFeatures,
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,

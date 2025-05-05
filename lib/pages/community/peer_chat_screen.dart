@@ -1,3 +1,4 @@
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -74,24 +75,37 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
   }
 
   void _displayError(dynamic error) {
-    String message = 'Unable to load chat. Please try again.';
+    final l10n = AppLocalizations.of(context)!;
+    String message = l10n.unableToLoadChat;
     if (error.toString().contains(
       'relation "public.communitymessages" does not exist',
     )) {
-      message = 'Chat service unavailable. Contact support.';
+      message = l10n.chatServiceUnavailable;
     } else if (error.toString().contains('User not authenticated')) {
-      message = 'Please log in to access chat.';
+      message = l10n.pleaseLogInChat;
     } else if (error is PostgrestException) {
-      message = 'Database error: ${error.message}';
+      message = l10n.databaseError(error.message);
     } else if (error.toString().contains('network')) {
-      message = 'Network error. Check your connection.';
+      message = l10n.networkError;
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 5),
-        action: SnackBarAction(label: 'Retry', onPressed: _initializeChat),
+        content: Text(
+          message,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onError,
+          ),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        action: SnackBarAction(
+          label: l10n.retryButton,
+          textColor: Theme.of(context).colorScheme.onErrorContainer,
+          onPressed: _initializeChat,
+        ),
       ),
     );
   }
@@ -124,8 +138,16 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
       print('Message send error: $e, Type: ${e.runtimeType}');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to send message: ${e.toString()}'),
-          duration: const Duration(seconds: 3),
+          content: Text(
+            AppLocalizations.of(context)!.failedToSendMessage(e.toString()),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onError,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
     }
@@ -141,19 +163,36 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
   }
 
   Widget _buildChatBody(ChatProvider chatProvider) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     if (_hasError) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              'Unable to load chat',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+            Text(
+              l10n.unableToLoadChat,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _initializeChat,
-              child: const Text('Retry'),
+              style: theme.elevatedButtonTheme.style?.copyWith(
+                backgroundColor: WidgetStatePropertyAll(
+                  theme.colorScheme.primary,
+                ),
+                foregroundColor: WidgetStatePropertyAll(
+                  theme.colorScheme.onPrimary,
+                ),
+              ),
+              child: Text(
+                l10n.retryButton,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onPrimary,
+                ),
+              ),
             ),
           ],
         ),
@@ -163,10 +202,10 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
     if (chatProvider.messages.isEmpty) {
       return Center(
         child: Text(
-          'Start chatting with ${widget.receiverName}',
-          style: Theme.of(
-            context,
-          ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+          l10n.startChatting(widget.receiverName),
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
       );
     }
@@ -177,7 +216,7 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
           child: ListView.builder(
             controller: _scrollController,
             reverse: true,
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(MediaQuery.of(context).size.height * 0.02),
             itemCount: chatProvider.messages.length,
             itemBuilder: (context, index) {
               final message = chatProvider.messages[index];
@@ -197,72 +236,90 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
   }
 
   Widget _buildMessageBubble(Message message, bool isSender) {
+    final theme = Theme.of(context);
     return Align(
       alignment: isSender ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isSender ? Theme.of(context).primaryColor : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment:
-              isSender ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: [
-            Text(
-              message.content,
-              style: TextStyle(
-                color: isSender ? Colors.white : Colors.black87,
-                fontSize: 16,
+      child: Semantics(
+        label:
+            isSender
+                ? 'Sent message: ${message.content}'
+                : 'Received message: ${message.content}',
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.75,
+          ),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color:
+                isSender
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.surfaceContainer,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.onSurface.withOpacity(0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
               ),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  timeago.format(message.createdAt),
-                  style: TextStyle(
-                    color: isSender ? Colors.white70 : Colors.grey[600],
-                    fontSize: 12,
-                  ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment:
+                isSender ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            children: [
+              Text(
+                message.content,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color:
+                      isSender
+                          ? theme.colorScheme.onPrimary
+                          : theme.colorScheme.onSurface,
+                  fontSize: 16,
                 ),
-                if (isSender && message.isSeen)
-                  const Padding(
-                    padding: EdgeInsets.only(left: 4),
-                    child: Icon(
-                      Icons.check_circle,
-                      size: 14,
-                      color: Colors.white70,
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    timeago.format(message.createdAt),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color:
+                          isSender
+                              ? theme.colorScheme.onPrimary.withOpacity(0.7)
+                              : theme.colorScheme.onSurfaceVariant,
+                      fontSize: 12,
                     ),
                   ),
-              ],
-            ),
-          ],
+                  if (isSender && message.isSeen)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Icon(
+                        Icons.check_circle,
+                        size: 14,
+                        color: theme.colorScheme.onPrimary.withOpacity(0.7),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildMessageInput() {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surfaceContainer,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: theme.colorScheme.onSurface.withOpacity(0.05),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -277,31 +334,44 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
               minLines: 1,
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: _hasError ? 'Chat unavailable' : 'Type a message...',
-                hintStyle: TextStyle(
-                  color: _hasError ? Colors.grey[700] : Colors.grey[500],
+                hintText:
+                    _hasError ? l10n.chatUnavailableHint : l10n.typeMessageHint,
+                hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                  color:
+                      _hasError
+                          ? theme.colorScheme.onSurfaceVariant
+                          : theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: _hasError ? Colors.grey[300] : Colors.grey[100],
+                fillColor:
+                    _hasError
+                        ? theme.colorScheme.surfaceContainerHighest
+                        : theme.colorScheme.surfaceContainerLow,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
                 ),
               ),
-              style: const TextStyle(color: Colors.black87),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+              ),
             ),
           ),
           const SizedBox(width: 8),
           IconButton(
             icon: Icon(
               Icons.send,
-              color: _hasError ? Colors.grey : const Color(0xFFf7a1c4),
+              color:
+                  _hasError
+                      ? theme.colorScheme.onSurfaceVariant
+                      : theme.colorScheme.primary,
             ),
             onPressed: _hasError ? null : _sendMessage,
+            tooltip: l10n.sendMessageTooltip,
           ),
         ],
       ),
@@ -310,15 +380,30 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: Text(widget.receiverName),
-        backgroundColor: Colors.white,
+        title: Text(
+          widget.receiverName,
+          style: theme.appBarTheme.titleTextStyle?.copyWith(
+            color: theme.colorScheme.onPrimary,
+          ),
+        ),
+        backgroundColor: theme.colorScheme.primary,
+        elevation: theme.appBarTheme.elevation,
       ),
       body:
           _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    theme.colorScheme.primary,
+                  ),
+                ),
+              )
               : Consumer<ChatProvider>(
                 builder:
                     (context, chatProvider, _) => _buildChatBody(chatProvider),

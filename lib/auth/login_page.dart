@@ -68,7 +68,7 @@ class _LoginPageState extends State<LoginPage> {
             context,
             MaterialPageRoute(
               builder:
-                  (context) => HomePage(
+                  (context) => BottomPageNavigation(
                     user_id: response.user!.id,
                     email: response.user?.email,
                   ),
@@ -107,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
             context,
             MaterialPageRoute(
               builder:
-                  (context) => HomePage(
+                  (context) => BottomPageNavigation(
                     email: email,
                     user_id: supabase.auth.currentUser!.id,
                   ),

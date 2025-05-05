@@ -1,3 +1,4 @@
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import 'appointments_page.dart';
@@ -9,60 +10,134 @@ class CalendarPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mother App'),
-        backgroundColor: Colors.teal,
+        title: Text(
+          l10n.motherAppTitle,
+          style: theme.appBarTheme.titleTextStyle?.copyWith(
+            color: theme.appBarTheme.foregroundColor,
+          ),
+        ),
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        elevation: theme.appBarTheme.elevation,
       ),
       body: Column(
         children: [
-          // Navigation Bar
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const DoctorsPage(),
+                Semantics(
+                  label: l10n.navigateToDoctors,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DoctorsPage(),
+                        ),
+                      );
+                    },
+                    style: theme.elevatedButtonTheme.style?.copyWith(
+                      backgroundColor: WidgetStatePropertyAll(
+                        theme.colorScheme.primary,
                       ),
-                    );
-                  },
-                  child: const Text('Doctors'),
+                      foregroundColor: WidgetStatePropertyAll(
+                        theme.colorScheme.onPrimary,
+                      ),
+                      minimumSize: WidgetStatePropertyAll(
+                        Size(screenWidth * 0.25, 48),
+                      ),
+                    ),
+                    child: Text(
+                      l10n.doctorsLabel,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onPrimary,
+                      ),
+                    ),
+                  ),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const BookingPage(doctorId: ''),
+                Semantics(
+                  label: l10n.navigateToBooking,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const BookingPage(doctorId: ''),
+                        ),
+                      );
+                    },
+                    style: theme.elevatedButtonTheme.style?.copyWith(
+                      backgroundColor: WidgetStatePropertyAll(
+                        theme.colorScheme.primary,
                       ),
-                    );
-                  },
-                  child: const Text('Booking'),
+                      foregroundColor: WidgetStatePropertyAll(
+                        theme.colorScheme.onPrimary,
+                      ),
+                      minimumSize: WidgetStatePropertyAll(
+                        Size(screenWidth * 0.25, 48),
+                      ),
+                    ),
+                    child: Text(
+                      l10n.bookingLabel,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onPrimary,
+                      ),
+                    ),
+                  ),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => SocketTestPage(doctorId: ''),
+                Semantics(
+                  label: l10n.navigateToAppointments,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => const SocketTestPage(doctorId: ''),
+                        ),
+                      );
+                    },
+                    style: theme.elevatedButtonTheme.style?.copyWith(
+                      backgroundColor: WidgetStatePropertyAll(
+                        theme.colorScheme.primary,
                       ),
-                    );
-                  },
-                  child: const Text('Appointments'),
+                      foregroundColor: WidgetStatePropertyAll(
+                        theme.colorScheme.onPrimary,
+                      ),
+                      minimumSize: WidgetStatePropertyAll(
+                        Size(screenWidth * 0.25, 48),
+                      ),
+                    ),
+                    child: Text(
+                      l10n.appointmentsLabel,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onPrimary,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-          const Expanded(
+          Expanded(
             child: Center(
               child: Text(
-                'Welcome to the Mother App!',
-                style: TextStyle(fontSize: 20),
+                l10n.welcomeMessage,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
           ),

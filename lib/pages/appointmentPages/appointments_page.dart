@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
-import 'tele-conseltation_page.dart'; // Import the video consultation page
+import 'package:adde/l10n/arb/app_localizations.dart';
+import 'tele-conseltation_page.dart';
 
 class SocketTestPage extends StatefulWidget {
-  // Make doctorId optional since we don't need it for the main appointments page
   final String? doctorId;
-
   const SocketTestPage({super.key, this.doctorId});
 
   @override
@@ -18,7 +17,6 @@ class _SocketTestPageState extends State<SocketTestPage>
     with SingleTickerProviderStateMixin {
   final supabase = Supabase.instance.client;
 
-  // Appointment lists by status
   List<Map<String, dynamic>> pendingAppointments = [];
   List<Map<String, dynamic>> acceptedAppointments = [];
   List<Map<String, dynamic>> rejectedAppointments = [];
@@ -28,14 +26,9 @@ class _SocketTestPageState extends State<SocketTestPage>
   bool isLoading = true;
   bool isReconnecting = false;
 
-  // Subscription channels
   RealtimeChannel? tempAppointmentsChannel;
   RealtimeChannel? appointmentsChannel;
-
-  // Tab controller for the different appointment categories
   late TabController _tabController;
-
-  // Keep track of appointments we've already processed
   final Set<String> _processedAppointments = {};
 
   @override
@@ -43,12 +36,10 @@ class _SocketTestPageState extends State<SocketTestPage>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
 
-    // Initialize data and subscriptions
     Future.microtask(() {
       _setupRealtimeSubscriptions();
       _loadAppointments();
 
-      // Set up a timer to periodically check for new appointments
       Timer.periodic(const Duration(seconds: 30), (timer) {
         if (mounted) {
           _fetchAppointmentsFromDatabase();
@@ -61,13 +52,12 @@ class _SocketTestPageState extends State<SocketTestPage>
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) {
       setState(() {
-        errorMessage = 'User not authenticated';
+        errorMessage = AppLocalizations.of(context)!.pleaseLogIn;
         connectionStatus = 'Authentication Error';
       });
       return;
     }
 
-    // Subscribe to temporary appointments
     tempAppointmentsChannel =
         supabase
             .channel('temp-appointments-mother-$userId')
@@ -77,7 +67,6 @@ class _SocketTestPageState extends State<SocketTestPage>
               table: 'temporary_appointments',
               callback: (payload) {
                 if (mounted) {
-                  // Refresh appointments when a temporary appointment is deleted
                   _fetchAppointmentsFromDatabase();
                 }
               },
@@ -88,14 +77,12 @@ class _SocketTestPageState extends State<SocketTestPage>
               table: 'temporary_appointments',
               callback: (payload) {
                 if (mounted) {
-                  // Refresh appointments when a new temporary appointment is created
                   _fetchAppointmentsFromDatabase();
                 }
               },
             )
             .subscribe();
 
-    // Subscribe to regular appointments
     appointmentsChannel =
         supabase
             .channel('appointments-mother-$userId')
@@ -105,15 +92,14 @@ class _SocketTestPageState extends State<SocketTestPage>
               table: 'appointments',
               callback: (payload) {
                 if (mounted) {
-                  // Refresh appointments when a new appointment is created
                   _fetchAppointmentsFromDatabase();
-
-                  // Show notification for accepted appointment
-                  _showStatusDialog(
-                    'Appointment Accepted',
-                    'Your appointment has been accepted! The video consultation will open shortly.',
-                    Colors.green,
-                  );
+                  if (payload.newRecord['status'] == 'accepted') {
+                    _showStatusDialog(
+                      AppLocalizations.of(context)!.appointmentAccepted,
+                      AppLocalizations.of(context)!.videoConsultationMessage,
+                      theme: Theme.of(context),
+                    );
+                  }
                 }
               },
             )
@@ -123,7 +109,6 @@ class _SocketTestPageState extends State<SocketTestPage>
               table: 'appointments',
               callback: (payload) {
                 if (mounted) {
-                  // Refresh appointments when an appointment is updated
                   _fetchAppointmentsFromDatabase();
                 }
               },
@@ -132,124 +117,81 @@ class _SocketTestPageState extends State<SocketTestPage>
   }
 
   Future<void> _loadAppointments() async {
-    setState(() {
-      isLoading = true;
-    });
-
+    setState(() => isLoading = true);
     try {
-      final userId = supabase.auth.currentUser?.id;
-      if (userId == null) {
-        setState(() {
-          errorMessage = 'User not authenticated';
-          isLoading = false;
-        });
-        return;
-      }
-
-      // Fetch appointments directly from database
       await _fetchAppointmentsFromDatabase();
     } catch (error) {
       if (mounted) {
         setState(() {
-          errorMessage = 'Failed to load appointments: $error';
+          errorMessage = AppLocalizations.of(
+            context,
+          )!.errorLabel(error.toString());
         });
       }
     } finally {
       if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
+        setState(() => isLoading = false);
       }
     }
   }
 
-  // Fetch appointments directly from Supabase
   Future<void> _fetchAppointmentsFromDatabase() async {
     try {
       final userId = supabase.auth.currentUser?.id;
       if (userId == null) return;
 
-      // Fetch temporary appointments
       final tempResponse = await supabase
           .from('temporary_appointments')
           .select('''
-            id, 
-            doctor_id,
-            requested_time, 
-            created_at,
-            doctors:doctor_id (
-              id, 
-              full_name, 
-              speciality,
-              profile_url
-            )
+            id, doctor_id, requested_time, created_at,
+            doctors:doctor_id (id, full_name, speciality, profile_url)
           ''')
           .eq('mother_id', userId)
           .order('created_at', ascending: false);
 
-      // Fetch regular appointments
       final appResponse = await supabase
           .from('appointments')
           .select('''
-            id, 
-            requested_time, 
-            status, 
-            payment_status, 
-            video_conference_link,
-            created_at,
-            updated_at,
-            doctors:doctor_id (
-              id, 
-              full_name, 
-              speciality,
-              profile_url
-            )
+            id, requested_time, status, payment_status, video_conference_link,
+            created_at, updated_at,
+            doctors:doctor_id (id, full_name, speciality, profile_url)
           ''')
-          .eq('mother_id', userId) // Use userId directly as mother_id
+          .eq('mother_id', userId)
           .order('requested_time', ascending: true);
 
-      // Process temporary appointments (all are pending)
-      List<Map<String, dynamic>> pending = [];
-      for (var appointment in tempResponse) {
-        // Convert to Map<String, dynamic> if it's not already
-        final appointmentMap = Map<String, dynamic>.from(appointment);
-        appointmentMap['status'] = 'pending';
-        appointmentMap['appointmentId'] = appointmentMap['id'];
-        pending.add(appointmentMap);
-      }
+      List<Map<String, dynamic>> pending =
+          tempResponse
+              .map(
+                (appointment) => {
+                  ...Map<String, dynamic>.from(appointment),
+                  'status': 'pending',
+                  'appointmentId': appointment['id'],
+                },
+              )
+              .toList();
 
-      // Process regular appointments by status
       List<Map<String, dynamic>> accepted = [];
       List<Map<String, dynamic>> declined = [];
 
       for (var appointment in appResponse) {
-        // Convert to Map<String, dynamic> if it's not already
         final appointmentMap = Map<String, dynamic>.from(appointment);
-
         String status = appointmentMap['status'] ?? 'pending';
 
         if (status == 'accepted') {
           accepted.add(appointmentMap);
-
-          // Check if this is a newly accepted appointment with a video link
-          if (appointmentMap['video_conference_link'] != null &&
-              appointmentMap['video_conference_link'].toString().isNotEmpty) {
-            // Check if we've already processed this appointment
-            if (!_processedAppointments.contains(appointmentMap['id'])) {
-              _processedAppointments.add(appointmentMap['id']);
-
-              // Navigate to video call immediately
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _navigateToVideoCall(appointmentMap);
-              });
-            }
+          if (appointmentMap['video_conference_link']?.toString().isNotEmpty ==
+                  true &&
+              !_processedAppointments.contains(appointmentMap['id'])) {
+            _processedAppointments.add(appointmentMap['id']);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _navigateToVideoCall(appointmentMap);
+            });
           }
         } else if (status == 'declined' || status == 'cancelled') {
           declined.add(appointmentMap);
         }
       }
 
-      // Update state with database appointments
       if (mounted) {
         setState(() {
           pendingAppointments = pending;
@@ -260,18 +202,16 @@ class _SocketTestPageState extends State<SocketTestPage>
     } catch (error) {
       if (mounted) {
         setState(() {
-          errorMessage = 'Error fetching appointments: $error';
+          errorMessage = AppLocalizations.of(
+            context,
+          )!.errorLabel(error.toString());
         });
       }
     }
   }
 
   void _navigateToVideoCall(Map<String, dynamic> appointment) {
-    final doctorName =
-        appointment['doctors'] != null
-            ? appointment['doctors']['full_name']
-            : 'Doctor';
-
+    final doctorName = appointment['doctors']?['full_name'] ?? 'Doctor';
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -284,31 +224,57 @@ class _SocketTestPageState extends State<SocketTestPage>
     );
   }
 
-  void _showStatusDialog(String title, String message, Color color) {
+  void _showStatusDialog(
+    String title,
+    String message, {
+    required ThemeData theme,
+  }) {
     if (!mounted) return;
 
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: Text(message),
-          backgroundColor: color.withAlpha(25),
-          actions: [
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+      builder:
+          (context) => AlertDialog(
+            title: Text(
+              title,
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: theme.colorScheme.onSurface,
+              ),
             ),
-          ],
-        );
-      },
+            content: Text(
+              message,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            backgroundColor: theme.colorScheme.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: theme.textButtonTheme.style?.copyWith(
+                  foregroundColor: WidgetStatePropertyAll(
+                    theme.colorScheme.primary,
+                  ),
+                ),
+                child: Text(
+                  AppLocalizations.of(context)!.okLabel,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
     );
   }
 
   String _formatDateTime(String? dateTimeString) {
-    if (dateTimeString == null) return 'Not specified';
+    if (dateTimeString == null) {
+      return AppLocalizations.of(context)!.notSpecified;
+    }
     try {
       final dateTime = DateTime.parse(dateTimeString);
       return DateFormat('MMM d, yyyy - h:mm a').format(dateTime);
@@ -317,7 +283,11 @@ class _SocketTestPageState extends State<SocketTestPage>
     }
   }
 
-  Widget _buildAppointmentCard(Map<String, dynamic> appointment) {
+  Widget _buildAppointmentCard(
+    Map<String, dynamic> appointment,
+    ThemeData theme,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
     final status = appointment['status'] ?? 'unknown';
     final Color statusColor =
         status == 'pending'
@@ -325,97 +295,121 @@ class _SocketTestPageState extends State<SocketTestPage>
             : status == 'accepted'
             ? Colors.green
             : Colors.red;
-
-    // Check if this appointment has a video conference link
     final hasVideoLink =
-        appointment['video_conference_link'] != null &&
-        appointment['video_conference_link'].toString().isNotEmpty;
+        appointment['video_conference_link']?.toString().isNotEmpty == true;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    appointment['doctor_name'] ??
-                        (appointment['doctors'] != null
-                            ? appointment['doctors']['full_name']
-                            : 'Unknown Doctor'),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withAlpha(50),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    status.toUpperCase(),
-                    style: TextStyle(
-                      color: statusColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+    return Semantics(
+      label: l10n.doctorRating(
+        appointment['doctors']?['full_name'] ?? 'Unknown Doctor',
+        appointment['doctors']?['speciality'] ?? '',
+      ),
+      child: Card(
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        elevation: theme.cardTheme.elevation,
+        shape: theme.cardTheme.shape,
+        color: theme.cardTheme.color,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      appointment['doctor_name'] ??
+                          (appointment['doctors']?['full_name'] ??
+                              'Unknown Doctor'),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
-                const SizedBox(width: 8),
-                Text(
-                  _formatDateTime(appointment['requested_time']),
-                  style: TextStyle(color: Colors.grey[700]),
-                ),
-              ],
-            ),
-            if (status == 'accepted') ...[
-              const SizedBox(height: 12),
-              ElevatedButton.icon(
-                onPressed: () {
-                  _navigateToVideoCall(appointment);
-                },
-                icon: const Icon(Icons.video_call),
-                label: const Text('Join Video Call'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: hasVideoLink ? Colors.blue : Colors.grey,
-                  foregroundColor: Colors.white,
-                ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      status.toUpperCase(),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _formatDateTime(appointment['requested_time']),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+              if (status == 'accepted') ...[
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed:
+                      hasVideoLink
+                          ? () => _navigateToVideoCall(appointment)
+                          : null,
+                  icon: const Icon(Icons.video_call),
+                  label: Text(l10n.joinVideoCall),
+                  style: theme.elevatedButtonTheme.style?.copyWith(
+                    backgroundColor: WidgetStatePropertyAll(
+                      hasVideoLink
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.surfaceContainerHighest,
+                    ),
+                    foregroundColor: WidgetStatePropertyAll(
+                      hasVideoLink
+                          ? theme.colorScheme.onPrimary
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildEmptyState(String message, IconData icon) {
+  Widget _buildEmptyState(String message, IconData icon, ThemeData theme) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 64, color: Colors.grey[400]),
+          Icon(
+            icon,
+            size: 64,
+            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+          ),
           const SizedBox(height: 16),
           Text(
             message,
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -425,7 +419,6 @@ class _SocketTestPageState extends State<SocketTestPage>
 
   @override
   void dispose() {
-    // Clean up subscriptions
     tempAppointmentsChannel?.unsubscribe();
     appointmentsChannel?.unsubscribe();
     _tabController.dispose();
@@ -434,151 +427,182 @@ class _SocketTestPageState extends State<SocketTestPage>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Appointments'),
+        title: Text(
+          l10n.pageTitleAppointments,
+          style: theme.appBarTheme.titleTextStyle?.copyWith(
+            color: theme.appBarTheme.foregroundColor,
+          ),
+        ),
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        elevation: theme.appBarTheme.elevation,
         bottom: TabBar(
           controller: _tabController,
+          labelStyle: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+          unselectedLabelStyle: theme.textTheme.bodyMedium,
+          labelColor: theme.colorScheme.primary,
+          unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+          indicatorColor: theme.colorScheme.primary,
           tabs: [
             Tab(
-              icon: const Icon(Icons.hourglass_empty),
-              text: 'Pending (${pendingAppointments.length})',
+              icon: Icon(
+                Icons.hourglass_empty,
+                color: theme.colorScheme.primary,
+              ),
+              text: l10n.tabPending(pendingAppointments.length),
             ),
             Tab(
-              icon: const Icon(Icons.check_circle),
-              text: 'Accepted (${acceptedAppointments.length})',
+              icon: Icon(Icons.check_circle, color: theme.colorScheme.primary),
+              text: l10n.tabAccepted(acceptedAppointments.length),
             ),
             Tab(
-              icon: const Icon(Icons.cancel),
-              text: 'Rejected (${rejectedAppointments.length})',
+              icon: Icon(Icons.cancel, color: theme.colorScheme.primary),
+              text: l10n.tabRejected(rejectedAppointments.length),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              _loadAppointments();
-            },
-            tooltip: 'Refresh',
+            icon: Icon(Icons.refresh, color: theme.colorScheme.primary),
+            onPressed: _loadAppointments,
+            tooltip: l10n.refreshAppointmentsTooltip,
           ),
         ],
       ),
       body: Column(
         children: [
-          // Connection status indicator (only show when disconnected)
           if (connectionStatus != 'Connected')
             Container(
               padding: const EdgeInsets.all(8),
-              color: Colors.red[50],
+              color: theme.colorScheme.error.withOpacity(0.1),
               child: Row(
                 children: [
-                  const Icon(Icons.wifi_off, color: Colors.red, size: 18),
+                  Icon(
+                    Icons.wifi_off,
+                    color: theme.colorScheme.error,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Text(
-                    'Status: $connectionStatus',
-                    style: const TextStyle(
-                      color: Colors.red,
+                    l10n.statusPrefix(connectionStatus),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.error,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   if (isReconnecting)
-                    const Padding(
-                      padding: EdgeInsets.only(left: 8.0),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
                       child: SizedBox(
                         width: 12,
                         height: 12,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            theme.colorScheme.error,
+                          ),
                         ),
                       ),
                     ),
                   const Spacer(),
                   TextButton(
                     onPressed: () {
-                      setState(() {
-                        isReconnecting = true;
-                      });
+                      setState(() => isReconnecting = true);
                       _fetchAppointmentsFromDatabase();
                       setState(() {
                         isReconnecting = false;
                         connectionStatus = 'Connected';
                       });
                     },
-                    style: TextButton.styleFrom(foregroundColor: Colors.red),
-                    child: const Text('Retry'),
+                    style: theme.textButtonTheme.style?.copyWith(
+                      foregroundColor: WidgetStatePropertyAll(
+                        theme.colorScheme.error,
+                      ),
+                    ),
+                    child: Text(
+                      l10n.retryLabel,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-
-          // Error message if any
           if (errorMessage.isNotEmpty)
             Container(
               padding: const EdgeInsets.all(8),
-              color: Colors.red[50],
+              color: theme.colorScheme.error.withOpacity(0.1),
               width: double.infinity,
               child: Text(
-                'Error: $errorMessage',
-                style: const TextStyle(color: Colors.red),
+                errorMessage,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
               ),
             ),
-
-          // Main content
           Expanded(
             child:
                 isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? Center(
+                      child: CircularProgressIndicator(
+                        color: theme.colorScheme.primary,
+                      ),
+                    )
                     : TabBarView(
                       controller: _tabController,
                       children: [
-                        // Pending Appointments Tab
                         pendingAppointments.isEmpty
                             ? _buildEmptyState(
-                              'No pending appointments.\nRequests you send will appear here.',
+                              l10n.noPendingAppointments,
                               Icons.hourglass_empty,
+                              theme,
                             )
                             : ListView.builder(
                               itemCount: pendingAppointments.length,
-                              padding: const EdgeInsets.all(8),
-                              itemBuilder: (context, index) {
-                                return _buildAppointmentCard(
-                                  pendingAppointments[index],
-                                );
-                              },
+                              padding: EdgeInsets.all(screenHeight * 0.01),
+                              itemBuilder:
+                                  (context, index) => _buildAppointmentCard(
+                                    pendingAppointments[index],
+                                    theme,
+                                  ),
                             ),
-
-                        // Accepted Appointments Tab
                         acceptedAppointments.isEmpty
                             ? _buildEmptyState(
-                              'No accepted appointments.\nAccepted appointments will appear here.',
+                              l10n.noAcceptedAppointments,
                               Icons.check_circle,
+                              theme,
                             )
                             : ListView.builder(
                               itemCount: acceptedAppointments.length,
-                              padding: const EdgeInsets.all(8),
-                              itemBuilder: (context, index) {
-                                return _buildAppointmentCard(
-                                  acceptedAppointments[index],
-                                );
-                              },
+                              padding: EdgeInsets.all(screenHeight * 0.01),
+                              itemBuilder:
+                                  (context, index) => _buildAppointmentCard(
+                                    acceptedAppointments[index],
+                                    theme,
+                                  ),
                             ),
-
-                        // Rejected Appointments Tab
                         rejectedAppointments.isEmpty
                             ? _buildEmptyState(
-                              'No rejected appointments.\nRejected appointments will appear here.',
+                              l10n.noRejectedAppointments,
                               Icons.cancel,
+                              theme,
                             )
                             : ListView.builder(
                               itemCount: rejectedAppointments.length,
-                              padding: const EdgeInsets.all(8),
-                              itemBuilder: (context, index) {
-                                return _buildAppointmentCard(
-                                  rejectedAppointments[index],
-                                );
-                              },
+                              padding: EdgeInsets.all(screenHeight * 0.01),
+                              itemBuilder:
+                                  (context, index) => _buildAppointmentCard(
+                                    rejectedAppointments[index],
+                                    theme,
+                                  ),
                             ),
                       ],
                     ),
@@ -586,11 +610,10 @@ class _SocketTestPageState extends State<SocketTestPage>
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navigate back to booking page
-          Navigator.pop(context);
-        },
-        tooltip: 'Book New Appointment',
+        onPressed: () => Navigator.pop(context),
+        tooltip: l10n.bookNewAppointmentTooltip,
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         child: const Icon(Icons.add),
       ),
     );

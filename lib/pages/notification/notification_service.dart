@@ -11,10 +11,14 @@ class NotificationService {
   bool get isInitialized => _isInitialized;
 
   NotificationService() {
-    _initNotification();
+    // We can't initialize with localized strings here because we don't have context
+    // Initialization will be done with locale-specific strings when called
   }
 
-  Future<void> _initNotification() async {
+  Future<void> _initNotification({
+    required String channelName,
+    required String channelDescription,
+  }) async {
     if (_isInitialized) return;
 
     try {
@@ -40,7 +44,13 @@ class NotificationService {
               final title = parts[2];
               final scheduledDate = DateTime.parse(parts[3]);
               await Future.wait([
-                _saveDeliveredNotification(userId, day, title, scheduledDate),
+                _saveDeliveredNotification(
+                  userId,
+                  day,
+                  title,
+                  scheduledDate,
+                  parts[4],
+                ), // Pass locale from payload
                 markNotificationAsSeen(userId, day),
               ]);
             }
@@ -57,10 +67,10 @@ class NotificationService {
         final granted = await androidPlugin.requestNotificationsPermission();
         if (granted != true) return;
 
-        const AndroidNotificationChannel channel = AndroidNotificationChannel(
+        final AndroidNotificationChannel channel = AndroidNotificationChannel(
           'daily_channel_id',
-          'Daily Tip',
-          description: 'Health tips every 4 days',
+          channelName, // Use the localized channel name
+          description: channelDescription, // Use the localized description
           importance: Importance.max,
           playSound: true,
           enableVibration: true,
@@ -75,11 +85,14 @@ class NotificationService {
     }
   }
 
-  NotificationDetails _notificationDetails() => const NotificationDetails(
+  NotificationDetails _notificationDetails({
+    required String channelName,
+    required String channelDescription,
+  }) => NotificationDetails(
     android: AndroidNotificationDetails(
       'daily_channel_id',
-      'Daily Tip',
-      channelDescription: 'Health tips every 4 days',
+      channelName, // Use the localized channel name
+      channelDescription: channelDescription, // Use the localized description
       importance: Importance.max,
       priority: Priority.high,
       showWhen: true,
@@ -93,14 +106,22 @@ class NotificationService {
     required String title,
     required String body,
     String? payload,
+    required String channelName,
+    required String channelDescription,
   }) async {
     try {
-      await _initNotification();
+      await _initNotification(
+        channelName: channelName,
+        channelDescription: channelDescription,
+      );
       await notificationPlugin.show(
         id,
         title,
         body,
-        _notificationDetails(),
+        _notificationDetails(
+          channelName: channelName,
+          channelDescription: channelDescription,
+        ),
         payload: payload,
       );
     } catch (e) {
@@ -111,11 +132,17 @@ class NotificationService {
   Future<void> scheduleDailyHealthTips(
     DateTime startDate,
     String userId,
+    String locale,
+    String channelName,
+    String channelDescription,
   ) async {
-    await _initNotification();
+    await _initNotification(
+      channelName: channelName,
+      channelDescription: channelDescription,
+    );
     if (!_isInitialized) return;
 
-    final tips = await _fetchHealthTips();
+    final tips = await _fetchHealthTips(locale);
     if (tips.isEmpty) return;
 
     await notificationPlugin.cancelAll();
@@ -148,9 +175,13 @@ class NotificationService {
             title,
             body,
             tzScheduledDate,
-            _notificationDetails(),
+            _notificationDetails(
+              channelName: channelName,
+              channelDescription: channelDescription,
+            ),
             androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-            payload: '$userId|$day|$title|${scheduledDate.toIso8601String()}',
+            payload:
+                '$userId|$day|$title|${scheduledDate.toIso8601String()}|$locale',
           );
         }
         return Future.value();
@@ -158,8 +189,17 @@ class NotificationService {
     );
   }
 
-  Future<void> checkAndShowTodaysTip(String userId, DateTime startDate) async {
-    await _initNotification();
+  Future<void> checkAndShowTodaysTip(
+    String userId,
+    DateTime startDate,
+    String locale,
+    String channelName,
+    String channelDescription,
+  ) async {
+    await _initNotification(
+      channelName: channelName,
+      channelDescription: channelDescription,
+    );
     if (!_isInitialized) return;
 
     final now = DateTime.now();
@@ -168,14 +208,14 @@ class NotificationService {
 
     final todayIntervalDay =
         (daysSinceStart ~/ 4) * 4; // Nearest lower 4-day mark
-    final history = await getNotificationHistory(userId);
+    final history = await getNotificationHistory(userId, locale);
     final todayNotification = history.firstWhere(
       (n) => n['day'] == todayIntervalDay,
       orElse: () => {},
     );
 
     if (todayNotification.isEmpty || todayNotification['seen'] == false) {
-      final tips = await _fetchHealthTips();
+      final tips = await _fetchHealthTips(locale);
       final tipIndex = todayIntervalDay ~/ 4;
       if (tipIndex >= tips.length) return;
 
@@ -186,9 +226,18 @@ class NotificationService {
         id: tip['id'],
         title: title,
         body: body,
-        payload: '$userId|$todayIntervalDay|$title|${now.toIso8601String()}',
+        payload:
+            '$userId|$todayIntervalDay|$title|${now.toIso8601String()}|$locale',
+        channelName: channelName,
+        channelDescription: channelDescription,
       );
-      await _saveDeliveredNotification(userId, todayIntervalDay, title, now);
+      await _saveDeliveredNotification(
+        userId,
+        todayIntervalDay,
+        title,
+        now,
+        locale,
+      );
     }
   }
 
@@ -197,22 +246,26 @@ class NotificationService {
     int day,
     String title,
     DateTime scheduledDate,
+    String locale,
   ) async {
     try {
-      final tips = await _fetchHealthTips();
+      // Fetch the tip in both languages
+      final tipsEn = await _fetchHealthTips('en');
+      final tipsAm = await _fetchHealthTips('am');
       final tipIndex = day ~/ 4;
-      if (tipIndex >= tips.length) return;
+      if (tipIndex >= tipsEn.length || tipIndex >= tipsAm.length) return;
 
-      final tip = tips[tipIndex];
-      final body = tip['body'];
-      final relevance = tip['relevance'];
+      final tipEn = tipsEn[tipIndex];
+      final tipAm = tipsAm[tipIndex];
 
       await Supabase.instance.client.from('notification_history').upsert({
         'user_id': userId,
         'day': day,
-        'title': title,
-        'body': body,
-        if (relevance != null) 'relevance': relevance,
+        'title_en': tipEn['title'],
+        'title_am': tipAm['title'],
+        'body_en': tipEn['body'],
+        'body_am': tipAm['body'],
+        if (tipEn['relevance'] != null) 'relevance': tipEn['relevance'],
         'scheduled_date': scheduledDate.toIso8601String(),
         'created_at': DateTime.now().toIso8601String(),
         'seen': false,
@@ -237,36 +290,67 @@ class NotificationService {
 
   Future<List<Map<String, dynamic>>> getNotificationHistory(
     String userId,
+    String locale,
   ) async {
     try {
+      final titleColumn = locale == 'am' ? 'title_am' : 'title_en';
+      final bodyColumn = locale == 'am' ? 'body_am' : 'body_en';
+
       final response = await Supabase.instance.client
           .from('notification_history')
-          .select()
+          .select(
+            'id, user_id, day, $titleColumn, $bodyColumn, relevance, seen, delivered_at',
+          )
           .eq('user_id', userId)
           .order('delivered_at', ascending: false);
-      return response;
+
+      return response.map<Map<String, dynamic>>((notification) {
+        return {
+          'day': notification['day'],
+          'title': notification[titleColumn] ?? '',
+          'body': notification[bodyColumn] ?? '',
+          'relevance': notification['relevance'],
+          'seen': notification['seen'],
+          'delivered_at': notification['delivered_at'],
+        };
+      }).toList();
     } catch (e) {
       print('Error fetching notification history: $e');
       return [];
     }
   }
 
-  Future<List<Map<String, dynamic>>> _fetchHealthTips() async {
+  Future<List<Map<String, dynamic>>> _fetchHealthTips(String locale) async {
     try {
+      final titleColumn = locale == 'am' ? 'title_am' : 'title_en';
+      final bodyColumn = locale == 'am' ? 'body_am' : 'body_en';
+
       final response = await Supabase.instance.client
           .from('health_tips')
-          .select('id, day, title, body, relevance')
+          .select('id, day, $titleColumn, $bodyColumn, relevance')
           .order('day', ascending: true);
-      return response;
+
+      return response.map<Map<String, dynamic>>((tip) {
+        return {
+          'id': tip['id'],
+          'day': tip['day'],
+          'title': tip[titleColumn] ?? 'Fallback Tip', // Fallback if null
+          'body': tip[bodyColumn] ?? 'Consult your doctor.',
+          'relevance': tip['relevance'],
+        };
+      }).toList();
     } catch (e) {
       print('Error fetching health tips: $e');
+      // Use localized fallback tips
       return List.generate(
         70, // 280 days / 4 = 70 tips
         (index) => {
           'id': index,
           'day': index * 4,
-          'title': 'Tip ${index + 1}',
-          'body': 'Consult your doctor for advice.',
+          'title':
+              'ምክር ${index + 1}', // Localized fallback title (Amharic example)
+          'body':
+              'ለመከረው ሐኪምዎን ያማክሩ።', // Localized fallback body (Amharic example)
         },
       );
     }

@@ -1,8 +1,10 @@
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:adde/pages/community/chat_provider.dart';
 import 'package:adde/pages/community/post_provider.dart';
 import 'package:adde/pages/name_suggestion/name_provider.dart';
 import 'package:adde/pages/note/note_provider.dart';
 import 'package:adde/pages/notification/notification_service.dart';
+import 'package:adde/pages/profile/locale_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -13,6 +15,7 @@ import 'package:adde/theme/theme_data.dart';
 import 'package:adde/theme/theme_provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:io';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +27,9 @@ Future<void> main() async {
   );
 
   final session = await getSavedSession();
+  final localeProvider = LocaleProvider();
+  await localeProvider.loadLocale(); // Load saved locale
+
   runApp(
     MultiProvider(
       providers: [
@@ -32,6 +38,9 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => NoteProvider()),
         ChangeNotifierProvider(create: (_) => NameProvider()),
+        ChangeNotifierProvider.value(
+          value: localeProvider,
+        ), // Add LocaleProvider
         Provider(create: (context) => NotificationService()),
       ],
       child: MyApp(session: session),
@@ -74,27 +83,22 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _showNoInternetDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder:
           (context) => AlertDialog(
             title: Text(
-              'No Internet Connection',
+              l10n.noInternetTitle,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color:
-                    Theme.of(
-                      context,
-                    ).colorScheme.onSurface, // #fb6f92 (light), white (dark)
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             content: Text(
-              'Please check your internet connection and try again.',
+              l10n.noInternetMessage,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color:
-                    Theme.of(context)
-                        .colorScheme
-                        .onSurfaceVariant, // black54 (light), white70 (dark)
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             actions: [
@@ -104,14 +108,12 @@ class _SplashScreenState extends State<SplashScreen> {
                   _checkConnectivityAndProceed();
                 },
                 child: Text(
-                  'Retry',
+                  l10n.retryButton,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color:
                         Theme.of(context).brightness == Brightness.light
                             ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context)
-                                .colorScheme
-                                .onPrimary, // #fb6f92 (light), white (dark)
+                            : Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
               ),
@@ -133,7 +135,7 @@ class _SplashScreenState extends State<SplashScreen> {
               builder:
                   (context) =>
                       widget.session != null
-                          ? HomePage(
+                          ? BottomPageNavigation(
                             user_id:
                                 Supabase.instance.client.auth.currentUser!.id,
                             email:
@@ -154,15 +156,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor:
-          Theme.of(context).brightness == Brightness.light
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(
-                context,
-              ).colorScheme.onPrimary, // #fb6f92 (light), white (dark)
+      backgroundColor: Theme.of(context).colorScheme.primary,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -170,33 +167,19 @@ class _SplashScreenState extends State<SplashScreen> {
             Icon(
               Icons.assistant,
               size: 100,
-              color:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Theme.of(context).colorScheme.onPrimary
-                      : Theme.of(
-                        context,
-                      ).colorScheme.primary, // white (light), black (dark)
+              color: Theme.of(context).colorScheme.onPrimary,
             ),
             const SizedBox(height: 20),
             Text(
-              'Adde Assistance',
+              l10n.appName,
               style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                color:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Theme.of(context).colorScheme.onPrimary
-                        : Theme.of(
-                          context,
-                        ).colorScheme.primary, // white (light), black (dark)
+                color: Theme.of(context).colorScheme.onPrimary,
               ),
             ),
             const SizedBox(height: 20),
             CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).brightness == Brightness.light
-                    ? Theme.of(context).colorScheme.onPrimary
-                    : Theme.of(
-                      context,
-                    ).colorScheme.primary, // white (light), black (dark)
+                Theme.of(context).colorScheme.onPrimary,
               ),
             ),
           ],
@@ -213,13 +196,28 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Adde Assistance App',
-      theme: ThemeModes.lightMode,
-      darkTheme: ThemeModes.darkMode,
-      themeMode: themeProvider.themeMode,
-      home: SplashScreen(session: session),
+    return Consumer<LocaleProvider>(
+      builder: (context, localeProvider, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Adde Assistance App',
+          theme: ThemeModes.lightMode,
+          darkTheme: ThemeModes.darkMode,
+          themeMode: themeProvider.themeMode,
+          locale: localeProvider.locale,
+          supportedLocales: const [Locale('en'), Locale('am')],
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          localeResolutionCallback: (deviceLocale, supportedLocales) {
+            return localeProvider.locale; // Use the provider's locale
+          },
+          home: SplashScreen(session: session),
+        );
+      },
     );
   }
 }

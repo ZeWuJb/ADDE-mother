@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:adde/pages/community/post_model.dart';
 import 'package:adde/pages/community/post_provider.dart';
 import 'package:flutter/material.dart';
@@ -37,9 +38,22 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Please log in')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.pleaseLogIn,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onError,
+              ),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
         setState(() {
           _isLoading = false;
         });
@@ -59,9 +73,20 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       });
     } catch (e) {
       print('Error fetching user data: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error fetching user data: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.errorFetchingUserData(e.toString()),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onError,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
       setState(() {
         _isLoading = false;
       });
@@ -75,7 +100,20 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         final size = await File(pickedFile.path).length();
         if (size > 5 * 1024 * 1024) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Image must be under 5MB')),
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context)!.imageSizeError,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onError,
+                ),
+              ),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
           );
           return;
         }
@@ -86,9 +124,20 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       }
     } catch (e) {
       print('Error picking image: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.errorPickingImage(e.toString()),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onError,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
     }
   }
 
@@ -96,16 +145,38 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     final postProvider = Provider.of<PostProvider>(context, listen: false);
 
     if (_contentController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter content')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.emptyContentError,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onError,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
       return;
     }
 
     if (motherId == null || fullName == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('User data not loaded')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.userDataNotLoaded,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onError,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
       return;
     }
 
@@ -131,14 +202,29 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       Navigator.pop(context);
     } catch (e) {
       print('Error saving post: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error saving post: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.errorSavingPost(e.toString()),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onError,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+    final l10n = AppLocalizations.of(context)!;
+
     return DraggableScrollableSheet(
       initialChildSize: 0.9,
       minChildSize: 0.5,
@@ -146,26 +232,34 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       builder:
           (_, controller) => Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
+              color: theme.colorScheme.surface,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(20),
               ),
             ),
             child:
                 _isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          theme.colorScheme.primary,
+                        ),
+                      ),
+                    )
                     : Column(
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: theme.colorScheme.surfaceContainer,
                             borderRadius: const BorderRadius.vertical(
                               top: Radius.circular(20),
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: theme.colorScheme.onSurface.withOpacity(
+                                  0.1,
+                                ),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -175,22 +269,32 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.close),
+                                icon: Icon(
+                                  Icons.close,
+                                  color: theme.colorScheme.onSurface,
+                                ),
                                 onPressed: () => Navigator.pop(context),
+                                tooltip: l10n.closeTooltip,
                               ),
                               Text(
                                 widget.post == null
-                                    ? 'Create Post'
-                                    : 'Edit Post',
-                                style: Theme.of(context).textTheme.titleLarge
-                                    ?.copyWith(color: Colors.black),
+                                    ? l10n.createPostTitle
+                                    : l10n.editPostTitle,
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontFamily: GoogleFonts.poppins().fontFamily,
+                                  color: theme.colorScheme.onSurface,
+                                ),
                               ),
                               TextButton(
                                 onPressed: _submit,
                                 child: Text(
-                                  widget.post == null ? 'Post' : 'Update',
-                                  style: GoogleFonts.poppins(
-                                    color: Theme.of(context).primaryColor,
+                                  widget.post == null
+                                      ? l10n.postButton
+                                      : l10n.updateButton,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontFamily:
+                                        GoogleFonts.poppins().fontFamily,
+                                    color: theme.colorScheme.primary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -201,26 +305,32 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         Expanded(
                           child: ListView(
                             controller: controller,
-                            padding: const EdgeInsets.all(16),
+                            padding: EdgeInsets.all(screenHeight * 0.02),
                             children: [
                               Row(
                                 children: [
-                                  CircleAvatar(
-                                    backgroundColor:
-                                        Theme.of(context).colorScheme.secondary,
-                                    child: Text(
-                                      fullName?.isNotEmpty == true
-                                          ? fullName![0]
-                                          : '?',
+                                  Semantics(
+                                    label: 'User avatar',
+                                    child: CircleAvatar(
+                                      backgroundColor:
+                                          theme.colorScheme.secondary,
+                                      foregroundColor:
+                                          theme.colorScheme.onSecondary,
+                                      child: Text(
+                                        fullName?.isNotEmpty == true
+                                            ? fullName![0]
+                                            : '?',
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
                                     fullName ?? 'Unknown',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleLarge
-                                        ?.copyWith(color: Colors.black),
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      fontFamily:
+                                          GoogleFonts.poppins().fontFamily,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -228,15 +338,20 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                               TextField(
                                 controller: _contentController,
                                 decoration: InputDecoration(
-                                  hintText: "What's on your mind?",
-                                  hintStyle: GoogleFonts.roboto(
-                                    color: Colors.grey[500],
-                                  ),
+                                  hintText: l10n.whatsOnYourMind,
+                                  hintStyle: theme.textTheme.bodyMedium
+                                      ?.copyWith(
+                                        fontFamily:
+                                            GoogleFonts.roboto().fontFamily,
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
+                                      ),
                                   border: InputBorder.none,
                                 ),
                                 maxLines: null,
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(color: Colors.black87),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurface,
+                                ),
                               ),
                               const SizedBox(height: 16),
                               if (_imageFile != null)
@@ -255,18 +370,21 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                       right: 8,
                                       top: 8,
                                       child: IconButton(
-                                        icon: const Icon(
+                                        icon: Icon(
                                           Icons.cancel,
-                                          color: Colors.white,
+                                          color: theme.colorScheme.onSurface,
                                         ),
                                         onPressed:
                                             () => setState(
                                               () => _imageFile = null,
                                             ),
                                         style: IconButton.styleFrom(
-                                          backgroundColor: Colors.black
+                                          backgroundColor: theme
+                                              .colorScheme
+                                              .onSurface
                                               .withOpacity(0.5),
                                         ),
+                                        tooltip: l10n.removeImageTooltip,
                                       ),
                                     ),
                                   ],
@@ -282,26 +400,34 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                         width: double.infinity,
                                         fit: BoxFit.cover,
                                         errorBuilder:
-                                            (_, __, ___) =>
-                                                const Icon(Icons.broken_image),
+                                            (_, __, ___) => Icon(
+                                              Icons.broken_image,
+                                              color:
+                                                  theme
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                            ),
                                       ),
                                     ),
                                     Positioned(
                                       right: 8,
                                       top: 8,
                                       child: IconButton(
-                                        icon: const Icon(
+                                        icon: Icon(
                                           Icons.cancel,
-                                          color: Colors.white,
+                                          color: theme.colorScheme.onSurface,
                                         ),
                                         onPressed:
                                             () => setState(
                                               () => _imageFile = null,
                                             ),
                                         style: IconButton.styleFrom(
-                                          backgroundColor: Colors.black
+                                          backgroundColor: theme
+                                              .colorScheme
+                                              .onSurface
                                               .withOpacity(0.5),
                                         ),
+                                        tooltip: l10n.removeImageTooltip,
                                       ),
                                     ),
                                   ],
@@ -310,11 +436,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                               Row(
                                 children: [
                                   IconButton(
-                                    icon: const Icon(
+                                    icon: Icon(
                                       Icons.image,
-                                      color: Color(0xFFa1c4f7),
+                                      color: theme.colorScheme.secondary,
                                     ),
                                     onPressed: _pickImage,
+                                    tooltip: l10n.addImageTooltip,
                                   ),
                                 ],
                               ),

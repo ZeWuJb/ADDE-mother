@@ -1,3 +1,4 @@
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:jitsi_meet_flutter_sdk/jitsi_meet_flutter_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -36,8 +37,7 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
     super.initState();
     _initializeJitsiMeet();
 
-    // Set up a timer to periodically check for updates to the appointment
-    _refreshTimer = Timer.periodic(Duration(seconds: 30), (timer) {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted) {
         _refreshAppointmentData();
       }
@@ -46,11 +46,9 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
 
   Future<void> _refreshAppointmentData() async {
     try {
-      // Only refresh if we have a valid appointment ID
-      final appointmentId = widget.appointment['id'];
+      final appointmentId = widget.appointment['id']?.toString();
       if (appointmentId == null) return;
 
-      // Fetch the latest appointment data from Supabase
       final response =
           await supabase
               .from('appointments')
@@ -59,7 +57,6 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
               .single();
 
       if (mounted) {
-        // Check if the video conference link has changed
         final newVideoLink = response['video_conference_link'];
         if (newVideoLink != null &&
             newVideoLink.isNotEmpty &&
@@ -69,13 +66,11 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
             roomName = meetingUrl.split('/').last;
           });
 
-          // If we're not in a call, show a prompt to join with the new link
           if (!isCallActive) {
             _showNewLinkDialog();
           }
         }
 
-        // Check if the appointment status has changed to cancelled
         final status = response['status'];
         if (status == 'cancelled' && isCallActive) {
           _showAppointmentCancelledDialog();
@@ -87,20 +82,19 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
   }
 
   void _showNewLinkDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text('New Meeting Link Available'),
-            content: Text(
-              'A new video conference link is available. Would you like to join with the new link?',
-            ),
+            title: Text(l10n.newMeetingLinkAvailable),
+            content: Text(l10n.newMeetingLinkMessage),
             actions: [
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
-                child: Text('Later'),
+                child: Text(l10n.later),
               ),
               ElevatedButton(
                 onPressed: () {
@@ -108,7 +102,7 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
                   _joinMeeting();
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-                child: Text('Join Now'),
+                child: Text(l10n.joinNow),
               ),
             ],
           ),
@@ -116,24 +110,23 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
   }
 
   void _showAppointmentCancelledDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder:
           (context) => AlertDialog(
-            title: Text('Appointment Cancelled'),
-            content: Text(
-              'This appointment has been cancelled. The video call will be ended.',
-            ),
+            title: Text(l10n.appointmentCancelled),
+            content: Text(l10n.appointmentCancelledMessage),
             actions: [
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop();
                   jitsiMeet.hangUp();
-                  Navigator.of(context).pop(); // Return to appointments page
+                  Navigator.of(context).pop();
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: Text('OK'),
+                child: const Text('OK'),
               ),
             ],
           ),
@@ -142,32 +135,28 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
 
   Future<void> _initializeJitsiMeet() async {
     try {
-      // Extract the meeting URL from the appointment
       print("Appointment data: ${widget.appointment}");
-      meetingUrl = widget.appointment['video_conference_link'] ?? '';
+      meetingUrl =
+          widget.appointment['video_conference_link']?.toString() ?? '';
       print("Meeting URL from appointment: $meetingUrl");
 
-      // Extract room name from the URL
       if (meetingUrl.isNotEmpty) {
         roomName = meetingUrl.split('/').last;
         print("Room name extracted from URL: $roomName");
       } else {
-        // Fallback to using appointment ID if no URL is available
         final appointmentId =
-            widget.appointment['id'] ??
-            widget.appointment['appointmentId'] ??
+            widget.appointment['id']?.toString() ??
+            widget.appointment['appointmentId']?.toString() ??
             'default_room';
         roomName = 'caresync_appointment_$appointmentId';
         meetingUrl = 'https://meet.jit.si/$roomName';
         print("Generated room name: $roomName");
         print("Generated meeting URL: $meetingUrl");
 
-        // If we had to generate a URL, try to update it in the database
         _updateVideoLinkInDatabase(appointmentId, meetingUrl);
       }
 
-      // Auto-join the meeting after a short delay
-      Future.delayed(Duration(seconds: 2), () {
+      Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
           _joinMeeting();
         }
@@ -175,18 +164,16 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
     } catch (e) {
       print("Error in initializeJitsiMeet: $e");
       setState(() {
-        errorMessage = "Error initializing: $e";
+        errorMessage = AppLocalizations.of(context)!.errorLabel(e.toString());
       });
     }
   }
 
-  // Update the video conference link in the database if needed
   Future<void> _updateVideoLinkInDatabase(
     String appointmentId,
     String videoLink,
   ) async {
     try {
-      // Only update if this is a valid UUID (not a socket-generated ID)
       if (appointmentId.contains('-')) {
         await supabase
             .from('appointments')
@@ -199,7 +186,6 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
     }
   }
 
-  // Get user details with minimal data
   Future<Map<String, String>> _getUserDetails() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -212,8 +198,8 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
     }
   }
 
-  // Join meeting with optimized options
   Future<void> _joinMeeting() async {
+    final l10n = AppLocalizations.of(context)!;
     if (isJoining) {
       print("Already attempting to join a meeting");
       return;
@@ -221,7 +207,7 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
 
     setState(() {
       isJoining = true;
-      callStatus = 'Joining call...';
+      callStatus = l10n.joiningCall;
       errorMessage = null;
     });
 
@@ -229,14 +215,13 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
       print("Starting to join meeting with room: $roomName");
       final userDetails = await _getUserDetails();
 
-      // Configure meeting options with minimal data
       var options = JitsiMeetConferenceOptions(
         serverURL: "https://meet.jit.si",
         room: roomName,
         configOverrides: {
           "startWithAudioMuted": false,
           "startWithVideoMuted": false,
-          "subject": "Appointment with ${widget.doctorName}",
+          "subject": l10n.appointmentWithDoctor(widget.doctorName),
         },
         featureFlags: {
           "ios.recording.enabled": false,
@@ -252,14 +237,13 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
 
       print("Jitsi options configured: ${options.room}");
 
-      // Create event listener
       var listener = JitsiMeetEventListener(
         conferenceJoined: (url) {
           print("Conference joined: $url");
           if (mounted) {
             setState(() {
               isCallActive = true;
-              callStatus = 'Connected to call';
+              callStatus = l10n.connectedToCall;
               isJoining = false;
             });
           }
@@ -270,7 +254,9 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
           if (mounted) {
             setState(() {
               isCallActive = false;
-              callStatus = 'Call ended: ${error ?? ""}';
+              callStatus = l10n.callEnded(
+                error?.toString() ?? l10n.notAvailable,
+              );
               isJoining = false;
             });
           }
@@ -280,7 +266,7 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
           print("Conference will join: $url");
           if (mounted) {
             setState(() {
-              callStatus = 'Connecting to call...';
+              callStatus = l10n.connectingToCall;
             });
           }
         },
@@ -299,14 +285,13 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
       );
 
       print("Attempting to join meeting now...");
-      // Join the meeting with the listener
       await jitsiMeet.join(options, listener);
       print("Join method completed");
     } catch (error) {
       print("Error joining meeting: $error");
       if (mounted) {
         setState(() {
-          callStatus = 'Error joining call';
+          callStatus = l10n.errorJoiningCall;
           errorMessage = error.toString();
           isJoining = false;
         });
@@ -314,16 +299,14 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
     }
   }
 
-  // Log call events locally to avoid server requests
   Future<void> _logCallEvent(String event) async {
     try {
       final appointmentId =
-          widget.appointment['id'] ??
-          widget.appointment['appointmentId'] ??
+          widget.appointment['id']?.toString() ??
+          widget.appointment['appointmentId']?.toString() ??
           'unknown';
       final timestamp = DateTime.now().toIso8601String();
 
-      // Store locally
       final prefs = await SharedPreferences.getInstance();
       final callLogs = prefs.getStringList('call_logs') ?? [];
       callLogs.add('$appointmentId|$event|$timestamp');
@@ -335,126 +318,123 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
     }
   }
 
-  // Format appointment date for display
   String _formatAppointmentDate() {
     try {
       final dateString =
           widget.appointment['appointmentDate'] ??
           widget.appointment['requested_time'];
-      if (dateString == null) return 'No date available';
+      if (dateString == null) {
+        return AppLocalizations.of(context)!.noDateAvailable;
+      }
 
       final date = DateTime.parse(dateString);
       return DateFormat('EEEE, MMMM d, yyyy - h:mm a').format(date);
     } catch (e) {
       print("Error formatting date: $e");
-      return 'Invalid date format';
+      return AppLocalizations.of(context)!.invalidDateFormat;
     }
   }
 
-  // Copy text to clipboard
   void _copyToClipboard(String text) {
+    final l10n = AppLocalizations.of(context)!;
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Copied to clipboard'),
-        duration: Duration(seconds: 2),
+        content: Text(l10n.copiedToClipboard),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Check if there's a video_conference_link in the appointment data
+    final l10n = AppLocalizations.of(context)!;
     final existingLink = widget.appointment['video_conference_link'];
     final hasExistingLink = existingLink != null && existingLink.isNotEmpty;
-
-    // If there's an existing link, use it instead of our generated one
     final displayUrl = hasExistingLink ? existingLink : meetingUrl;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Video Consultation'),
+        title: Text(l10n.videoConsultationTitle),
         backgroundColor: Colors.teal,
       ),
       body: Container(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Appointment details card
             Card(
               elevation: 4,
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Appointment with ${widget.doctorName}',
-                      style: TextStyle(
+                      l10n.appointmentWithDoctor(widget.doctorName),
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
-                      'Scheduled for: ${_formatAppointmentDate()}',
-                      style: TextStyle(fontSize: 16),
+                      l10n.scheduledFor(_formatAppointmentDate()),
+                      style: const TextStyle(fontSize: 16),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
-                      'Status: ${widget.appointment['status'] ?? 'Confirmed'}',
-                      style: TextStyle(fontSize: 16, color: Colors.green),
+                      l10n.statusLabel(
+                        widget.appointment['status']?.toString() ?? 'Confirmed',
+                      ),
+                      style: const TextStyle(fontSize: 16, color: Colors.green),
                     ),
                   ],
                 ),
               ),
             ),
-
-            SizedBox(height: 20),
-
-            // Meeting link card
+            const SizedBox(height: 20),
             Card(
               elevation: 4,
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Meeting Information',
-                      style: TextStyle(
+                      l10n.meetingInformation,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
                           child: Text(
                             displayUrl,
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: Colors.blue,
                               decoration: TextDecoration.underline,
                             ),
                           ),
                         ),
                         IconButton(
-                          icon: Icon(Icons.copy),
+                          icon: const Icon(Icons.copy),
                           onPressed: () => _copyToClipboard(displayUrl),
-                          tooltip: 'Copy link',
+                          tooltip: l10n.copyLinkTooltip,
                         ),
                       ],
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
-                      'Room name: $roomName',
+                      l10n.roomName(roomName),
                       style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
-                      'Your doctor will use this same link to join the meeting.',
+                      l10n.yourDoctorWillJoin,
                       style: TextStyle(
                         fontStyle: FontStyle.italic,
                         fontSize: 14,
@@ -465,14 +445,11 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
                 ),
               ),
             ),
-
-            SizedBox(height: 20),
-
-            // Error message if any
+            const SizedBox(height: 20),
             if (errorMessage != null)
               Container(
-                padding: EdgeInsets.all(12),
-                margin: EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
                   color: Colors.red.shade100,
                   borderRadius: BorderRadius.circular(8),
@@ -482,13 +459,13 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Error:',
+                      l10n.errorPrefix,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.red.shade800,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       errorMessage!,
                       style: TextStyle(color: Colors.red.shade800),
@@ -496,11 +473,9 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
                   ],
                 ),
               ),
-
-            // Call status
             Center(
               child: Container(
-                padding: EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color:
                       isCallActive
@@ -518,65 +493,70 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
                 ),
               ),
             ),
-
-            SizedBox(height: 30),
-
-            // Join call button
+            const SizedBox(height: 30),
             Center(
               child: ElevatedButton.icon(
                 onPressed: isCallActive || isJoining ? null : _joinMeeting,
-                icon: Icon(Icons.video_call),
+                icon: const Icon(Icons.video_call),
                 label: Text(
                   isJoining
-                      ? 'Joining...'
+                      ? l10n.joining
                       : isCallActive
-                      ? 'In Call'
-                      : 'Join Video Call',
+                      ? l10n.inCall
+                      : l10n.joinVideoCall,
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal,
                   foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  textStyle: TextStyle(fontSize: 18),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  textStyle: const TextStyle(fontSize: 18),
                 ),
               ),
             ),
-
-            SizedBox(height: 20),
-
-            // Instructions
+            const SizedBox(height: 20),
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Before joining:',
-                      style: TextStyle(
+                      l10n.beforeJoining,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     ListTile(
-                      leading: Icon(Icons.check_circle, color: Colors.green),
-                      title: Text(
-                        'Ensure you have a stable internet connection',
+                      leading: const Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
                       ),
+                      title: Text(l10n.ensureStableConnection),
                     ),
                     ListTile(
-                      leading: Icon(Icons.check_circle, color: Colors.green),
-                      title: Text(
-                        'Find a quiet, private space for your consultation',
+                      leading: const Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
                       ),
+                      title: Text(l10n.findQuietSpace),
                     ),
                     ListTile(
-                      leading: Icon(Icons.check_circle, color: Colors.green),
-                      title: Text('Test your camera and microphone'),
+                      leading: const Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
+                      ),
+                      title: Text(l10n.testCameraMic),
                     ),
                     ListTile(
-                      leading: Icon(Icons.check_circle, color: Colors.green),
-                      title: Text('Have your questions ready for the doctor'),
+                      leading: const Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
+                      ),
+                      title: Text(l10n.haveQuestionsReady),
                     ),
                   ],
                 ),
@@ -590,7 +570,6 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
 
   @override
   void dispose() {
-    // Clean up resources
     _refreshTimer?.cancel();
     if (isCallActive) {
       try {

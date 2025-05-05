@@ -60,13 +60,17 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
 
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: Text(widget.fullName),
-        backgroundColor: Colors.white,
+        backgroundColor:
+            theme.brightness == Brightness.light
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onPrimary,
       ),
       body:
           _isLoading
@@ -139,9 +143,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Text(
                         'Posts',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.titleLarge?.copyWith(color: Colors.black),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: theme.colorScheme.onSurface,
+                        ),
                       ),
                     ),
                   ),

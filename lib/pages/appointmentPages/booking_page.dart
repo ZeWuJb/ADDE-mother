@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'appointments_page.dart';
 
 class BookingPage extends StatefulWidget {
@@ -26,13 +27,11 @@ class _BookingPageState extends State<BookingPage> {
   @override
   void initState() {
     super.initState();
-    // Check connection status
     _checkConnectionStatus();
   }
 
   Future<void> _checkConnectionStatus() async {
     try {
-      // Simple query to check if Supabase is connected
       await supabase.from('doctors').select('id').limit(1);
       if (mounted) {
         setState(() {
@@ -63,8 +62,19 @@ class _BookingPageState extends State<BookingPage> {
 
       if (response == null || response['availability'] == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No availability found for this doctor.'),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.noAvailabilityFound,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onError,
+              ),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
         return;
@@ -91,13 +101,25 @@ class _BookingPageState extends State<BookingPage> {
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error fetching availability: $error')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.errorLabel(error.toString()),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onError,
+              ),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
         );
       }
     }
   }
 
-  // Check if mother record exists and create if needed
   Future<bool> _ensureMotherRecordExists() async {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) {
@@ -105,7 +127,6 @@ class _BookingPageState extends State<BookingPage> {
     }
 
     try {
-      // Check if mother record exists - IMPORTANT: use user_id, not id
       final motherRecord =
           await supabase
               .from('mothers')
@@ -117,17 +138,12 @@ class _BookingPageState extends State<BookingPage> {
         return true;
       }
 
-      // Get user details from auth
       final user = supabase.auth.currentUser!;
       final email = user.email ?? '';
 
-      // Create mother record with user_id as the primary key
       await supabase.from('mothers').insert({
-        'user_id': userId, // This is the primary key
-        'full_name':
-            email.split(
-              '@',
-            )[0], // Use part of email as name if no name available
+        'user_id': userId,
+        'full_name': email.split('@')[0],
         'email': email,
         'created_at': DateTime.now().toIso8601String(),
       });
@@ -144,10 +160,24 @@ class _BookingPageState extends State<BookingPage> {
   }
 
   Future<void> sendRequest() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_selectedDay == null || _currentTimeIndex == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select a date and time')),
+          SnackBar(
+            content: Text(
+              l10n.pleaseSelectDateTime,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onError,
+              ),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
         );
       }
       return;
@@ -159,13 +189,23 @@ class _BookingPageState extends State<BookingPage> {
     });
 
     try {
-      // First ensure mother record exists
       final motherRecordExists = await _ensureMotherRecordExists();
       if (!motherRecordExists) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Could not create user profile. Please try again.'),
+            SnackBar(
+              content: Text(
+                l10n.couldNotCreateProfile,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onError,
+                ),
+              ),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           );
         }
@@ -177,7 +217,6 @@ class _BookingPageState extends State<BookingPage> {
 
       final selectedTime = _availableTimes[_currentTimeIndex!];
 
-      // Create a proper DateTime object for the requested time
       final requestedDateTime = DateTime(
         _selectedDay!.year,
         _selectedDay!.month,
@@ -191,11 +230,9 @@ class _BookingPageState extends State<BookingPage> {
         throw Exception('User not authenticated');
       }
 
-      // Calculate expires_at (20 minutes from now)
       final now = DateTime.now();
       final expiresAt = now.add(const Duration(minutes: 20));
 
-      // Create temporary appointment request
       final result =
           await supabase
               .from('temporary_appointments')
@@ -211,14 +248,22 @@ class _BookingPageState extends State<BookingPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Appointment request sent! Waiting for doctor approval.',
+              l10n.requestSent,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.white),
+            ),
+            backgroundColor: Colors.green.shade400,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
         );
 
-        // Navigate to appointments page - pass the doctorId
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -239,7 +284,20 @@ class _BookingPageState extends State<BookingPage> {
           _errorMessage = error.toString();
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error sending request: ${error.toString()}')),
+          SnackBar(
+            content: Text(
+              l10n.errorSendingRequest(error.toString()),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onError,
+              ),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
         );
       }
     } finally {
@@ -253,57 +311,81 @@ class _BookingPageState extends State<BookingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Book Appointment')),
+      appBar: AppBar(
+        title: Text(
+          l10n.bookAppointment,
+          style: theme.appBarTheme.titleTextStyle?.copyWith(
+            color: theme.appBarTheme.foregroundColor,
+          ),
+        ),
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        elevation: theme.appBarTheme.elevation,
+      ),
       body:
           _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(
+                child: CircularProgressIndicator(
+                  color: theme.colorScheme.primary,
+                ),
+              )
               : Column(
                 children: [
-                  // Error message if any
                   if (_errorMessage != null)
                     Container(
                       padding: const EdgeInsets.all(8),
                       margin: const EdgeInsets.all(8),
-                      color: Colors.red[50],
+                      color: theme.colorScheme.error.withOpacity(0.1),
                       child: Row(
                         children: [
-                          const Icon(Icons.error, color: Colors.red),
+                          Icon(Icons.error, color: theme.colorScheme.error),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _errorMessage!,
-                              style: const TextStyle(color: Colors.red),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.error,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-
-                  // Connection status indicator
                   Container(
                     padding: const EdgeInsets.all(8),
                     margin: const EdgeInsets.symmetric(horizontal: 8),
-                    color: _isConnected ? Colors.green[50] : Colors.orange[50],
+                    color:
+                        _isConnected
+                            ? Colors.green.shade50
+                            : theme.colorScheme.error.withOpacity(0.1),
                     child: Row(
                       children: [
                         Icon(
                           _isConnected ? Icons.wifi : Icons.wifi_off,
-                          color: _isConnected ? Colors.green : Colors.orange,
+                          color:
+                              _isConnected
+                                  ? Colors.green
+                                  : theme.colorScheme.error,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           _isConnected
-                              ? 'Connected to server'
-                              : 'Not connected - appointments may not be sent',
-                          style: TextStyle(
-                            color: _isConnected ? Colors.green : Colors.orange,
+                              ? l10n.connectedToServer
+                              : l10n.notConnected,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color:
+                                _isConnected
+                                    ? Colors.green
+                                    : theme.colorScheme.error,
                           ),
                         ),
                       ],
                     ),
                   ),
-
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: CalendarDatePicker(
@@ -322,11 +404,11 @@ class _BookingPageState extends State<BookingPage> {
                     ),
                   ),
                   if (_selectedDay != null) ...[
-                    const Text(
-                      'Available Time Slots:',
-                      style: TextStyle(
-                        fontSize: 16,
+                    Text(
+                      l10n.availableTimeSlots,
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     Wrap(
@@ -337,8 +419,18 @@ class _BookingPageState extends State<BookingPage> {
                         return Padding(
                           padding: const EdgeInsets.all(4.0),
                           child: ChoiceChip(
-                            label: Text(time),
+                            label: Text(
+                              time,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color:
+                                    _currentTimeIndex == index
+                                        ? theme.colorScheme.onPrimary
+                                        : theme.colorScheme.onSurface,
+                              ),
+                            ),
                             selected: _currentTimeIndex == index,
+                            selectedColor: theme.colorScheme.primary,
+                            backgroundColor: theme.colorScheme.surfaceContainer,
                             onSelected: (selected) {
                               setState(() {
                                 _currentTimeIndex = selected ? index : null;
@@ -356,12 +448,32 @@ class _BookingPageState extends State<BookingPage> {
                         _selectedDay != null && _timeSelected
                             ? sendRequest
                             : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
+                    style: theme.elevatedButtonTheme.style?.copyWith(
+                      backgroundColor: WidgetStateProperty.resolveWith(
+                        (states) =>
+                            states.contains(WidgetState.disabled)
+                                ? theme.colorScheme.surfaceContainerHighest
+                                : theme.colorScheme.primary,
+                      ),
+                      foregroundColor: WidgetStateProperty.resolveWith(
+                        (states) =>
+                            states.contains(WidgetState.disabled)
+                                ? theme.colorScheme.onSurfaceVariant
+                                : theme.colorScheme.onPrimary,
+                      ),
                     ),
-                    child: const Text('Request Appointment'),
+                    child: Text(
+                      l10n.requestAppointment,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color:
+                            _selectedDay != null && _timeSelected
+                                ? theme.colorScheme.onPrimary
+                                : theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: screenHeight * 0.02),
                 ],
               ),
     );

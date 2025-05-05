@@ -148,8 +148,10 @@ class _MotherFormPageState extends State<MotherFormPage> {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder:
-                (context) =>
-                    HomePage(email: widget.email, user_id: widget.user_id!),
+                (context) => BottomPageNavigation(
+                  email: widget.email,
+                  user_id: widget.user_id!,
+                ),
           ),
         );
       } else {

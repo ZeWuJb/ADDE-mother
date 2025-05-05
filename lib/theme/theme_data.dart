@@ -5,22 +5,22 @@ class ThemeModes {
     brightness: Brightness.light,
     colorScheme: ColorScheme(
       brightness: Brightness.light,
-      primary: Color(0xFFfb6f92), // Soft pink for primary actions
+      primary: const Color(0xFFfb6f92), // Soft pink for primary actions
       onPrimary: Colors.white,
-      secondary: Color(0xFFffb3c6), // Lighter pink for secondary actions
+      secondary: const Color(0xFFffb3c6), // Lighter pink for secondary actions
       onSecondary: Colors.black87,
-      tertiary: Color(0xFFffcad4), // Soft pink for highlights
+      tertiary: const Color(0xFFffcad4), // Soft pink for highlights
       onTertiary: Colors.black87,
       error: Colors.redAccent,
       onError: Colors.white,
-      surface: Color(0xFFffe5ec), // Light pink surface
-      onSurface: Color(0xFFfb6f92),
+      surface: const Color(0xFFffe5ec), // Light pink surface
+      onSurface: const Color(0xFFfb6f92),
       outline: Colors.grey[400]!,
       shadow: Colors.black12,
-      surfaceContainerHighest: Color(0xFFFCE4EC),
+      surfaceContainerHighest: const Color(0xFFFCE4EC),
       onSurfaceVariant: Colors.black54,
     ),
-    textTheme: TextTheme(
+    textTheme: const TextTheme(
       displayLarge: TextStyle(
         fontSize: 32,
         fontWeight: FontWeight.bold,
@@ -39,7 +39,7 @@ class ThemeModes {
       bodyLarge: TextStyle(fontSize: 18, color: Colors.black87),
       bodyMedium: TextStyle(fontSize: 16, color: Colors.black87),
     ),
-    appBarTheme: AppBarTheme(
+    appBarTheme: const AppBarTheme(
       backgroundColor: Color(0xFFff8fab),
       foregroundColor: Colors.black87,
       elevation: 4,
@@ -51,9 +51,9 @@ class ThemeModes {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: Color(0xFFff8fab),
+        backgroundColor: const Color(0xFFff8fab),
         foregroundColor: Colors.white,
-        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 3,
       ),
@@ -62,12 +62,12 @@ class ThemeModes {
       filled: true,
       fillColor: Colors.white,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-      focusedBorder: OutlineInputBorder(
+      focusedBorder: const OutlineInputBorder(
         borderSide: BorderSide(color: Color(0xFFff8fab), width: 2),
       ),
     ),
     cardTheme: CardTheme(
-      color: Color(0xFFFDE2E4),
+      color: const Color(0xFFFDE2E4),
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
@@ -92,7 +92,7 @@ class ThemeModes {
       surfaceContainerHighest: Colors.black54, // Slightly lighter for cards
       onSurfaceVariant: Colors.white70, // Dimmed white for secondary text
     ),
-    textTheme: TextTheme(
+    textTheme: const TextTheme(
       displayLarge: TextStyle(
         fontSize: 32,
         fontWeight: FontWeight.bold,
@@ -111,7 +111,7 @@ class ThemeModes {
       bodyLarge: TextStyle(fontSize: 18, color: Colors.white),
       bodyMedium: TextStyle(fontSize: 16, color: Colors.white70),
     ),
-    appBarTheme: AppBarTheme(
+    appBarTheme: const AppBarTheme(
       backgroundColor: Colors.black, // Pure black for app bar
       foregroundColor: Colors.white, // White for icons/text
       elevation: 4,
@@ -125,7 +125,7 @@ class ThemeModes {
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white, // White for buttons
         foregroundColor: Colors.black, // Black for button text/icons
-        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 3,
       ),
@@ -134,7 +134,7 @@ class ThemeModes {
       filled: true,
       fillColor: Colors.black54, // Dark gray for input fields
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-      focusedBorder: OutlineInputBorder(
+      focusedBorder: const OutlineInputBorder(
         borderSide: BorderSide(
           color: Colors.white,
           width: 2,

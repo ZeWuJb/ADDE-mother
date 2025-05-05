@@ -1,4 +1,6 @@
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'notification_service.dart'; // Adjust import path
 import 'notification_detail.dart'; // Adjust import path
@@ -21,6 +23,13 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
   @override
   void initState() {
     super.initState();
+    // Do not initialize _notificationHistoryFuture here
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize _notificationHistoryFuture here instead
     _notificationHistoryFuture = _fetchNotificationHistory();
   }
 
@@ -29,7 +38,11 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
       context,
       listen: false,
     );
-    return await notificationService.getNotificationHistory(widget.userId);
+    final locale = AppLocalizations.of(context)!.localeName; // Get the locale
+    return await notificationService.getNotificationHistory(
+      widget.userId,
+      locale,
+    );
   }
 
   Future<void> _markAsSeen(int day) async {
@@ -56,7 +69,9 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Error marking as seen: $e',
+              AppLocalizations.of(
+                context,
+              )!.errorMarkingAsSeen(e.toString()), // Already localized
               style: TextStyle(color: Theme.of(context).colorScheme.onError),
             ),
             backgroundColor: Theme.of(context).colorScheme.error,
@@ -70,6 +85,9 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context)!; // Add this to access localized strings
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
@@ -79,7 +97,7 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
                 : Theme.of(context).colorScheme.onPrimary,
         elevation: Theme.of(context).appBarTheme.elevation,
         title: Text(
-          'Notification History',
+          l10n.pageTitleNotificationHistory, // Already localized
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
@@ -113,7 +131,9 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
             } else if (snapshot.hasError) {
               return Center(
                 child: Text(
-                  'Error: ${snapshot.error}',
+                  l10n.errorLabel(
+                    snapshot.error.toString(),
+                  ), // Use localized error label
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.error,
                     fontSize: 16,
@@ -132,7 +152,7 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'No notifications yet',
+                      l10n.noNotifications, // Already localized
                       style: TextStyle(
                         fontSize: 18,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -152,9 +172,13 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
                   itemBuilder: (context, index) {
                     final notification = _notifications[index];
                     final bool isSeen = notification['seen'] ?? false;
-                    final deliveredAt = DateTime.parse(
-                      notification['delivered_at'],
-                    ).toLocal().toString().substring(0, 16);
+                    // Use DateFormat for localized date formatting
+                    final deliveredAt = DateFormat(
+                      'yyyy-MM-dd HH:mm',
+                      l10n.localeName,
+                    ).format(
+                      DateTime.parse(notification['delivered_at']).toLocal(),
+                    );
 
                     return _buildNotificationCard(
                       notification,
@@ -187,6 +211,9 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
     bool isSeen,
     String deliveredAt,
   ) {
+    final l10n =
+        AppLocalizations.of(context)!; // Add this to access localized strings
+
     return Card(
       elevation: Theme.of(context).cardTheme.elevation,
       margin: const EdgeInsets.only(bottom: 8),
@@ -252,7 +279,9 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      notification['title'] ?? 'No Title',
+                      notification['title']?.isNotEmpty ?? false
+                          ? notification['title']
+                          : l10n.noTitle, // Already localized
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight:
@@ -265,7 +294,9 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      notification['body'] ?? 'No Content',
+                      notification['body']?.isNotEmpty ?? false
+                          ? notification['body']
+                          : l10n.noContent, // Already localized
                       style: TextStyle(
                         fontSize: 14,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -276,7 +307,9 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
                     if (notification['relevance'] != null) ...[
                       const SizedBox(height: 4),
                       Text(
-                        'Relevance: ${notification['relevance']}',
+                        l10n.relevanceLabelWithValue(
+                          notification['relevance'].toString(),
+                        ), // Already localized
                         style: TextStyle(
                           fontSize: 12,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -288,7 +321,7 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          deliveredAt,
+                          deliveredAt, // Already formatted with DateFormat
                           style: TextStyle(
                             fontSize: 12,
                             color:
@@ -319,7 +352,7 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Seen',
+                                  l10n.seenLabel, // Already localized
                                   style: TextStyle(
                                     fontSize: 12,
                                     color:
@@ -342,7 +375,7 @@ class _NotificationHistoryPageState extends State<NotificationHistoryPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              'Tap to view',
+                              l10n.tapToView, // Already localized
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Theme.of(context).colorScheme.onTertiary,

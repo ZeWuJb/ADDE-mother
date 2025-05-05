@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timeago/timeago.dart' as timeago;
-
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'add_note_screen.dart';
 import 'note_provider.dart';
 
@@ -33,9 +33,15 @@ class _JournalScreenState extends State<JournalScreen> {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Please log in')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.pleaseLogIn,
+              style: TextStyle(color: Theme.of(context).colorScheme.onError),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
         setState(() => _isLoading = false);
         return;
       }
@@ -45,9 +51,15 @@ class _JournalScreenState extends State<JournalScreen> {
       print('Initialized JournalScreen for userId: ${user.id}');
     } catch (e) {
       print('Error initializing JournalScreen: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.errorLabel(e.toString()),
+            style: TextStyle(color: Theme.of(context).colorScheme.onError),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
       setState(() => _isLoading = false);
     }
   }
@@ -60,6 +72,7 @@ class _JournalScreenState extends State<JournalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final noteProvider = Provider.of<NoteProvider>(context);
     final filteredNotes =
         noteProvider.notes
@@ -67,14 +80,29 @@ class _JournalScreenState extends State<JournalScreen> {
             .toList();
 
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Journal'),
-        backgroundColor: Colors.white,
+        title: Text(
+          l10n.pageTitleJournal,
+          style: TextStyle(
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(context).colorScheme.primary,
+          ),
+        ),
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.light
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onPrimary,
       ),
       body:
           _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(
+                child: CircularProgressIndicator(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              )
               : Column(
                 children: [
                   Padding(
@@ -82,7 +110,10 @@ class _JournalScreenState extends State<JournalScreen> {
                     child: Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.add, color: Color(0xFFf7a1c4)),
+                          icon: Icon(
+                            Icons.add,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                           onPressed: () {
                             print('Navigating to AddNoteScreen for new note');
                             Navigator.push(
@@ -97,10 +128,18 @@ class _JournalScreenState extends State<JournalScreen> {
                           child: TextField(
                             controller: _searchController,
                             decoration: InputDecoration(
-                              hintText: 'Search notes by title...',
-                              hintStyle: TextStyle(color: Colors.grey[500]),
+                              hintText: l10n.searchNotesHint,
+                              hintStyle: TextStyle(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                              ),
                               filled: true,
-                              fillColor: Colors.grey[100],
+                              fillColor:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainer,
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 10,
@@ -110,7 +149,9 @@ class _JournalScreenState extends State<JournalScreen> {
                                 borderSide: BorderSide.none,
                               ),
                             ),
-                            style: const TextStyle(color: Colors.black87),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                           ),
                         ),
                       ],
@@ -122,9 +163,14 @@ class _JournalScreenState extends State<JournalScreen> {
                             ? Center(
                               child: Text(
                                 _searchQuery.isEmpty
-                                    ? 'No notes yet. Add one!'
-                                    : 'No notes match your search',
-                                style: TextStyle(color: Colors.grey[600]),
+                                    ? l10n.noNotesYet
+                                    : l10n.noNotesMatchSearch,
+                                style: TextStyle(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                ),
                               ),
                             )
                             : ListView.builder(
@@ -149,7 +195,10 @@ class _JournalScreenState extends State<JournalScreen> {
                                       vertical: 8,
                                     ),
                                     child: Card(
-                                      color: Colors.white,
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.surfaceContainer,
                                       elevation: 4,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
@@ -172,14 +221,20 @@ class _JournalScreenState extends State<JournalScreen> {
                                                         .textTheme
                                                         .titleLarge
                                                         ?.copyWith(
-                                                          color: Colors.black,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .onSurface,
                                                         ),
                                                   ),
                                                 ),
                                                 PopupMenuButton<String>(
-                                                  icon: const Icon(
+                                                  icon: Icon(
                                                     Icons.more_vert,
-                                                    color: Colors.grey,
+                                                    color:
+                                                        Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurfaceVariant,
                                                   ),
                                                   onSelected: (value) async {
                                                     if (value == 'delete') {
@@ -191,10 +246,24 @@ class _JournalScreenState extends State<JournalScreen> {
                                                         ScaffoldMessenger.of(
                                                           context,
                                                         ).showSnackBar(
-                                                          const SnackBar(
+                                                          SnackBar(
                                                             content: Text(
-                                                              'Note deleted',
+                                                              l10n.noteDeleted,
+                                                              style: TextStyle(
+                                                                color:
+                                                                    Theme.of(
+                                                                          context,
+                                                                        )
+                                                                        .colorScheme
+                                                                        .onSurface,
+                                                              ),
                                                             ),
+                                                            backgroundColor:
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .primary,
                                                           ),
                                                         );
                                                       } catch (e) {
@@ -203,8 +272,24 @@ class _JournalScreenState extends State<JournalScreen> {
                                                         ).showSnackBar(
                                                           SnackBar(
                                                             content: Text(
-                                                              'Error deleting note: $e',
+                                                              l10n.errorDeletingNote(
+                                                                e.toString(),
+                                                              ),
+                                                              style: TextStyle(
+                                                                color:
+                                                                    Theme.of(
+                                                                          context,
+                                                                        )
+                                                                        .colorScheme
+                                                                        .onError,
+                                                              ),
                                                             ),
+                                                            backgroundColor:
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .error,
                                                           ),
                                                         );
                                                       }
@@ -212,9 +297,11 @@ class _JournalScreenState extends State<JournalScreen> {
                                                   },
                                                   itemBuilder:
                                                       (context) => [
-                                                        const PopupMenuItem(
+                                                        PopupMenuItem(
                                                           value: 'delete',
-                                                          child: Text('Delete'),
+                                                          child: Text(
+                                                            l10n.deleteAction,
+                                                          ),
                                                         ),
                                                       ],
                                                 ),
@@ -226,7 +313,10 @@ class _JournalScreenState extends State<JournalScreen> {
                                               style: Theme.of(
                                                 context,
                                               ).textTheme.bodyMedium?.copyWith(
-                                                color: Colors.black87,
+                                                color:
+                                                    Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
                                               ),
                                               maxLines: 4,
                                               overflow: TextOverflow.ellipsis,
@@ -237,7 +327,10 @@ class _JournalScreenState extends State<JournalScreen> {
                                               style: Theme.of(
                                                 context,
                                               ).textTheme.bodySmall?.copyWith(
-                                                color: Colors.grey[600],
+                                                color:
+                                                    Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
                                               ),
                                             ),
                                           ],

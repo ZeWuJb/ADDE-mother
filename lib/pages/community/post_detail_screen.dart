@@ -1,3 +1,4 @@
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:adde/pages/community/comment_model.dart';
 import 'package:adde/pages/community/post_model.dart';
 import 'package:flutter/material.dart';
@@ -28,12 +29,26 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   Future<void> _fetchUserData() async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Please log in')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              l10n.pleaseLogIn,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onError,
+              ),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
         setState(() {
           _isLoading = false;
         });
@@ -53,9 +68,20 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       });
     } catch (e) {
       print('Error fetching user data: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error fetching user data: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.errorFetchingUserData(e.toString()),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onError,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
       setState(() {
         _isLoading = false;
       });
@@ -63,6 +89,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   Future<void> _fetchComments() async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       final response = await Supabase.instance.client
           .from('comments')
@@ -86,19 +113,42 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       });
     } catch (e) {
       print('Error fetching comments: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error fetching comments: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.errorFetchingComments(e.toString()),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onError,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
     }
   }
 
   Future<void> _addComment() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_commentController.text.isEmpty ||
         motherId == null ||
         fullName == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Comment cannot be empty')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.commentCannotBeEmpty,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onError,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
       return;
     }
 
@@ -121,13 +171,25 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       });
     } catch (e) {
       print('Error adding comment: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error adding comment: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.errorAddingComment(e.toString()),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onError,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
     }
   }
 
   Future<void> _deleteComment(String commentId) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       await Supabase.instance.client
           .from('comments')
@@ -137,22 +199,72 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         _comments.removeWhere((comment) => comment.id == commentId);
         print('Deleted comment ID: $commentId');
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.commentDeletedSuccessfully,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.white),
+          ),
+          backgroundColor: Colors.green.shade400,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
     } catch (e) {
       print('Error deleting comment: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error deleting comment: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.errorDeletingComment(e.toString()),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onError,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
-      backgroundColor: Colors.grey[200],
-      appBar: AppBar(title: const Text('Post'), backgroundColor: Colors.white),
+      backgroundColor: theme.colorScheme.surface,
+      appBar: AppBar(
+        title: Text(
+          l10n.postDetailTitle,
+          style: theme.appBarTheme.titleTextStyle?.copyWith(
+            color:
+                theme.brightness == Brightness.light
+                    ? theme.colorScheme.onPrimary
+                    : theme.colorScheme.primary,
+          ),
+        ),
+        backgroundColor:
+            theme.brightness == Brightness.light
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onPrimary,
+        elevation: theme.appBarTheme.elevation,
+      ),
       body:
           _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    theme.colorScheme.primary,
+                  ),
+                ),
+              )
               : Column(
                 children: [
                   Expanded(
@@ -160,32 +272,36 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       slivers: [
                         SliverToBoxAdapter(
                           child: Container(
-                            margin: const EdgeInsets.all(16.0),
+                            margin: EdgeInsets.all(screenHeight * 0.02),
                             child: Card(
-                              color: Colors.white,
-                              elevation: 4,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                              color: theme.colorScheme.surfaceContainer,
+                              elevation: theme.cardTheme.elevation,
+                              shape:
+                                  theme.cardTheme.shape ??
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                               child: Padding(
-                                padding: const EdgeInsets.all(16.0),
+                                padding: EdgeInsets.all(screenHeight * 0.02),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
                                       children: [
-                                        CircleAvatar(
-                                          radius: 24,
-                                          backgroundColor:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.secondary,
-                                          child: Text(
-                                            widget.post.fullName.isNotEmpty
-                                                ? widget.post.fullName[0]
-                                                : '?',
-                                            style: const TextStyle(
-                                              color: Colors.white,
+                                        Semantics(
+                                          label: l10n.profileOf(
+                                            widget.post.fullName,
+                                          ),
+                                          child: CircleAvatar(
+                                            radius: 24,
+                                            backgroundColor:
+                                                theme.colorScheme.secondary,
+                                            foregroundColor:
+                                                theme.colorScheme.onSecondary,
+                                            child: Text(
+                                              widget.post.fullName.isNotEmpty
+                                                  ? widget.post.fullName[0]
+                                                  : '?',
                                             ),
                                           ),
                                         ),
@@ -199,22 +315,27 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                                 widget.post.fullName.isNotEmpty
                                                     ? widget.post.fullName
                                                     : 'Unknown',
-                                                style: Theme.of(context)
+                                                style: theme
                                                     .textTheme
                                                     .titleLarge
                                                     ?.copyWith(
-                                                      color: Colors.black,
+                                                      color:
+                                                          theme
+                                                              .colorScheme
+                                                              .onSurface,
                                                     ),
                                               ),
                                               Text(
                                                 timeago.format(
                                                   widget.post.createdAt,
                                                 ),
-                                                style: Theme.of(
-                                                  context,
-                                                ).textTheme.bodySmall?.copyWith(
-                                                  color: Colors.grey[600],
-                                                ),
+                                                style: theme.textTheme.bodySmall
+                                                    ?.copyWith(
+                                                      color:
+                                                          theme
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                    ),
                                               ),
                                             ],
                                           ),
@@ -224,10 +345,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     const SizedBox(height: 12),
                                     Text(
                                       widget.post.content,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(color: Colors.black87),
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            color: theme.colorScheme.onSurface,
+                                          ),
                                     ),
                                     if (widget.post.imageUrl != null) ...[
                                       const SizedBox(height: 12),
@@ -239,9 +360,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                           width: double.infinity,
                                           fit: BoxFit.cover,
                                           errorBuilder:
-                                              (_, __, ___) => const Icon(
+                                              (_, __, ___) => Icon(
                                                 Icons.broken_image,
                                                 size: 50,
+                                                color:
+                                                    theme
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
                                               ),
                                         ),
                                       ),
@@ -252,22 +377,26 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          '${widget.post.likesCount} Likes',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodySmall?.copyWith(
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.black87,
+                                          l10n.likesCountText(
+                                            widget.post.likesCount,
                                           ),
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w500,
+                                                color:
+                                                    theme.colorScheme.onSurface,
+                                              ),
                                         ),
                                         Text(
-                                          '${_comments.length} Comments',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodySmall?.copyWith(
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.black87,
+                                          l10n.commentsCountText(
+                                            _comments.length,
                                           ),
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w500,
+                                                color:
+                                                    theme.colorScheme.onSurface,
+                                              ),
                                         ),
                                       ],
                                     ),
@@ -285,96 +414,130 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           ) {
                             final comment = _comments[index];
                             return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: screenHeight * 0.02,
+                                vertical: screenHeight * 0.01,
                               ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  CircleAvatar(
-                                    radius: 18,
-                                    backgroundColor:
-                                        Theme.of(context).colorScheme.secondary,
-                                    child: Text(
-                                      comment.fullName.isNotEmpty
-                                          ? comment.fullName[0]
-                                          : '?',
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[100],
-                                        borderRadius: BorderRadius.circular(12),
+                              child: Semantics(
+                                label: l10n.commentBy(comment.fullName),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 18,
+                                      backgroundColor:
+                                          theme.colorScheme.secondary,
+                                      foregroundColor:
+                                          theme.colorScheme.onSecondary,
+                                      child: Text(
+                                        comment.fullName.isNotEmpty
+                                            ? comment.fullName[0]
+                                            : '?',
                                       ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                comment.fullName.isNotEmpty
-                                                    ? comment.fullName
-                                                    : 'Unknown',
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .titleLarge
-                                                    ?.copyWith(
-                                                      fontSize: 16,
-                                                      color: Colors.black,
-                                                    ),
-                                              ),
-                                              if (comment.motherId == motherId)
-                                                IconButton(
-                                                  icon: const Icon(
-                                                    Icons.delete,
-                                                    size: 20,
-                                                    color: Colors.grey,
-                                                  ),
-                                                  onPressed:
-                                                      () => _deleteComment(
-                                                        comment.id,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color:
+                                              theme
+                                                  .colorScheme
+                                                  .surfaceContainerLow,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  comment.fullName.isNotEmpty
+                                                      ? comment.fullName
+                                                      : 'Unknown',
+                                                  style: theme
+                                                      .textTheme
+                                                      .titleLarge
+                                                      ?.copyWith(
+                                                        fontSize: 16,
+                                                        color:
+                                                            theme
+                                                                .colorScheme
+                                                                .onSurface,
                                                       ),
                                                 ),
-                                            ],
-                                          ),
-                                          Text(
-                                            comment.content,
-                                            style: Theme.of(
-                                              context,
-                                            ).textTheme.bodyMedium?.copyWith(
-                                              color: Colors.black87,
+                                                if (comment.motherId ==
+                                                    motherId)
+                                                  Semantics(
+                                                    label: l10n.deleteCommentBy(
+                                                      comment.fullName,
+                                                    ),
+                                                    child: IconButton(
+                                                      icon: Icon(
+                                                        Icons.delete,
+                                                        size: 20,
+                                                        color:
+                                                            theme
+                                                                .colorScheme
+                                                                .onSurfaceVariant,
+                                                      ),
+                                                      onPressed:
+                                                          () => _deleteComment(
+                                                            comment.id,
+                                                          ),
+                                                    ),
+                                                  ),
+                                              ],
                                             ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            timeago.format(comment.createdAt),
-                                            style: Theme.of(
-                                              context,
-                                            ).textTheme.bodySmall?.copyWith(
-                                              color: Colors.grey[600],
+                                            Text(
+                                              comment.content,
+                                              style: theme.textTheme.bodyMedium
+                                                  ?.copyWith(
+                                                    color:
+                                                        theme
+                                                            .colorScheme
+                                                            .onSurface,
+                                                  ),
                                             ),
-                                          ),
-                                        ],
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              timeago.format(comment.createdAt),
+                                              style: theme.textTheme.bodySmall
+                                                  ?.copyWith(
+                                                    color:
+                                                        theme
+                                                            .colorScheme
+                                                            .onSurfaceVariant,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             );
                           }, childCount: _comments.length),
                         ),
                         if (_comments.isEmpty)
-                          const SliverToBoxAdapter(
+                          SliverToBoxAdapter(
                             child: Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child: Center(child: Text('No comments yet')),
+                              padding: EdgeInsets.all(screenHeight * 0.02),
+                              child: Center(
+                                child: Text(
+                                  l10n.noCommentsYet,
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                       ],
@@ -386,10 +549,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: theme.colorScheme.surfaceContainer,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: theme.colorScheme.onSurface.withOpacity(0.05),
                           blurRadius: 8,
                           offset: const Offset(0, -2),
                         ),
@@ -401,30 +564,37 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           child: TextField(
                             controller: _commentController,
                             decoration: InputDecoration(
-                              hintText: 'Write a comment...',
-                              hintStyle: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: Colors.grey[500]),
+                              hintText: l10n.writeCommentHint,
+                              hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(20),
                                 borderSide: BorderSide.none,
                               ),
                               filled: true,
-                              fillColor: Colors.grey[100],
+                              fillColor: theme.colorScheme.surfaceContainerLow,
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 10,
                               ),
                             ),
-                            style: const TextStyle(color: Colors.black87),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurface,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.send,
-                            color: Color(0xFFf7a1c4),
+                        Semantics(
+                          label: l10n.sendCommentTooltip,
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.send,
+                              color: theme.colorScheme.primary,
+                            ),
+                            onPressed: _addComment,
+                            tooltip: l10n.sendCommentTooltip,
                           ),
-                          onPressed: _addComment,
                         ),
                       ],
                     ),

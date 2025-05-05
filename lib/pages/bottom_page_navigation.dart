@@ -1,20 +1,26 @@
+import 'package:adde/l10n/arb/app_localizations.dart'; // Import AppLocalizations
+import 'package:adde/pages/appointmentPages/calander_page.dart';
 import 'package:adde/pages/community/community_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:adde/pages/home_screen.dart';
 import 'package:adde/pages/education/Education_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class HomePage extends StatefulWidget {
+class BottomPageNavigation extends StatefulWidget {
   final String? email;
   final String user_id;
 
-  const HomePage({super.key, required this.email, required this.user_id});
+  const BottomPageNavigation({
+    super.key,
+    required this.email,
+    required this.user_id,
+  });
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<BottomPageNavigation> createState() => _BottomPageNavigationState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _BottomPageNavigationState extends State<BottomPageNavigation> {
   int _selectedIndex = 0;
 
   DateTime? pregnancyStartDate;
@@ -80,7 +86,9 @@ class _HomePageState extends State<HomePage> {
       });
     } catch (error) {
       print("Error fetching mother info: $error"); // Debug log
-      showSnackBar("An error occurred: $error");
+      showSnackBar(
+        AppLocalizations.of(context)!.errorLoadingData(error.toString()),
+      );
     }
   }
 
@@ -107,6 +115,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!; // Access AppLocalizations
+
     List<Widget> pages = [
       isLoading
           ? Center(
@@ -129,7 +139,7 @@ class _HomePageState extends State<HomePage> {
           )
           : Center(
             child: Text(
-              "Failed to load user data",
+              l10n.failedToLoadUserData, // Localized error message
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 16,
@@ -138,7 +148,7 @@ class _HomePageState extends State<HomePage> {
           ),
       const CommunityScreen(),
       const EducationPage(),
-      const Center(child: Text("Consult Page (Coming Soon)")),
+      const CalendarPage(), // Localized placeholder
     ];
 
     return Scaffold(
@@ -180,26 +190,26 @@ class _HomePageState extends State<HomePage> {
         unselectedLabelStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: "Home",
+            icon: const Icon(Icons.home_outlined),
+            activeIcon: const Icon(Icons.home),
+            label: l10n.bottomNavHome, // Localized label
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.people_outline),
-            activeIcon: Icon(Icons.people),
-            label: "Community",
+            icon: const Icon(Icons.people_outline),
+            activeIcon: const Icon(Icons.people),
+            label: l10n.bottomNavCommunity, // Localized label
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.menu_book_outlined),
-            activeIcon: Icon(Icons.menu_book),
-            label: "Education",
+            icon: const Icon(Icons.menu_book_outlined),
+            activeIcon: const Icon(Icons.menu_book),
+            label: l10n.bottomNavEducation, // Localized label
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.video_call_outlined),
-            activeIcon: Icon(Icons.video_call),
-            label: "Consult",
+            icon: const Icon(Icons.video_call_outlined),
+            activeIcon: const Icon(Icons.video_call),
+            label: l10n.bottomNavConsult, // Localized label
           ),
         ],
       ),

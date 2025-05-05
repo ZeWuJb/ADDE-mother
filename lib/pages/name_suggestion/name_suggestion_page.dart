@@ -1,3 +1,4 @@
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:adde/pages/name_suggestion/name_model.dart';
 import 'package:adde/pages/name_suggestion/name_provider.dart';
 import 'package:flutter/material.dart';
@@ -31,9 +32,20 @@ class _NameSuggestionPageState extends State<NameSuggestionPage>
       });
     } catch (e) {
       print('Error initializing NameSuggestionPage: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.errorLabel(e.toString()),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onError,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
       setState(() {
         _isLoading = false;
       });
@@ -48,28 +60,63 @@ class _NameSuggestionPageState extends State<NameSuggestionPage>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final nameProvider = Provider.of<NameProvider>(context);
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Baby Name Suggester'),
-        backgroundColor: Colors.white,
+        title: Text(
+          l10n.pageTitleNameSuggestion,
+          style: theme.appBarTheme.titleTextStyle?.copyWith(
+            color:
+                theme.brightness == Brightness.light
+                    ? theme.colorScheme.onPrimary
+                    : theme.colorScheme.primary,
+          ),
+        ),
+        backgroundColor:
+            theme.brightness == Brightness.light
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onPrimary,
+        elevation: theme.appBarTheme.elevation,
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Colors.pink,
-          unselectedLabelColor: Colors.grey[600],
-          indicatorColor: Colors.pink,
-          tabs: const [
-            Tab(text: 'All'),
-            Tab(text: 'Christian'),
-            Tab(text: 'Muslim'),
+          labelColor:
+              theme.brightness == Brightness.light
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onPrimary,
+          unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+          indicatorColor:
+              theme.brightness == Brightness.light
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onPrimary,
+          labelStyle: theme.tabBarTheme.labelStyle?.copyWith(
+            color:
+                theme.brightness == Brightness.light
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onPrimary,
+          ),
+          unselectedLabelStyle: theme.tabBarTheme.unselectedLabelStyle
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          tabs: [
+            Tab(text: l10n.tabAll),
+            Tab(text: l10n.tabChristian),
+            Tab(text: l10n.tabMuslim),
           ],
         ),
       ),
       body:
           _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    theme.colorScheme.primary,
+                  ),
+                ),
+              )
               : TabBarView(
                 controller: _tabController,
                 children: [
@@ -92,19 +139,25 @@ class _NameSuggestionPageState extends State<NameSuggestionPage>
   }
 
   Widget _buildNameList(List<Name> names, String? religion) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final screenHeight = MediaQuery.of(context).size.height;
     final boys = names.where((name) => name.gender == 'Boy').toList();
     final girls = names.where((name) => name.gender == 'Girl').toList();
 
     return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
       children: [
         if (boys.isNotEmpty) ...[
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: EdgeInsets.symmetric(
+              horizontal: screenHeight * 0.02,
+              vertical: screenHeight * 0.01,
+            ),
             child: Text(
-              'Boys',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Colors.black,
+              l10n.boysLabel,
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: theme.colorScheme.onSurface,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -113,11 +166,14 @@ class _NameSuggestionPageState extends State<NameSuggestionPage>
         ],
         if (girls.isNotEmpty) ...[
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: EdgeInsets.symmetric(
+              horizontal: screenHeight * 0.02,
+              vertical: screenHeight * 0.01,
+            ),
             child: Text(
-              'Girls',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Colors.black,
+              l10n.girlsLabel,
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: theme.colorScheme.onSurface,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -127,10 +183,10 @@ class _NameSuggestionPageState extends State<NameSuggestionPage>
         if (boys.isEmpty && girls.isEmpty)
           Center(
             child: Text(
-              'No names available for ${religion ?? 'this category'}',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+              l10n.noNamesAvailable(religion ?? l10n.tabAll),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
       ],
@@ -138,12 +194,21 @@ class _NameSuggestionPageState extends State<NameSuggestionPage>
   }
 
   Widget _buildNameTile(Name name) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: EdgeInsets.symmetric(
+        horizontal: screenHeight * 0.02,
+        vertical: screenHeight * 0.005,
+      ),
       child: Card(
-        color: Colors.white,
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        color: theme.colorScheme.surfaceContainer,
+        elevation: theme.cardTheme.elevation,
+        shape:
+            theme.cardTheme.shape ??
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
@@ -151,22 +216,28 @@ class _NameSuggestionPageState extends State<NameSuggestionPage>
           ),
           title: Text(
             name.name,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Colors.black87,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
           subtitle: Text(
             name.description,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          trailing: Icon(
-            name.gender == 'Boy' ? Icons.male : Icons.female,
-            color: name.gender == 'Boy' ? Colors.blue : Colors.pink,
+          trailing: Semantics(
+            label: name.gender == 'Boy' ? l10n.maleGender : l10n.femaleGender,
+            child: Icon(
+              name.gender == 'Boy' ? Icons.male : Icons.female,
+              color:
+                  name.gender == 'Boy'
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.secondary,
+            ),
           ),
         ),
       ),

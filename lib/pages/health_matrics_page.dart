@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:adde/l10n/arb/app_localizations.dart';
 
 class HealthMetricsPage extends StatefulWidget {
   final String userId;
@@ -45,7 +46,9 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
 
     if ([bpSystolic, bpDiastolic, heartRate, bodyTemp, weight].contains(null)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please enter valid values for all fields.")),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.invalidValuesError),
+        ),
       );
       return;
     }
@@ -68,12 +71,14 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
       weightController.clear();
 
       fetchHealthData();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Data saved successfully!")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.dataSavedSuccessfully),
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to save data. Please try again.")),
+        SnackBar(content: Text(AppLocalizations.of(context)!.failedToSaveData)),
       );
     }
   }
@@ -81,12 +86,9 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
   Widget buildLineChart() {
     if (healthData.isEmpty) {
       return Text(
-        "No data available.",
+        AppLocalizations.of(context)!.noDataAvailable,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color:
-              Theme.of(
-                context,
-              ).colorScheme.onSurfaceVariant, // black54 (light), white70 (dark)
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       );
     }
@@ -126,9 +128,7 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
             drawVerticalLine: true,
             getDrawingHorizontalLine:
                 (value) => FlLine(
-                  color: Theme.of(context).colorScheme.outline.withOpacity(
-                    0.5,
-                  ), // grey[400] (light), grey[700] (dark)
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
                   strokeWidth: 1,
                 ),
             getDrawingVerticalLine:
@@ -158,10 +158,7 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
                   return Text(
                     text,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color:
-                          Theme.of(context)
-                              .colorScheme
-                              .onSurface, // #fb6f92 (light), white (dark)
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   );
                 },
@@ -180,14 +177,16 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
                 },
               ),
             ),
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
           ),
           borderData: FlBorderData(
             show: true,
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outline,
-            ), // grey[400] (light), grey[700] (dark)
+            border: Border.all(color: Theme.of(context).colorScheme.outline),
           ),
           minY: 0,
           maxY: 200,
@@ -195,53 +194,34 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
             LineChartBarData(
               spots: bpSysSpots,
               isCurved: true,
-              color:
-                  isDarkMode
-                      ? Colors.blue.shade300
-                      : Colors
-                          .blue
-                          .shade700, // Lighter blue in dark, darker in light
+              color: isDarkMode ? Colors.blue.shade300 : Colors.blue.shade700,
               barWidth: 2,
-              dotData: FlDotData(show: true),
+              dotData: const FlDotData(show: true),
               belowBarData: BarAreaData(show: false),
             ),
             LineChartBarData(
               spots: hrSpots,
               isCurved: true,
-              color:
-                  isDarkMode
-                      ? Colors.red.shade300
-                      : Colors
-                          .red
-                          .shade700, // Lighter red in dark, darker in light
+              color: isDarkMode ? Colors.red.shade300 : Colors.red.shade700,
               barWidth: 2,
-              dotData: FlDotData(show: true),
+              dotData: const FlDotData(show: true),
               belowBarData: BarAreaData(show: false),
             ),
             LineChartBarData(
               spots: tempSpots,
               isCurved: true,
-              color:
-                  isDarkMode
-                      ? Colors.green.shade300
-                      : Colors
-                          .green
-                          .shade700, // Lighter green in dark, darker in light
+              color: isDarkMode ? Colors.green.shade300 : Colors.green.shade700,
               barWidth: 2,
-              dotData: FlDotData(show: true),
+              dotData: const FlDotData(show: true),
               belowBarData: BarAreaData(show: false),
             ),
             LineChartBarData(
               spots: weightSpots,
               isCurved: true,
               color:
-                  isDarkMode
-                      ? Colors.orange.shade300
-                      : Colors
-                          .orange
-                          .shade700, // Lighter orange in dark, darker in light
+                  isDarkMode ? Colors.orange.shade300 : Colors.orange.shade700,
               barWidth: 2,
-              dotData: FlDotData(show: true),
+              dotData: const FlDotData(show: true),
               belowBarData: BarAreaData(show: false),
             ),
           ],
@@ -253,25 +233,28 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
                   final data = healthData[index];
                   String label = '';
                   if (spot.barIndex == 0) {
-                    label = 'BP Sys: ${data['bp_systolic']} mmHg';
+                    label = AppLocalizations.of(
+                      context,
+                    )!.tooltipBpSys(data['bp_systolic'].toString() as int);
                   } else if (spot.barIndex == 1) {
-                    label = 'HR: ${data['heart_rate']} bpm';
+                    label = AppLocalizations.of(
+                      context,
+                    )!.tooltipHr(data['heart_rate'].toString() as int);
                   } else if (spot.barIndex == 2) {
-                    label =
-                        'Temp: ${(data['body_temp'] as num).toStringAsFixed(1)}°C';
+                    label = AppLocalizations.of(context)!.tooltipTemp(
+                      (data['body_temp'] as num).toStringAsFixed(1) as double,
+                    );
                   } else if (spot.barIndex == 3) {
-                    label =
-                        'Weight: ${(data['weight'] as num).toStringAsFixed(1)} kg';
+                    label = AppLocalizations.of(context)!.tooltipWeight(
+                      (data['weight'] as num).toStringAsFixed(1) as double,
+                    );
                   }
                   return LineTooltipItem(
                     label,
                     Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color:
-                              Theme.of(context)
-                                  .colorScheme
-                                  .onPrimary, // white (light), black (dark)
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ) ??
-                        TextStyle(color: Colors.white),
+                        const TextStyle(color: Colors.white),
                   );
                 }).toList();
               },
@@ -283,10 +266,10 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
   }
 
   List<String> generateRecommendations() {
+    final l10n = AppLocalizations.of(context)!;
+
     if (healthData.isEmpty) {
-      return [
-        "No data available yet. Start by entering your health metrics to receive personalized recommendations.",
-      ];
+      return [l10n.noDataRecommendation];
     }
 
     final latest = healthData.last;
@@ -299,59 +282,35 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
     List<String> recommendations = [];
 
     if (bpSys < 90 || bpDia < 60) {
-      recommendations.add(
-        "Your blood pressure appears to be low (Systolic: $bpSys mmHg, Diastolic: $bpDia mmHg). This could be due to dehydration, fatigue, or other factors. To help stabilize it, consider increasing your salt intake slightly (e.g., adding a pinch to your meals), drinking more water throughout the day (aim for 8-10 glasses), and eating small, frequent meals to maintain energy levels. If you feel dizzy or faint often, consult a healthcare professional to rule out underlying issues.",
-      );
+      recommendations.add(l10n.bpLowRecommendation(bpSys, bpDia));
     } else if (bpSys > 140 || bpDia > 90) {
-      recommendations.add(
-        "Your blood pressure is elevated (Systolic: $bpSys mmHg, Diastolic: $bpDia mmHg), which might indicate hypertension. To manage this, reduce your salt intake by avoiding processed foods and opting for fresh ingredients, engage in moderate exercise like brisk walking or cycling for 30 minutes most days of the week, and practice stress-reduction techniques such as yoga or deep breathing for 10-15 minutes daily. If this persists across multiple readings, consider seeing a doctor for a detailed evaluation.",
-      );
+      recommendations.add(l10n.bpHighRecommendation(bpSys, bpDia));
     } else {
-      recommendations.add(
-        "Your blood pressure (Systolic: $bpSys mmHg, Diastolic: $bpDia mmHg) is within a normal range. To maintain this, continue a balanced diet rich in fruits, vegetables, and lean proteins, and keep up with regular physical activity (at least 150 minutes per week). Monitoring trends over time will help ensure it stays stable.",
-      );
+      recommendations.add(l10n.bpNormalRecommendation(bpSys, bpDia));
     }
 
     if (hr < 60) {
-      recommendations.add(
-        "Your heart rate ($hr bpm) is on the lower side. This can be normal for fit individuals, but if you’re not highly active or feel unusually tired, it’s worth monitoring. Increase your physical activity with exercises like jogging, swimming, or dancing for 20-30 minutes a few times a week to boost cardiovascular health. Track this over time and consult a doctor if it drops further or you experience symptoms like lightheadedness.",
-      );
+      recommendations.add(l10n.hrLowRecommendation(hr));
     } else if (hr > 100) {
-      recommendations.add(
-        "Your heart rate ($hr bpm) is elevated, which could be due to stress, caffeine, or exertion. To bring it down, try relaxation techniques like deep breathing exercises (inhale for 4 seconds, exhale for 6) or meditation for 10-15 minutes daily. Limit stimulants like coffee or energy drinks, and ensure you’re getting 7-9 hours of sleep. If it remains high consistently, a medical checkup might be warranted.",
-      );
+      recommendations.add(l10n.hrHighRecommendation(hr));
     } else {
-      recommendations.add(
-        "Your heart rate ($hr bpm) is in a healthy range. To keep it that way, maintain a routine of moderate exercise (e.g., walking or cycling) and ensure you’re managing stress effectively with hobbies or relaxation practices. Consistency is key—keep tracking it to spot any unusual changes.",
-      );
+      recommendations.add(l10n.hrNormalRecommendation(hr));
     }
 
     if (temp < 36.0) {
-      recommendations.add(
-        "Your body temperature ($temp°C) is below average, which might suggest you’re cold or your metabolism is slow. Keep warm by layering clothing or using a blanket, and sip warm beverages like herbal tea throughout the day. Monitor for signs of illness like fatigue or chills, and if this persists, consider a thyroid check with your doctor since low temperature can sometimes indicate hormonal imbalances.",
-      );
+      recommendations.add(l10n.tempLowRecommendation(temp));
     } else if (temp > 37.5) {
-      recommendations.add(
-        "Your body temperature ($temp°C) is elevated, possibly indicating a fever or overheating. Stay hydrated by drinking 8-12 glasses of water daily, rest in a cool environment, and avoid heavy physical activity until it normalizes. If it exceeds 38°C or lasts more than a day, seek medical advice to rule out infections or other causes.",
-      );
+      recommendations.add(l10n.tempHighRecommendation(temp));
     } else {
-      recommendations.add(
-        "Your body temperature ($temp°C) is normal. To maintain this, dress appropriately for the weather, stay hydrated with 6-8 glasses of water daily, and avoid extreme temperature changes. Regular monitoring will help you catch any deviations early.",
-      );
+      recommendations.add(l10n.tempNormalRecommendation(temp));
     }
 
     if (weight < 50) {
-      recommendations.add(
-        "Your weight ($weight kg) is on the lower side. To gain or maintain a healthy weight, focus on a nutrient-dense diet including proteins (e.g., eggs, chicken, beans), healthy fats (e.g., nuts, avocados), and complex carbs (e.g., whole grains). Aim for 3 balanced meals and 2 snacks daily, and consider light strength training exercises like lifting small weights to build muscle mass. Consult a nutritionist if you’re struggling to gain weight.",
-      );
+      recommendations.add(l10n.weightLowRecommendation(weight));
     } else if (weight > 80) {
-      recommendations.add(
-        "Your weight ($weight kg) is on the higher side. To manage it, incorporate regular exercise like walking, swimming, or yoga for 30-40 minutes most days, and focus on a diet rich in vegetables, lean proteins, and whole grains while cutting back on sugary drinks and processed snacks. Set small, achievable goals (e.g., losing 0.5 kg per month) and track progress. A healthcare provider can offer tailored advice if needed.",
-      );
+      recommendations.add(l10n.weightHighRecommendation(weight));
     } else {
-      recommendations.add(
-        "Your weight ($weight kg) is within a healthy range. To sustain this, continue eating a balanced diet with plenty of fruits, vegetables, and lean proteins, and stay active with at least 150 minutes of moderate exercise weekly. Regular weigh-ins will help you maintain consistency over time.",
-      );
+      recommendations.add(l10n.weightNormalRecommendation(weight));
     }
 
     if (healthData.length > 1) {
@@ -362,51 +321,42 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
 
       if (bpSys > prevBpSys + 10) {
         recommendations.add(
-          "Your systolic blood pressure has increased by more than 10 mmHg since your last reading (from $prevBpSys to $bpSys). This could be situational (e.g., stress or diet), but monitor it closely over the next few days. Reduce sodium intake, avoid caffeine close to bedtime, and try a 10-minute relaxation exercise daily to see if it stabilizes.",
+          l10n.bpSysIncreasedRecommendation(prevBpSys, bpSys),
         );
       }
       if (hr > prevHr + 15) {
-        recommendations.add(
-          "Your heart rate has jumped by more than 15 bpm compared to your previous entry (from $prevHr to $hr). This might reflect temporary stress or activity, but if you haven’t been exercising, consider what’s changed—too much coffee, poor sleep, or anxiety? Take time to unwind with a calming activity like reading or a warm bath.",
-        );
+        recommendations.add(l10n.hrIncreasedRecommendation(prevHr, hr));
       }
       if (weight > prevWeight + 2) {
         recommendations.add(
-          "Your weight has increased by more than 2 kg since your last record (from $prevWeight to $weight). This could be water retention or diet-related. Cut back on salty or carb-heavy meals for a few days and increase your water intake to flush out excess fluids. If it’s consistent, reassess your calorie intake and activity level.",
+          l10n.weightIncreasedRecommendation(prevWeight, weight),
         );
       }
     }
 
     return recommendations.isEmpty
-        ? [
-          "All your latest vitals (BP: $bpSys/$bpDia mmHg, HR: $hr bpm, Temp: $temp°C, Weight: $weight kg) are within normal ranges. Great job! Keep up your healthy habits, including a balanced diet, regular exercise (150 minutes weekly), and consistent sleep (7-9 hours nightly) to stay on track.",
-        ]
+        ? [l10n.allVitalsNormalRecommendation(bpSys, bpDia, hr, temp, weight)]
         : recommendations;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Health Metrics",
+          l10n.pageTitleHealthMetrics,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             color:
-                Theme.of(
-                  context,
-                ).colorScheme.onPrimary, // white (light), black (dark)
+                Theme.of(context).brightness == Brightness.light
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(context).colorScheme.primary,
           ),
         ),
-        backgroundColor:
-            Theme.of(
-              context,
-            ).appBarTheme.backgroundColor, // #ff8fab (light), black (dark)
-        foregroundColor:
-            Theme.of(
-              context,
-            ).appBarTheme.foregroundColor, // black87 (light), white (dark)
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: Theme.of(context).appBarTheme.elevation,
       ),
       body: SingleChildScrollView(
@@ -416,32 +366,23 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Enter Health Data:",
+                l10n.enterHealthData,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color:
-                      Theme.of(
-                        context,
-                      ).colorScheme.onSurface, // #fb6f92 (light), white (dark)
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: bpSysController,
                 decoration: InputDecoration(
-                  labelText: "BP Systolic (mmHg)",
+                  labelText: l10n.bpSystolicLabel,
                   border: Theme.of(context).inputDecorationTheme.border,
                   focusedBorder:
                       Theme.of(context).inputDecorationTheme.focusedBorder,
                   filled: true,
-                  fillColor:
-                      Theme.of(context)
-                          .inputDecorationTheme
-                          .fillColor, // white (light), black54 (dark)
+                  fillColor: Theme.of(context).inputDecorationTheme.fillColor,
                   labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color:
-                        Theme.of(context)
-                            .colorScheme
-                            .onSurfaceVariant, // black54 (light), white70 (dark)
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -453,7 +394,7 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
               TextField(
                 controller: bpDiaController,
                 decoration: InputDecoration(
-                  labelText: "BP Diastolic (mmHg)",
+                  labelText: l10n.bpDiastolicLabel,
                   border: Theme.of(context).inputDecorationTheme.border,
                   focusedBorder:
                       Theme.of(context).inputDecorationTheme.focusedBorder,
@@ -472,7 +413,7 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
               TextField(
                 controller: hrController,
                 decoration: InputDecoration(
-                  labelText: "Heart Rate (bpm)",
+                  labelText: l10n.heartRateLabel,
                   border: Theme.of(context).inputDecorationTheme.border,
                   focusedBorder:
                       Theme.of(context).inputDecorationTheme.focusedBorder,
@@ -491,7 +432,7 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
               TextField(
                 controller: tempController,
                 decoration: InputDecoration(
-                  labelText: "Body Temperature (°C)",
+                  labelText: l10n.bodyTemperatureLabel,
                   border: Theme.of(context).inputDecorationTheme.border,
                   focusedBorder:
                       Theme.of(context).inputDecorationTheme.focusedBorder,
@@ -504,13 +445,15 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: weightController,
                 decoration: InputDecoration(
-                  labelText: "Weight (kg)",
+                  labelText: l10n.weightLabelKg,
                   border: Theme.of(context).inputDecorationTheme.border,
                   focusedBorder:
                       Theme.of(context).inputDecorationTheme.focusedBorder,
@@ -523,7 +466,9 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
               ),
               const SizedBox(height: 10),
               ElevatedButton(
@@ -534,19 +479,16 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
                   ),
                 ),
                 child: Text(
-                  "Save Data",
+                  l10n.saveDataButton,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color:
-                        Theme.of(
-                          context,
-                        ).colorScheme.onPrimary, // white (light), black (dark)
+                    color: Theme.of(context).colorScheme.onPrimary,
                     fontSize: 16,
                   ),
                 ),
               ),
               const SizedBox(height: 20),
               Text(
-                "Recommendations:",
+                l10n.recommendationsTitle,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -566,7 +508,7 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
               ),
               const SizedBox(height: 20),
               Text(
-                "Health Trends:",
+                l10n.healthTrendsTitle,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -589,7 +531,7 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        "BP Systolic",
+                        l10n.bpSystolicLabel,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -609,7 +551,7 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        "Heart Rate",
+                        l10n.heartRateLabel,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -629,7 +571,7 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        "Temp (°C x 5)",
+                        l10n.tempScaledLabel,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -649,7 +591,7 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        "Weight",
+                        l10n.weightLabel,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),

@@ -1,0 +1,998 @@
+{
+  "@@locale": "am",
+  "pageTitleNotificationDetail": "የማሳወቂያ ዝርዝሮች",
+  "messageLabel": "መልእክት",
+  "deliveredLabel": "ተልኳል: {date}",
+  "seenLabel": "ተመልክቷል",
+  "unreadLabel": "አልተነበበም",
+  "relevanceLabel": "ጠቀሜት",
+  "pageTitleNotificationHistory": "የማሳወቂያ ታሪክ",
+  "noNotifications": "ገና ምንም ማሳወቂያ የለም",
+  "errorLabel": "ስህተት: {error}",
+  "pageTitleCommunity": "ማህበረሰብ",
+  "whatsOnYourMind": "ምን እያሰብክ ነው",
+  "noPosts": "ምንም ልጥፍ የለም። አዲስ ፍጠር",
+  "pageTitleProfile": "መገለጫ",
+  "languageSettings": "የቋንቋ ቅንብሮች",
+  "languageEnglish": "እንግሊዝኛ",
+  "languageAmharic": "አማርኛ",
+  "viewNotification": "ማሳወቂያ ተመልከት",
+  "pageTitleHome": "መነሻ",
+  "pageTitleHealthMetrics": "የጤና መለኪያዎች",
+  "pageTitleEducation": "ትምህርት",
+  "pageTitleFavorites": "ተወዳጆች",
+  "pageTitleWeeklyTip": "ሳምንታዊ ምክር",
+  "pageTitleJournal": "ዕለታዊ ማስታወሻ",
+  "greeting": "ሰላም፣ {name}!",
+  "pregnancyJourney": "የእርግዝና ጉዞ",
+  "weeksLabel": "ሳምንታት",
+  "daysLabel": "ቀናት",
+  "weeklyTips": "ሳምንታዊ ምክሮች",
+  "noTipsYet": "እስካሁን ምንም ምክሮች የሉም—ጥቂት ያክሉ!",
+  "exploreFeatures": "ተግባራትን ያስሱ",
+  "featureCalendar": "ቀን መቁጠሪያ",
+  "featureCalendarDescription": "ቀጠሮዎችን መርሐ ግብር ያስይዙ",
+  "featureHealthMetrics": "የጤና መለኪያዎች",
+  "featureHealthMetricsDescription": "ጤናዎን ይፈትሹ",
+  "featureJournal": "ዕለታዊ ማስታወሻ",
+  "featureJournalDescription": "ሀሳቦችዎን ይፃፉ",
+  "featureNameSuggestion": "ስም መጠየቅ",
+  "featureNameSuggestionDescription": "የሕፃን ስሞችን ይፈልጉ",
+  "noUserLoggedIn": "ምንም ተጠቃሚ አልገባም",
+  "failedToLoadProfile": "መገለጫ መጫን አልተሳካም: {error}",
+  "weekLabel": "ሳምንት {week}",
+  "noTitle": "No Title",
+  "pageTitleHealthArticle": "የጤና ጽሑፍ",
+  "noDiaryEntries": "እስካሁን ምንም የዴስክ ግቤቶች የሉም።",
+  "errorLoadingEntries": "ግቤቶችን መጫን ላይ ስህተት: {error}",
+  "addedToFavorites": "ወደ ተወዳጆች ተጨምሯል!",
+  "removedFromFavorites": "ከተወዳጆች ተወግዷል!",
+  "errorUpdatingFavorite": "ተወዳጅ ማዘመን ላይ ስህተት: {error}",
+  "noContent": "ይዘት የለም",
+  "moreButton": "ተጨማሪ >>>",
+  "lessButton": "ያነሰ >>>",
+  "postedAt": "ተለጠፈ በ: {date}",
+  "weekLabelWithNumber": "ሳምንት {week}",
+  "favoriteEntriesTitle": "ተወዳጅ ግቤቶች",
+  "noFavoriteEntries": "እስካሁን ምንም ተወዳጅ ግቤቶች የሉም።",
+  "refreshButton": "አድስ",
+  "showMore": "ተጨማሪ >>>",
+  "showLess": "ያነሰ >>>",
+  "postedAtLabel": "የተለጠፈበት ቀን",
+  "bottomNavHome": "መነሻ",
+  "bottomNavCommunity": "ማህበረሰብ",
+  "bottomNavEducation": "ትምህርት",
+  "bottomNavConsult": "አማካሪ",
+  "failedToLoadUserData": "የተጠቃሚ ውሂብ መጫን አልተሳካም",
+  "errorLoadingData": "ስህተት ተከስቷል: {error}",
+  "consultPageComingSoon": "የአማካሪ ገፅ (በቅርቡ ይመጣል)",
+  "editProfileTitle": "መገለጫ አርትዕ",
+  "chooseFromGallery": "ከጋለሪ ምረጥ",
+  "takePhoto": "ፎቶ አንሳ",
+  "personalInformation": "የግል መረጃ",
+  "fullNameLabel": "ሙሉ ስም",
+  "ageLabel": "ዕድሜ",
+  "weightLabel": "ክብደት",
+  "heightLabel": "ቁመት",
+  "bloodPressureLabel": "የደም ግፊት (ለምሳሌ፣ 120/80)",
+  "selectHealthConditions": "ተፈጻሚ የጤና ሁኔታዎችን ምረጥ",
+  "describeHealthIssue": "የጤና ችግርህን ግለጽ",
+  "healthIssueHint": "የጤና ታሪክህን ወይም ችግሮችህን እዚህ ግለጽ...",
+  "saveProfileButton": "መገለጫ አስቀምጥ",
+  "failedToUpdateProfile": "መገለጫ ማዘመን አልተሳካም: {error}",
+  "cameraPermissionDenied": "የካሜራ ፍቃድ ተከልክሏል",
+  "galleryPermissionDenied": "የጋለሪ ፍቃድ ተከልክሏል",
+  "imageTooLarge": "ምስሉ በጣም ትልቅ ነው፣ እባክህ ትንሽ ምረጥ",
+  "errorPickingImage": "ምስል መምረጥ ላይ ስህተት: {error}",
+  "profileUpdatedSuccessfully": "መገለጫ በተሳካ ሁኔታ ታድሷል!",
+  "weightUnit": "{unit, select, kg {ኪግ} lbs {ፓውንድ} other {{unit}}}",
+  "heightUnit": "{unit, select, cm {ሴሜ} ft {ፊት} other {{unit}}}",
+  "healthCondition": "{condition, select, diabetes {ስኳር በሽታ} hypertension {ከፍተኛ የደም ግፊት} asthma {አስም} heartDisease {የልብ በሽታ} thyroidIssues {የታይሮይድ ችግሮች} other {ሌላ} other {{condition}}}",
+  "errorMarkingAsSeen": "እንደተመለከተ ምልክት ማድረግ ላይ �ስህተት: {error}",
+  "tapToView": "መታ ያድርጉ ለመመልከት",
+  "notificationChannelName": "የየቀኑ ምክር",
+  "notificationChannelDescription": "የጤና ምክሮች በየ4 ቀናት",
+  "fallbackTipTitle": "ምክር {index}",
+  "fallbackTipBody": "ለመከረው ሐኪምዎን ያማክሩ።",
+  "relevanceLabelWithValue": "ተገቢነት: {value}",
+  "genderLabel": "ጾታ",
+  "genderSelectionError": "እባክዎ ጾታ ይምረጡ",
+  "enterHealthData": "የጤና ውሂብ ያስገቡ:",
+  "bpSystolicLabel": "Blood Pressure Systolic (mmHg)",
+  "bpDiastolicLabel": "Blood Pressure Diastolic (mmHg)",
+  "heartRateLabel": "የልብ መጠጥ (bpm)",
+  "bodyTemperatureLabel": "የሰውነት ሙቀት (°C)",
+  "weightLabelKg": "ክብደት (ኪግ)",
+  "saveDataButton": "ውሂብ አስቀምጥ",
+  "recommendationsTitle": "ምክሮች:",
+  "healthTrendsTitle": "የጤና መልካም ሁኔታዎች:",
+  "noDataAvailable": "ውሂብ የለም።",
+  "dataSavedSuccessfully": "ውሂብ በተሳካ ሁኔታ ተቀምጧል!",
+  "failedToSaveData": "ውሂብ መቀመጥ አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
+  "invalidValuesError": "እባክዎ ሁሉንም መስፈርቶች ትክክለኛ እሴቶችን ያስገቡ።",
+  "tempScaledLabel": "የሙቀት መጠን (°C x 5)",
+  "bpLowRecommendation": "የደም ግፊትህ ዝቅተኛ እንደሆነ ይመስላል (Systolic: {bpSys} mmHg, Diastolic: {bpDia} mmHg)። ይህ በውሃ እጥበት፣ በመቀነስ ወይም በሌሎች ምክንያቶች ሊኖር ይችላል። ለመቀነስ የሚረዱበትን ጥሩ የጤና መልካም ሁኔታ ይቀጥሉ፣ በየቀኑ ውሃ መጠጣትን ያሳድጉ (8-10 ጋላ ይዘት) እና የእህቴ ምግብ መቀነስ ይፈልጉ። ከዚያም በተለቀቀ ጊዜ ለማስጠበቅ ለመንገድ እና ለማደንቀፍ ከሆነ ለማድረግ ለመልካም አቅም የሚያስፈልግ ነው።",
+  "bpHighRecommendation": "የደም ግፊትህ ከፍተኛ ነው (Systolic: {bpSys} mmHg, Diastolic: {bpDia} mmHg)፣ ይህም ሊያመልክት የሚችል ነው የከፍተኛ የደም ግፊት ነው። ለመቀነስ የሚረዱበትን ጥሩ የጤና መልካም ሁኔታ ይቀጥሉ፣ በየቀኑ ውሃ መጠጣትን ያሳድጉ (8-10 ጋላ ይዘት) እና የእህቴ ምግብ መቀነስ ይፈልጉ። ከዚያም በተለቀቀ ጊዜ ለማስጠበቅ ለመንገድ እና ለማደንቀፍ ከሆነ ለማድረግ ለመልካም አቅም የሚያስፈልግ ነው።",
+  "bpNormalRecommendation": "የደም ግፊትህ (Systolic: {bpSys} mmHg, Diastolic: {bpDia} mmHg) መደበኛ ነው። ይህን ለመቀነስ የሚረዱበትን ጥሩ የጤና መልካም ሁኔታ ይቀጥሉ፣ በየቀኑ ውሃ መጠጣትን ያሳድጉ (8-10 ጋላ ይዘት) እና የእህቴ ምግብ መቀነስ ይፈልጉ። ከዚያም በተለቀቀ ጊዜ ለማስጠበቅ ለመንገድ እና ለማደንቀፍ ከሆነ ለማድረግ ለመልካም አቅም የሚያስፈልግ ነው።",
+  "hrLowRecommendation": "የልብ መጠጡ ({hr} bpm) ዝቅተኛ ነው። ይህ ለጤና ያለፈ ሰዎች መደበኛ ነው፣ ግን ከፍተኛ አይነት እንቅስቃሴ አልተካሄድም ወይም መቀነስ እንደሚሰማብዎ መመከር ይገባል። የልብ መጠጥን ለመጨመር እንቁስቋሴዎን ያሳድጉ በሚያደርግበት ጊዜ የልብ መጠጡን ያረጋግጡ።",
+  "hrHighRecommendation": "የልብ መጠጡ ({hr} bpm) ከፍተኛ ነው፣ ይህም በጭንቀት፣ በቡና ወይም በግብዓት ሊኖር ይችላል። ለመቀነስ የልብ መጠጡን ያረጋግጡ በሚያደርግበት ጊዜ የልብ መጠጡን ያረጋግጡ።",
+  "hrNormalRecommendation": "የልብ መጠጡ ({hr} bpm) መደበኛ ነው። ይህን ለመቀነስ የልብ መጠጡን ያረጋግጡ በሚያደርግበት ጊዜ የልብ መጠጡን ያረጋግጡ።",
+  "tempLowRecommendation": "የሰውነት ሙቀት ({temp}°C) ከመካከለኛ መከላከያ በታች ነው፣ ይህም በተቆጣጠረ ሁኔታ ወይም በተቀንሶ መጠን ሊኖር ይችላል። ለመቀነስ የሰውነት ሙቀትዎን ያረᜌጋግጡ በሚያደርግበት ጊዜ የሰውነት ሙቀትዎን ያረጋግጡ።",
+  "tempHighRecommendation": "የሰውነት ሙቀት ({temp}°C) ከፍተኛ ነው፣ ይህም ሊያመልክት የሚችል ነው የተቆጣጠረ ሁኔታ ነው። ለመቀነስ የሰውነት ሙቀትዎን ያረጋግጡ በሚያደርግበት ጊዜ የሰውነት ሙቀትዎን ያረጋግጡ።",
+  "tempNormalRecommendation": "የሰውነት ሙቀት ({temp}°C) መደበኛ ነው። ይህን ለመቀነስ የሰውነት ሙቀትዎን ያረጋግጢ በሚያደርግበት ጊዜ የሰውነት ሙቀትዎን ያረጋግጡ።",
+  "weightLowRecommendation": "ክብደትህ ({weight} kg) ዝቅተኛ ነው። ይህን ለመቀነስ የሰውነት ክብደትዎን ያረጋግጡ በሚያደርግበት ጊዜ የሰውነት ክብደትዎን ያረጋግጡ።",
+  "weightHighRecommendation": "ክብደትህ ({weight} kg) ከፍተኛ ነው። ይህን ለመቀነስ የሰውነት ክብደትዎን ያረጋግጡ በሚያደርግበት ጊዜ የሰውነት ክብደትዎን ያረጋግጡ።",
+  "weightNormalRecommendation": "ክብደትህ ({weight} kg) መደበኛ ነው። ይህን ለመቀነስ የሰውነት ክብደትዎን ያረጋግጡ በሚያደርግበት ጊዜ የሰውነት ክብደትዎን ያረጋግጡ።",
+  "bpSysIncreasedRecommendation": "የደም ግፊትህ (Systolic: {bpSys} mmHg) ከፍተኛ ነው ከፊተኛ መጠን (ከ{prevBpSys} ወደ {bpSys}) በላይ ነው። ይህ በጊዜ ሁኔታ ወይም በተመጣጣኝ ምግብ ሊኖር ይችላል፣ ግን በተቃራይ ጊዜ ይመከሩ።",
+  "hrIncreasedRecommendation": "የልብ መጠጡ ({hr} bpm) ከፊተኛ መጠን (ከ{prevHr} ወደ {hr}) በላይ ነው። ይህ በጊዜ ሁኔታ ወይም በተመጣጣኝ እንቁስቋሴ ሊኖር ይችላል፣ ግን በተቃራይ ጊዜ ይመከሩ።",
+  "weightIncreasedRecommendation": "ክብደትህ ({weight} kg) ከፊተኛ መጠን (ከ{prevWeight} ወደ {weight}) በላይ ነው። ይህ በውሃ መጠጣት ወይም በተመጣጣኝ ምግብ ሊኖር ይችላል፣ ግን በተቃራይ ጊዜ ይመከሩ።",
+  "allVitalsNormalRecommendation": "ሁሉም የመጨረሻ የጤና መለኪያዎችህ (BP: {bpSys}/{bpDia} mmHg, HR: {hr} bpm, Temp: {temp}°C, Weight: {weight} kg) መደበኛ ናቸው። በጣም ጥሩ! ጤናማ ልማቶችህን ቀጥል፣ ሚዛናዊ ምግብ፣ መደበኛ እንቅስቃሴ (ሳምንታዊ 150 ደቂቃዎች)፣ እና ተከታታይ እንቅልፍ (በሌሊት 7-9 ሰዓታት) ለመቀጠል።",
+  "noDataRecommendation": "እስካሁን ውሂብ የለም። የጤና መለኪያዎችህን በማስገባት ግላዊ ምክሮችን ለመቀበል ጀምር።",
+  "tooltipBpSys": "BP Sys: {value} mmHg",
+  "tooltipHr": "HR: {value} bpm",
+  "tooltipTemp": "የሙቀት መጠን: {value}°C",
+  "tooltipWeight": "ክብደት: {value} kg",
+  "boysLabel": "ወንዶች",
+  "femaleGender": "የሴት ጾታ",
+  "girlsLabel": "ሴቶች",
+  "maleGender": "የወንድ ጾታ",
+  "noNamesAvailable": "ለ{category} ምንም ስሞች የሉም",
+  "pageTitleNameSuggestion": "የሕፃን ስም መጠየቂያ",
+  "tabAll": "ሁሉም",
+  "tabChristian": "ክርስቲያን",
+  "tabMuslim": "ሙስሊም",
+  "addNoteLabel": "ማስቀመጥ ምስክር",
+  "deleteAction": "መሰረዝ",
+  "errorDeletingNote": "የምስክር መሰረዝ ላይ ስህተት: {error}",
+  "loginPrompt": "እባክህ መግባት ይፈልጋሉ",
+  "noNotesMatchSearch": "ምንም ምስክሮች ከመፈለጉ ጋር አይዛመዱም",
+  "noNotesYet": "እስካሁን ምንም ምስክር የለም። አንድ ያክሉ!",
+  "searchHint": "የምስክሮችን በአርዕስት መፈለግ...",
+  "aboutSection": "ስለ",
+  "appointmentAccepted": "ቀጠሮ ተቀባይነት አግኝቷል",
+  "appointmentCancelled": "ቀጠሮ ተሰርዟል",
+  "appointmentCancelledMessage": "ይህ ቀጠሮ ተሰርዟል። የቪዲዮ ጥሪው ይጠናቀቃል።",
+  "appointmentWithDoctor": "{doctorName} ጋር ቀጠሮ",
+  "appointmentsLabel": "ቀጠሮዎች",
+  "availableDoctors": "የሚገኙ ዶክተሮች",
+  "availableTimeSlots": "የሚገኙ የጊዜ ቦታዎች፡",
+  "beforeJoining": "ከመቀላቀልዎ በፊት፡",
+  "bookAppointment": "ቀጠሮ ይያዙ",
+  "bookAppointmentWith": "{fullName} ጋር ቀጠሮ ይያዙ",
+  "bookNewAppointmentTooltip": "አዲስ ቀጠሮ ይያዙ",
+  "bookingLabel": "መያዣ",
+  "callEnded": "ጥሪ አልቋል፡ {error}",
+  "connectedToCall": "ወደ ጥሪ ተገናኝቷል",
+  "connectedToServer": "ከአገልጋይ ጋር ተገናኝቷል",
+  "connectingToCall": "ወደ ጥሪ በመገናኘት ላይ...",
+  "contactInformation": "የመገናኛ መረጃ",
+  "copiedToClipboard": "ወደ ክሊፕቦርድ ተቀድቷል",
+  "copyLinkTooltip": "አገናኝ ቅዳ",
+  "couldNotCreateProfile": "የተጠቃሚ መገለጫ መፍጠር አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
+  "doctorProfile": "ዶክተር መገለጫ፡ {fullName}፣ {speciality}",
+  "doctorRating": "ዶክተር {fullName}፣ {speciality}፣ 4.5 ደረጃ",
+  "doctorsLabel": "ዶክተሮች",
+  "emailLabel": "ኢሜይል",
+  "ensureStableConnection": "የተረጋጋ የበይነመረብ ግንኙነት እንዳለዎት ያረጋግጡ",
+  "errorJoiningCall": "ጥሪ መቀላቀል ላይ ስህተት",
+  "errorPrefix": "ስህተት",
+  "errorSendingRequest": "ጥያቄ መላክ ላይ ስህተት፡ {error}",
+  "findQuietSpace": "ለእርስዎ ምክክር ጸጥ ያለ፣ የግል ቦታ ያግኙ",
+  "haveQuestionsReady": "ለዶክተሩ ጥያቄዎችዎን ያዘጋጁ",
+  "inCall": "በጥሪ ውስጥ",
+  "invalidDateFormat": "የተሳሳተ የቀን ቅርጸት",
+  "joinNow": "አሁን ይቀላቀሉ",
+  "joinVideoCall": "የቪዲዮ ጥሪ ይቀላቀሉ",
+  "joining": "በመቀላቀል ላይ...",
+  "joiningCall": "ጥሪ በመቀላቀል ላይ...",
+  "later": "በኋላ",
+  "meetingInformation": "የስብሰባ መረጃ",
+  "motherAppTitle": "የእናቶች መተግበሪያ",
+  "navigateToAppointments": "ወደ ቀጠሮዎች ገፅ ይሂዱ",
+  "navigateToBooking": "ወደ መያዣ ገፅ ይሂዱ",
+  "navigateToDoctors": "ወደ ዶክተሮች ገፅ ይሂዱ",
+  "newMeetingLinkAvailable": "አዲስ የስብሰባ አገናኝ ይገኛል",
+  "newMeetingLinkMessage": "አዲስ የቪዲዮ ኮንፈረንስ አገናኝ ይገኛል። በአዲሱ አገናኝ መቀላቀል ይፈልጋሉ?",
+  "noAcceptedAppointments": "ምንም ተቀባይነት ያላቸው ቀጠሮዎች የሉም።\nተቀባይነት ያገኙ ቀጠሮዎች እዚህ ይታያሉ።",
+  "noAvailabilityFound": "ለዚህ ዶክተር ምንም መገኘት አልተገኘም።",
+  "noDateAvailable": "ምንም ቀን የለም",
+  "noDescriptionAvailable": "ምንም መግለጫ የለም",
+  "noDoctorsAvailable": "ምንም ዶክተሮች የሉም",
+  "noPendingAppointments": "ምንም በመጠባበቅ ላይ ያሉ ቀጠሮዎች የሉም።\nየሚልኳቸው ጥያቄዎች እዚህ ይታያሉ።",
+  "noRejectedAppointments": "ምንም ውድቅ የተደረጉ ቀጠሮዎች የሉም።\nውድቅ የተደረጉ ቀጠሮዎች እዚህ ይታያሉ።",
+  "notAvailable": "አይገኝም",
+  "notConnected": "አልተገናኘም - ቀጠሮዎች ላይላኩ ይችላሉ",
+  "notSpecified": "አልተገለጸም",
+  "okLabel": "እሺ",
+  "pageTitleAppointments": "የእኔ ቀጠሮዎች",
+  "phoneLabel": "ስልክ",
+  "pleaseSelectDateTime": "እባክዎ ቀን እና ሰዓት ይምረጡ",
+  "ratingLabel": "4.5 (245 ግምገማዎች)",
+  "readyToJoin": "መቀላቀል ዝግጁ ነው",
+  "refreshAppointmentsTooltip": "ቀጠሮዎችን አድስ",
+  "requestAppointment": "ቀጠሮ ጠይቅ",
+  "requestSent": "የቀጠሮ ጥያቄ ተልኳል! የዶክተር ፈቃድ በመጠባበቅ ላይ።",
+  "rescheduleAppointment": "ቀጠሮ እንደገና ማስያዝ",
+  "selectDateTime": "ቀን እና ሰዓት ይምረጡ",
+  "specialityLabel": "ልዩ ሙያ፦ {speciality}",
+  "startCall": "ጥሪ ይጀምሩ",
+  "startVideoCall": "ቪዲዮ ጥሪ ይጀምሩ",
+  "statusAccepted": "ተቀባይነት አግኝቷል",
+  "statusCancelled": "ተሰርዟል",
+  "statusPending": "በመጠባበቅ ላይ",
+  "statusRejected": "ተቀባይነት አላገኘም",
+  "timeZoneLabel": "ሰዓት ሰቅ {timeZone}",
+  "upcomingAppointments": "የቀጠሮ ቀናት",
+  "viewProfile": "መገለጫ ይመልከቱ",
+  "waitingForDoctor": "ዶክተሩን እየጠበቅን ነው።",
+  "yourMeetingLink": "የእርስዎ የስብሰባ አገናኝ",
+  "@deliveredLabel": {
+    "placeholders": {
+      "date": {
+        "type": "Object"
+      }
+    }
+  },
+  "@errorLabel": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@greeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@failedToLoadProfile": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@errorLoadingEntries": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@errorUpdatingFavorite": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@postedAt": {
+    "placeholders": {
+      "date": {
+        "type": "Object"
+      }
+    }
+  },
+  "@weekLabelWithNumber": {
+    "placeholders": {
+      "week": {
+        "type": "int"
+      }
+    }
+  },
+  "@errorLoadingData": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@failedToUpdateProfile": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@errorPickingImage": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@weightUnit": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "@heightUnit": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "@healthCondition": {
+    "placeholders": {
+      "condition": {
+        "type": "String"
+      }
+    }
+  },
+  "@errorMarkingAsSeen": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@fallbackTipTitle": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "@relevanceLabelWithValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@bpLowRecommendation": {
+    "placeholders": {
+      "bpSys": {
+        "type": "int"
+      },
+      "bpDia": {
+        "type": "int"
+      }
+    }
+  },
+  "@bpHighRecommendation": {
+    "placeholders": {
+      "bpSys": {
+        "type": "int"
+      },
+      "bpDia": {
+        "type": "int"
+      }
+    }
+  },
+  "@bpNormalRecommendation": {
+    "placeholders": {
+      "bpSys": {
+        "type": "int"
+      },
+      "bpDia": {
+        "type": "int"
+      }
+    }
+  },
+  "@hrLowRecommendation": {
+    "placeholders": {
+      "hr": {
+        "type": "int"
+      }
+    }
+  },
+  "@hrHighRecommendation": {
+    "placeholders": {
+      "hr": {
+        "type": "int"
+      }
+    }
+  },
+  "@hrNormalRecommendation": {
+    "placeholders": {
+      "hr": {
+        "type": "int"
+      }
+    }
+  },
+  "@tempLowRecommendation": {
+    "placeholders": {
+      "temp": {
+        "type": "double"
+      }
+    }
+  },
+  "@tempHighRecommendation": {
+    "placeholders": {
+      "temp": {
+        "type": "double"
+      }
+    }
+  },
+  "@tempNormalRecommendation": {
+    "placeholders": {
+      "temp": {
+        "type": "double"
+      }
+    }
+  },
+  "@weightLowRecommendation": {
+    "placeholders": {
+      "weight": {
+        "type": "double"
+      }
+    }
+  },
+  "@weightHighRecommendation": {
+    "placeholders": {
+      "weight": {
+        "type": "double"
+      }
+    }
+  },
+  "@weightNormalRecommendation": {
+    "placeholders": {
+      "weight": {
+        "type": "double"
+      }
+    }
+  },
+  "@bpSysIncreasedRecommendation": {
+    "placeholders": {
+      "prevBpSys": {
+        "type": "int"
+      },
+      "bpSys": {
+        "type": "int"
+      }
+    }
+  },
+  "@hrIncreasedRecommendation": {
+    "placeholders": {
+      "prevHr": {
+        "type": "int"
+      },
+      "hr": {
+        "type": "int"
+      }
+    }
+  },
+  "@weightIncreasedRecommendation": {
+    "placeholders": {
+      "prevWeight": {
+        "type": "double"
+      },
+      "weight": {
+        "type": "double"
+      }
+    }
+  },
+  "@allVitalsNormalRecommendation": {
+    "placeholders": {
+      "bpSys": {
+        "type": "int"
+      },
+      "bpDia": {
+        "type": "int"
+      },
+      "hr": {
+        "type": "int"
+      },
+      "temp": {
+        "type": "double"
+      },
+      "weight": {
+        "type": "double"
+      }
+    }
+  },
+  "@tooltipBpSys": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "@tooltipHr": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "@tooltipTemp": {
+    "placeholders": {
+      "value": {
+        "type": "double"
+      }
+    }
+  },
+  "@tooltipWeight": {
+    "placeholders": {
+      "value": {
+        "type": "double"
+      }
+    }
+  },
+  "@noNamesAvailable": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "@errorDeletingNote": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@appointmentWithDoctor": {
+    "placeholders": {
+      "doctorName": {
+        "type": "String"
+      }
+    }
+  },
+  "@bookAppointmentWith": {
+    "placeholders": {
+      "fullName": {
+        "type": "String"
+      }
+    }
+  },
+  "@callEnded": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@doctorProfile": {
+    "placeholders": {
+      "fullName": {
+        "type": "String"
+      },
+      "speciality": {
+        "type": "String"
+      }
+    }
+  },
+  "@doctorRating": {
+    "placeholders": {
+      "fullName": {
+        "type": "String"
+      },
+      "speciality": {
+        "type": "String"
+      }
+    }
+  },
+  "@errorSendingRequest": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@specialityLabel": {
+    "placeholders": {
+      "speciality": {
+        "type": "String"
+      }
+    }
+  },
+  "@timeZoneLabel": {
+    "placeholders": {
+      "timeZone": {
+        "type": "String"
+      }
+    }
+  },
+    "retryButton": "እንደገና ሞክር",
+    "@retryButton": {
+      "description": "Label for the retry button in error messages"
+    },
+    
+      "searchNotesHint": "የእርስዎን ማስታወሻዎች ይፈልጉ...",
+      "@searchNotesHint": {
+        "description": "Hint text for the search bar in the notes section"
+      },
+
+      "pleaseLogIn": "እባክዎ ለመቀጠል ይግቡ",
+  "@pleaseLogIn": {
+    "description": "Message shown when a user is not logged in"
+  },
+  "noteDeleted": "ማስታወሻ በተሳካ ሁኔታ ተሰርዟል",
+  "@noteDeleted": {
+    "description": "Confirmation message when a note is deleted"
+  },
+  "appName": "አዴ እርዳታ መተግበሪያ",
+  "@appName": {
+    "description": "Name of the application displayed on the splash screen"
+  },
+  "noInternetTitle": "የበይነመረብ ግንኙነት የለም",
+  "@noInternetTitle": {
+    "description": "Title of the dialog shown when there is no internet connection"
+  },
+  "noInternetMessage": "እባክዎ የበይነመረብ ግኍኙነትዎን ያረጋግጡ እና እንደገና ይሞክሩ።",
+  "@noInternetMessage": {
+    "description": "Message shown in the dialog when there is no internet connection"
+  },
+  "genderFemale": "ሴት",
+  "@genderFemale": {
+    "description": "Label for the female gender option"
+  },
+  "genderMale": "ወንድ",
+  "@genderMale": {
+    "description": "Label for the male gender option"
+  },
+  "genderOther": "ሌላ",
+  "@genderOther": {
+    "description": "Label for the other gender option"
+  },
+  "editProfile": "መገለጫ አርትዕ",
+  "@editProfile": {
+    "description": "Label for the option to edit the user profile"
+  },
+  "themeMode": "ገጽታ ሁኔታ",
+  "@themeMode": {
+    "description": "Label for the theme mode toggle (light/dark)"
+  },
+  "consultationFee": "የምክር ክፍያ",
+  "@consultationFee": {
+    "description": "Label for the consultation fee of a doctor"
+  },
+  "unknownName": "ያልታወቀ ስም",
+  "@unknownName": {
+    "description": "Fallback text for when a doctor's name is not available"
+  },
+  "welcomeMessage": "ወደ አዴ እርዳታ መተግበሪያ እንኳን ደህና መጡ!",
+  "@welcomeMessage": {
+    "description": "Welcome message displayed on the calendar page"
+  },
+  "testCameraMic": "ካሜራዎን እና ማይክሮፎንዎን ይሞክሩ",
+  "@testCameraMic": {
+    "description": "Instruction to test camera and microphone before joining a video call"
+  },
+  "yourDoctorWillJoin": "ዶክተርዎ በቅርቡ ወደ ስብሰባው ይቀላቀላል",
+  "@yourDoctorWillJoin": {
+    "description": "Message indicating that the doctor will join the video call soon"
+  },
+  "roomName": "ክፍል: {roomName}",
+  "@roomName": {
+    "description": "Label for the meeting room name",
+    "placeholders": {
+      "roomName": {
+        "type": "Object"
+      }
+    }
+  },
+  "statusLabel": "ሁኔታ: {status}",
+  "@statusLabel": {
+    "description": "Label for the appointment status",
+    "placeholders": {
+      "status": {
+        "type": "Object"
+      }
+    }
+  },
+  "scheduledFor": "የተያዘለት: {date}",
+  "@scheduledFor": {
+    "description": "Label for the scheduled date and time of the appointment",
+    "placeholders": {
+      "date": {
+        "type": "Object"
+      }
+    }
+  },
+  "videoConsultationTitle": "የቪዲዮ ምክክር",
+  "@videoConsultationTitle": {
+    "description": "Title for the video consultation page"
+  },
+  "videoConsultationMessage": "የእርስዎ የቪዲዮ ምክክር ለመጀመር ዝግጁ ነው።",
+  "@videoConsultationMessage": {
+    "description": "Message shown when an appointment is accepted and ready for video consultation"
+  },
+  "tabPending": "በመጠባበቅ ላይ ({count})",
+  "@tabPending": {
+    "description": "Label for the pending appointments tab with the number of appointments",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tabAccepted": "ተቀባይነት ያለው ({count})",
+  "@tabAccepted": {
+    "description": "Label for the accepted appointments tab with the number of appointments",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tabRejected": "ውድቅ የተደረገ ({count})",
+  "@tabRejected": {
+    "description": "Label for the rejected appointments tab with the number of appointments",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statusPrefix": "ሁኔታ: {status}",
+  "@statusPrefix": {
+    "description": "Prefix for displaying the connection status",
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "retryLabel": "እንደገና ሞክር",
+  "@retryLabel": {
+    "description": "Label for the retry button when reconnecting"
+  },
+  "errorFetchingUserData": "የተጠቃሚ መረጃ ማግኘት ላይ ስህተት: {error}",
+  "@errorFetchingUserData": {
+    "description": "Error message shown when fetching user data fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorFetchingComments": "አስተያየቶችን ማግኘት ላይ ስህተት: {error}",
+  "@errorFetchingComments": {
+    "description": "Error message shown when fetching comments fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "commentCannotBeEmpty": "አስተያየት ባዶ ሊሆን አይችልም",
+  "@commentCannotBeEmpty": {
+    "description": "Error message shown when a comment is empty or user is not logged in"
+  },
+  "errorAddingComment": "አስተያየት መጨመር ላይ ስህተት: {error}",
+  "@errorAddingComment": {
+    "description": "Error message shown when adding a comment fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "commentDeletedSuccessfully": "አስተያየት በተሳካ ሁኔታ ተሰርዟል",
+  "@commentDeletedSuccessfully": {
+    "description": "Success message shown when a comment is deleted"
+  },
+  "errorDeletingComment": "አስተያየት መሰረዝ ላይ ስህተት: {error}",
+  "@errorDeletingComment": {
+    "description": "Error message shown when deleting a comment fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "postDetailTitle": "የመልእክት ዝርዝሮች",
+  "@postDetailTitle": {
+    "description": "Title for the post detail screen"
+  },
+  "profileOf": "የ{fullName} መገለጫ",
+  "@profileOf": {
+    "description": "Accessibility label for the profile avatar of the post author",
+    "placeholders": {
+      "fullName": {
+        "type": "String"
+      }
+    }
+  },
+  "likesCountText": "{count} መውደዶች",
+  "@likesCountText": {
+    "description": "Text displaying the number of likes for a post",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commentsCountText": "{count} አስተያየቶች",
+  "@commentsCountText": {
+    "description": "Text displaying the number of comments for a post",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commentBy": "አስተያየት በ{fullName}",
+  "@commentBy": {
+    "description": "Accessibility label for a comment by a specific user",
+    "placeholders": {
+      "fullName": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteCommentBy": "አስተያየት በ{fullName} ሰርዝ",
+  "@deleteCommentBy": {
+    "description": "Accessibility label for the delete button of a comment by a specific user",
+    "placeholders": {
+      "fullName": {
+        "type": "String"
+      }
+    }
+  },
+  "noCommentsYet": "እስካሁን ምንም አስተያየቶች የሉም",
+  "@noCommentsYet": {
+    "description": "Message shown when there are no comments on a post"
+  },
+  "writeCommentHint": "አስተያየት ይፃፉ...",
+  "@writeCommentHint": {
+    "description": "Hint text for the comment input field"
+  },
+  "sendCommentTooltip": "አስተያየት ላክ",
+  "@sendCommentTooltip": {
+    "description": "Tooltip for the send comment button"
+  },
+  "unableToLoadChat": "ውይይት መጫን አልተቻለም",
+  "@unableToLoadChat": {
+    "description": "Error message shown when the chat fails to load"
+  },
+  "chatServiceUnavailable": "የውይይት አገልግሎት በአሁኑ ጊዜ አይገኝም",
+  "@chatServiceUnavailable": {
+    "description": "Error message shown when the chat database table is not found"
+  },
+  "pleaseLogInChat": "እባክዎ ውይይት ለመድረስ ይግቡ",
+  "@pleaseLogInChat": {
+    "description": "Error message shown when the user is not authenticated for chat"
+  },
+  "databaseError": "የውሂብ ጎታ ስህተት: {message}",
+  "@databaseError": {
+    "description": "Error message for database-related issues",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "networkError": "የአውታረ መረብ ስህተት፣ እባክዎ ግንኙነትዎን ያረጋግጡ",
+  "@networkError": {
+    "description": "Error message shown when a network issue occurs"
+  },
+  "failedToSendMessage": "መልእክት መላክ አልተሳካም: {error}",
+  "@failedToSendMessage": {
+    "description": "Error message shown when sending a message fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "startChatting": "{receiverName} ጋር ውይይት ይጀምሩ",
+  "@startChatting": {
+    "description": "Message shown when there are no messages in the chat",
+    "placeholders": {
+      "receiverName": {
+        "type": "String"
+      }
+    }
+  },
+  "chatUnavailableHint": "ውይይት በአሁኑ ጊዜ አይገኝም",
+  "@chatUnavailableHint": {
+    "description": "Hint text for the message input field when chat is unavailable"
+  },
+  "typeMessageHint": "መልእክት ይፃፉ...",
+  "@typeMessageHint": {
+    "description": "Hint text for the message input field"
+  },
+  "sendMessageTooltip": "መልእክት ላክ",
+  "@sendMessageTooltip": {
+    "description": "Tooltip for the send message button"
+  },
+  "postBy": "መልእክት በ{fullName}",
+  "@postBy": {
+    "description": "Accessibility label for a post by a specific user",
+    "placeholders": {
+      "fullName": {
+        "type": "String"
+      }
+    }
+  },
+  "editPost": "መልእክት አርትዕ",
+  "@editPost": {
+    "description": "Label for the edit post option in the popup menu"
+  },
+  "deletePost": "መልእክት ሰርዝ",
+  "@deletePost": {
+    "description": "Label for the delete post option in the popup menu"
+  },
+  "unlikePost": "መልእክት አለመውደድ",
+  "@unlikePost": {
+    "description": "Accessibility label for unliking a post"
+  },
+  "likePost": "መልእክት ውደድ",
+  "@likePost": {
+    "description": "Accessibility label for liking a post"
+  },
+  "commentOnPost": "በመልእክት ላይ አስተያየት ስጥ",
+  "@commentOnPost": {
+    "description": "Accessibility label for commenting on a post"
+  },
+  "commentPost": "አስተያየት",
+  "@commentPost": {
+    "description": "Label for the comment button on a post"
+  },
+  "imageSizeError": "የምስል መጠን ከ5ሜባ በላይ ነው",
+  "@imageSizeError": {
+    "description": "Error message shown when the selected image is too large"
+  },
+  "emptyContentError": "የልጥፍ ይዘት ባዶ መሆን አይችልም",
+  "@emptyContentError": {
+    "description": "Error message shown when the post content is empty"
+  },
+  "userDataNotLoaded": "የተጠቃሚ ውሂብ አልተጫነም፣ እባክዎ እንደገና ይሞክሩ",
+  "@userDataNotLoaded": {
+    "description": "Error message shown when user data fails to load"
+  },
+  "errorSavingPost": "ልጥፍ ማስቀመጥ ላይ ስህተት: {error}",
+  "@errorSavingPost": {
+    "description": "Error message shown when saving a post fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "closeTooltip": "ዝጋ",
+  "@closeTooltip": {
+    "description": "Tooltip for the close button"
+  },
+  "editPostTitle": "ልጥፍ አርትዕ",
+  "@editPostTitle": {
+    "description": "Title for the edit post screen"
+  },
+  "postButton": "ለጥፍ",
+  "@postButton": {
+    "description": "Label for the post button when creating a new post"
+  },
+  "updateButton": "አዘምን",
+  "@updateButton": {
+    "description": "Label for the update button when editing a post"
+  },
+  "removeImageTooltip": "ምስል አስወግድ",
+  "@removeImageTooltip": {
+    "description": "Tooltip for the remove image button"
+  },
+  "addImageTooltip": "ምስል ጨምር",
+  "@addImageTooltip": {
+    "description": "Tooltip for the add image button"
+  },
+  "createPostTitle": "ልጥፍ ፍጠር",
+  "@createPostTitle": {
+    "description": "Title for the create post screen"
+  },
+    "errorFetchingUser": "የተጠቃሚ ውሂብ ማግኘት ላይ ስህተት: {error}",
+  "@errorFetchingUser": {
+    "description": "Error message shown when fetching user data fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPosts": "ልጥፎችን ፈልግ",
+  "@searchPosts": {
+    "description": "Tooltip for the search button in the community screen"
+  },
+  "createNewPost": "አዲስ ልጥፍ ፍጠር",
+  "@createNewPost": {
+    "description": "Accessibility label for the create post button"
+  }
+}

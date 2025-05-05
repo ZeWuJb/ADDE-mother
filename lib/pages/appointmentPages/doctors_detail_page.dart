@@ -1,3 +1,4 @@
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'booking_page.dart';
 
@@ -8,175 +9,224 @@ class DoctorDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
           doctor['full_name'],
-          style: const TextStyle(
+          style: theme.appBarTheme.titleTextStyle?.copyWith(
             fontWeight: FontWeight.bold,
             fontSize: 20,
-            color: Colors.white,
+            color: theme.colorScheme.onPrimary,
           ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          color: Colors.white,
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Stack(
         children: [
-          // Background gradient
           Container(
             height: 250,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.teal, Colors.tealAccent],
+                colors: [
+                  theme.colorScheme.primary,
+                  theme.colorScheme.primaryContainer,
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(30),
                 bottomRight: Radius.circular(30),
               ),
             ),
           ),
-
-          // Main content
           SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 80),
-
-                // Profile Section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
-                        spreadRadius: 2,
-                        blurRadius: 10,
-                      ),
-                    ],
+                Semantics(
+                  label: l10n.doctorProfile(
+                    doctor['full_name'],
+                    doctor['speciality'],
                   ),
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 60,
-                        backgroundColor: Colors.teal.shade50,
-                        child: ClipOval(
-                          child: doctor['profile_url'] != null
-                              ? Image.network(
-                            doctor['profile_url'],
-                            fit: BoxFit.cover,
-                            width: 120,
-                            height: 120,
-                            errorBuilder: (_, __, ___) =>
-                                Icon(Icons.person, size: 60, color: Colors.teal),
-                          )
-                              : Icon(Icons.person, size: 60, color: Colors.teal),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.colorScheme.onSurface.withOpacity(0.2),
+                          spreadRadius: 2,
+                          blurRadius: 10,
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        doctor['full_name'],
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.teal,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        doctor['speciality'],
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.star, color: Colors.amber, size: 24),
-                          const SizedBox(width: 4),
-                          Text(
-                            '4.5 (245 reviews)',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // About Section
-                _buildSection(
-                  title: 'About',
-                  child: Text(
-                    doctor['description'] ?? 'No description available',
-                    style: const TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Contact Information
-                _buildSection(
-                  title: 'Contact Information',
-                  child: Column(
-                    children: [
-                      _buildContactRow(Icons.email, 'Email', doctor['email']),
-                      _buildContactRow(Icons.phone, 'Phone', doctor['phone'] ?? 'Not available'),
-                      _buildContactRow(Icons.attach_money, 'Consultation Fee',
-                          '\$${doctor['payment_required_amount']}'),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Booking Button
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => BookingPage(doctorId: doctor['id']),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      ],
                     ),
-                    minimumSize: const Size(double.infinity, 56),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 60,
+                          backgroundColor: theme.colorScheme.primary
+                              .withOpacity(0.2),
+                          child: ClipOval(
+                            child:
+                                doctor['profile_url'] != null
+                                    ? Image.network(
+                                      doctor['profile_url'],
+                                      fit: BoxFit.cover,
+                                      width: 120,
+                                      height: 120,
+                                      errorBuilder:
+                                          (_, __, ___) => Icon(
+                                            Icons.person,
+                                            size: 60,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                    )
+                                    : Icon(
+                                      Icons.person,
+                                      size: 60,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          doctor['full_name'],
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          doctor['speciality'],
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              l10n.ratingLabel,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                ),
+                const SizedBox(height: 24),
+                _buildSection(
+                  title: l10n.aboutSection,
+                  child: Text(
+                    doctor['description'] ?? l10n.noDescriptionAvailable,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  theme: theme,
+                ),
+                const SizedBox(height: 24),
+                _buildSection(
+                  title: l10n.contactInformation,
+                  child: Column(
                     children: [
-                      Icon(Icons.calendar_month, color: Colors.white),
-                      SizedBox(width: 8),
-                      Text(
-                        'Book Appointment',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      _buildContactRow(
+                        Icons.email,
+                        l10n.emailLabel,
+                        doctor['email'],
+                        theme,
+                      ),
+                      _buildContactRow(
+                        Icons.phone,
+                        l10n.phoneLabel,
+                        doctor['phone'] ?? l10n.notAvailable,
+                        theme,
+                      ),
+                      _buildContactRow(
+                        Icons.attach_money,
+                        l10n.consultationFee,
+                        '\$${doctor['payment_required_amount']}',
+                        theme,
                       ),
                     ],
+                  ),
+                  theme: theme,
+                ),
+                const SizedBox(height: 24),
+                Semantics(
+                  label: l10n.bookAppointmentWith(doctor['full_name']),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => BookingPage(doctorId: doctor['id']),
+                        ),
+                      );
+                    },
+                    style: theme.elevatedButtonTheme.style?.copyWith(
+                      backgroundColor: WidgetStatePropertyAll(
+                        theme.colorScheme.primary,
+                      ),
+                      foregroundColor: WidgetStatePropertyAll(
+                        theme.colorScheme.onPrimary,
+                      ),
+                      padding: const WidgetStatePropertyAll(
+                        EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      shape: WidgetStatePropertyAll(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      minimumSize: const WidgetStatePropertyAll(
+                        Size(double.infinity, 56),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.calendar_month,
+                          color: theme.colorScheme.onPrimary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          l10n.bookAppointment,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -187,27 +237,30 @@ class DoctorDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSection({required String title, required Widget child}) {
+  Widget _buildSection({
+    required String title,
+    required Widget child,
+    required ThemeData theme,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 20,
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Colors.teal,
+            color: theme.colorScheme.primary,
           ),
         ),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
+                color: theme.colorScheme.onSurface.withOpacity(0.1),
                 spreadRadius: 2,
                 blurRadius: 10,
               ),
@@ -219,12 +272,17 @@ class DoctorDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildContactRow(IconData icon, String label, String value) {
+  Widget _buildContactRow(
+    IconData icon,
+    String label,
+    String value,
+    ThemeData theme,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(icon, color: Colors.teal, size: 20),
+          Icon(icon, color: theme.colorScheme.primary, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -232,18 +290,16 @@ class DoctorDetailsPage extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.teal,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.primary,
                   ),
                 ),
               ],

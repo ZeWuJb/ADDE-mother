@@ -1,9 +1,10 @@
-import 'package:adde/pages/community/post_card.dart';
-import 'package:adde/pages/community/post_provider.dart';
-import 'package:adde/pages/community/user_profile_screen.dart';
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:adde/pages/community/post_card.dart';
+import 'package:adde/pages/community/post_provider.dart';
+import 'package:adde/pages/community/user_profile_screen.dart';
 import 'create_post_screen.dart';
 import 'post_detail_screen.dart';
 
@@ -29,9 +30,22 @@ class _CommunityScreenState extends State<CommunityScreen> {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Please log in')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.pleaseLogIn,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onError,
+              ),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
         setState(() {
           _isLoading = false;
         });
@@ -48,9 +62,20 @@ class _CommunityScreenState extends State<CommunityScreen> {
       });
     } catch (e) {
       print('Error initializing: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error fetching user: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.errorFetchingUser(e.toString()),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onError,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
       setState(() {
         _isLoading = false;
       });
@@ -79,59 +104,95 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final postProvider = Provider.of<PostProvider>(context, listen: true);
+    final screenHeight = MediaQuery.of(context).size.height;
+    final l10n = AppLocalizations.of(context)!;
 
     if (_isLoading || motherId == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              theme.colorScheme.primary,
+            ),
+          ),
+        ),
+      );
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Community'),
-        backgroundColor: Colors.white,
+        title: Text(
+          l10n.pageTitleCommunity,
+          style: theme.appBarTheme.titleTextStyle?.copyWith(
+            color:
+                theme.brightness == Brightness.light
+                    ? theme.colorScheme.onPrimary
+                    : theme.colorScheme.primary,
+          ),
+        ),
+        backgroundColor:
+            theme.brightness == Brightness.light
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onPrimary,
+        elevation: theme.appBarTheme.elevation,
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: Icon(
+              Icons.search,
+              color:
+                  theme.brightness == Brightness.light
+                      ? theme.colorScheme.onPrimary
+                      : theme.colorScheme.primary,
+            ),
             onPressed: () {
               print('Search icon pressed');
             },
+            tooltip: l10n.searchPosts,
           ),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: _refreshPosts,
+        color: theme.colorScheme.primary,
+        backgroundColor: theme.colorScheme.surface,
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: GestureDetector(
-                  onTap: _showCreatePostDialog,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[300]!),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.secondary,
-                          child: Text(motherId![0].toUpperCase()),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          "What's on your mind?",
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: Colors.grey[600]),
-                        ),
-                      ],
+                padding: EdgeInsets.all(screenHeight * 0.02),
+                child: Semantics(
+                  label: l10n.createNewPost,
+                  child: GestureDetector(
+                    onTap: _showCreatePostDialog,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainer,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: theme.colorScheme.outline),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: theme.colorScheme.secondary,
+                            foregroundColor: theme.colorScheme.onSecondary,
+                            child: Text(motherId![0].toUpperCase()),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            l10n.whatsOnYourMind,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -144,15 +205,36 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   print('FutureBuilder state: ${snapshot.connectionState}');
                   if (snapshot.connectionState == ConnectionState.waiting &&
                       postProvider.posts.isEmpty) {
-                    return const Center(child: CircularProgressIndicator());
+                    return Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          theme.colorScheme.primary,
+                        ),
+                      ),
+                    );
                   }
                   if (snapshot.hasError) {
                     print('FutureBuilder error: ${snapshot.error}');
-                    return Center(child: Text('Error: ${snapshot.error}'));
+                    return Center(
+                      child: Text(
+                        l10n.errorLabel(snapshot.error.toString()),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.error,
+                        ),
+                      ),
+                    );
                   }
                   if (postProvider.posts.isEmpty) {
-                    return const Center(
-                      child: Text('No posts available. Create one!'),
+                    return Center(
+                      child: Semantics(
+                        label: l10n.noPosts,
+                        child: Text(
+                          l10n.noPosts,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
                     );
                   }
                   return Column(

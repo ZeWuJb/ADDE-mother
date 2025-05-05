@@ -1,0 +1,1075 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for English (`en`).
+class AppLocalizationsEn extends AppLocalizations {
+  AppLocalizationsEn([String locale = 'en']) : super(locale);
+
+  @override
+  String get pageTitleNotificationDetail => 'Notification Details';
+
+  @override
+  String get messageLabel => 'Message';
+
+  @override
+  String deliveredLabel(Object date) {
+    return 'Delivered: $date';
+  }
+
+  @override
+  String get seenLabel => 'Seen';
+
+  @override
+  String get unreadLabel => 'Unread';
+
+  @override
+  String get relevanceLabel => 'Relevance';
+
+  @override
+  String get pageTitleNotificationHistory => 'Notification History';
+
+  @override
+  String get noNotifications => 'No notifications yet';
+
+  @override
+  String errorLabel(Object error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get pageTitleCommunity => 'Community';
+
+  @override
+  String get whatsOnYourMind => 'What\'s on your mind?';
+
+  @override
+  String get noPosts => 'No posts yet. Create a new one!';
+
+  @override
+  String get pageTitleProfile => 'Profile';
+
+  @override
+  String get languageSettings => 'Language Settings';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageAmharic => 'Amharic';
+
+  @override
+  String get viewNotification => 'View Notification';
+
+  @override
+  String get pageTitleHome => 'Home';
+
+  @override
+  String get pageTitleHealthMetrics => 'Health Metrics';
+
+  @override
+  String get pageTitleEducation => 'Education';
+
+  @override
+  String get pageTitleFavorites => 'Favorites';
+
+  @override
+  String get pageTitleWeeklyTip => 'Weekly Tip';
+
+  @override
+  String get pageTitleJournal => 'Journal';
+
+  @override
+  String greeting(String name) {
+    return 'Hello, $name!';
+  }
+
+  @override
+  String get pregnancyJourney => 'Pregnancy Journey';
+
+  @override
+  String get weeksLabel => 'Weeks';
+
+  @override
+  String get daysLabel => 'Days';
+
+  @override
+  String get weeklyTips => 'Weekly Tips';
+
+  @override
+  String get noTipsYet => 'No tips yet—add some!';
+
+  @override
+  String get exploreFeatures => 'Explore Features';
+
+  @override
+  String get featureCalendar => 'Calendar';
+
+  @override
+  String get featureCalendarDescription => 'Plan appointments';
+
+  @override
+  String get featureHealthMetrics => 'Health Metrics';
+
+  @override
+  String get featureHealthMetricsDescription => 'Track your health';
+
+  @override
+  String get featureJournal => 'Journal';
+
+  @override
+  String get featureJournalDescription => 'Write your thoughts';
+
+  @override
+  String get featureNameSuggestion => 'Name Suggestion';
+
+  @override
+  String get featureNameSuggestionDescription => 'Find baby names';
+
+  @override
+  String get noUserLoggedIn => 'No user logged in';
+
+  @override
+  String failedToLoadProfile(Object error) {
+    return 'Failed to load profile: $error';
+  }
+
+  @override
+  String weekLabel(Object week) {
+    return 'Week';
+  }
+
+  @override
+  String get noTitle => 'No Title';
+
+  @override
+  String get pageTitleHealthArticle => 'Health Article';
+
+  @override
+  String get noDiaryEntries => 'No diary entries yet';
+
+  @override
+  String errorLoadingEntries(Object error) {
+    return 'Error loading entries: $error';
+  }
+
+  @override
+  String get addedToFavorites => 'Added to favorites!';
+
+  @override
+  String get removedFromFavorites => 'Removed from favorites!';
+
+  @override
+  String errorUpdatingFavorite(Object error) {
+    return 'Error updating favorite: $error';
+  }
+
+  @override
+  String get noContent => 'No Content';
+
+  @override
+  String get moreButton => 'More >>>';
+
+  @override
+  String get lessButton => 'Less >>>';
+
+  @override
+  String postedAt(Object date) {
+    return 'Posted at: $date';
+  }
+
+  @override
+  String weekLabelWithNumber(int week) {
+    return 'Week $week';
+  }
+
+  @override
+  String get favoriteEntriesTitle => 'Favorite Entries';
+
+  @override
+  String get noFavoriteEntries => 'No favorite entries yet';
+
+  @override
+  String get refreshButton => 'Refresh';
+
+  @override
+  String get showMore => 'Show More >>>';
+
+  @override
+  String get showLess => 'Show Less >>>';
+
+  @override
+  String get postedAtLabel => 'Posted at';
+
+  @override
+  String get bottomNavHome => 'Home';
+
+  @override
+  String get bottomNavCommunity => 'Community';
+
+  @override
+  String get bottomNavEducation => 'Education';
+
+  @override
+  String get bottomNavConsult => 'Consult';
+
+  @override
+  String get failedToLoadUserData => 'Failed to load user data';
+
+  @override
+  String errorLoadingData(Object error) {
+    return 'Error occurred: $error';
+  }
+
+  @override
+  String get consultPageComingSoon => 'Consult Page (Coming Soon)';
+
+  @override
+  String get editProfileTitle => 'Edit Profile';
+
+  @override
+  String get chooseFromGallery => 'Choose from Gallery';
+
+  @override
+  String get takePhoto => 'Take Photo';
+
+  @override
+  String get personalInformation => 'Personal Information';
+
+  @override
+  String get fullNameLabel => 'Full Name';
+
+  @override
+  String get ageLabel => 'Age';
+
+  @override
+  String get weightLabel => 'Weight';
+
+  @override
+  String get heightLabel => 'Height';
+
+  @override
+  String get bloodPressureLabel => 'Blood Pressure (e.g., 120/80)';
+
+  @override
+  String get selectHealthConditions => 'Select applicable health conditions';
+
+  @override
+  String get describeHealthIssue => 'Describe your health issue';
+
+  @override
+  String get healthIssueHint => 'Describe your health history or issues here...';
+
+  @override
+  String get saveProfileButton => 'Save Profile';
+
+  @override
+  String failedToUpdateProfile(Object error) {
+    return 'Failed to update profile: $error';
+  }
+
+  @override
+  String get cameraPermissionDenied => 'Camera permission denied';
+
+  @override
+  String get galleryPermissionDenied => 'Gallery permission denied';
+
+  @override
+  String get imageTooLarge => 'Image is too large, please choose a smaller one';
+
+  @override
+  String errorPickingImage(Object error) {
+    return 'Error picking image: $error';
+  }
+
+  @override
+  String get profileUpdatedSuccessfully => 'Profile updated successfully!';
+
+  @override
+  String weightUnit(String unit) {
+    String _temp0 = intl.Intl.selectLogic(
+      unit,
+      {
+        'kg': 'kg',
+        'lbs': 'lbs',
+        'other': '$unit',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String heightUnit(String unit) {
+    String _temp0 = intl.Intl.selectLogic(
+      unit,
+      {
+        'cm': 'cm',
+        'ft': 'ft',
+        'other': '$unit',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String healthCondition(String condition) {
+    String _temp0 = intl.Intl.selectLogic(
+      condition,
+      {
+        'diabetes': 'Diabetes',
+        'hypertension': 'Hypertension',
+        'asthma': 'Asthma',
+        'heartDisease': 'Heart Disease',
+        'thyroidIssues': 'Thyroid Issues',
+        'other': 'Other',
+        'other': '$condition',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String errorMarkingAsSeen(Object error) {
+    return 'Error marking as seen: $error';
+  }
+
+  @override
+  String get tapToView => 'Tap to view';
+
+  @override
+  String get notificationChannelName => 'Daily Tip';
+
+  @override
+  String get notificationChannelDescription => 'Health tips every 4 days';
+
+  @override
+  String fallbackTipTitle(int index) {
+    return 'Tip $index';
+  }
+
+  @override
+  String get fallbackTipBody => 'Consult your doctor for advice.';
+
+  @override
+  String relevanceLabelWithValue(String value) {
+    return 'Relevance: $value';
+  }
+
+  @override
+  String get genderLabel => 'Gender';
+
+  @override
+  String get genderSelectionError => 'Please select a gender';
+
+  @override
+  String get enterHealthData => 'Enter Health Data';
+
+  @override
+  String get bpSystolicLabel => 'Blood Pressure Systolic (mmHg)';
+
+  @override
+  String get bpDiastolicLabel => 'Blood Pressure Diastolic (mmHg)';
+
+  @override
+  String get heartRateLabel => 'Heart Rate (BPM)';
+
+  @override
+  String get bodyTemperatureLabel => 'Body Temperature (°C)';
+
+  @override
+  String get weightLabelKg => 'Weight (kg)';
+
+  @override
+  String get saveDataButton => 'Save Data';
+
+  @override
+  String get recommendationsTitle => 'Recommendations';
+
+  @override
+  String get healthTrendsTitle => 'Health Trends';
+
+  @override
+  String get noDataAvailable => 'No data available';
+
+  @override
+  String get dataSavedSuccessfully => 'Data saved successfully!';
+
+  @override
+  String get failedToSaveData => 'Failed to save data. Please try again.';
+
+  @override
+  String get invalidValuesError => 'Please enter valid values for all fields';
+
+  @override
+  String get tempScaledLabel => 'Temperature (°C x 5)';
+
+  @override
+  String bpLowRecommendation(int bpSys, int bpDia) {
+    return 'Your blood pressure appears low (Systolic: $bpSys mmHg, Diastolic: $bpDia mmHg). This could be due to dehydration, fatigue, or other factors. To stabilize, consider adding a small amount of salt (e.g., a pinch in your food), drinking more water throughout the day (aim for 8-10 glasses), and eating small, frequent meals. If you feel dizzy or faint often, consult a healthcare professional to rule out other issues.';
+  }
+
+  @override
+  String bpHighRecommendation(int bpSys, int bpDia) {
+    return 'Your blood pressure is elevated (Systolic: $bpSys mmHg, Diastolic: $bpDia mmHg), which may indicate hypertension. To manage, reduce salt intake by avoiding processed foods and choosing fresh ingredients, engage in moderate exercise like brisk walking or cycling for 30 minutes most days of the week, and practice stress reduction techniques like yoga or deep breathing for 10-15 minutes daily. If this persists across multiple readings, consider seeing a doctor for a detailed evaluation.';
+  }
+
+  @override
+  String bpNormalRecommendation(int bpSys, int bpDia) {
+    return 'Your blood pressure (Systolic: $bpSys mmHg, Diastolic: $bpDia mmHg) is within the normal range. To maintain this, continue a balanced diet rich in fruits, vegetables, and lean proteins, and get at least 150 minutes of moderate exercise per week. Monitoring trends over time helps ensure it stays stable.';
+  }
+
+  @override
+  String hrLowRecommendation(int hr) {
+    return 'Your heart rate ($hr BPM) is on the lower side. This can be normal for fit individuals, but if you\'re not highly active or feel unusually tired, it\'s worth monitoring. To boost cardiovascular health, include activities like jogging, swimming, or dancing a few times a week for 20-30 minutes. If your heart rate drops further or you experience symptoms like dizziness, consult a doctor.';
+  }
+
+  @override
+  String hrHighRecommendation(int hr) {
+    return 'Your heart rate ($hr BPM) is elevated, which could be due to stress, caffeine, or physical activity. To lower it, try relaxation techniques like deep breathing exercises (inhale for 4 seconds, exhale for 6 seconds) or meditation for 10-15 minutes daily. Limit stimulants like coffee or energy drinks, and ensure you\'re getting 7-9 hours of sleep. If consistently high, a medical evaluation may be needed.';
+  }
+
+  @override
+  String hrNormalRecommendation(int hr) {
+    return 'Your heart rate ($hr BPM) is in a healthy range. To maintain this, continue a regular schedule of moderate physical activities like walking or cycling and manage stress effectively with hobbies or relaxation practices. Keep monitoring to spot any unusual changes.';
+  }
+
+  @override
+  String tempLowRecommendation(double temp) {
+    return 'Your body temperature ($temp°C) is below average, which may indicate you\'re cold or your metabolism is sluggish. Keep warm by wearing layers or using a blanket, and consume warm beverages like herbal tea throughout the day. Monitor for signs of illness like fatigue or chills, and if this persists, consider consulting a doctor about a thyroid test, as low body temperature can sometimes indicate hormonal imbalances.';
+  }
+
+  @override
+  String tempHighRecommendation(double temp) {
+    return 'Your body temperature ($temp°C) is elevated, which may indicate a fever or overheating. Stay hydrated by drinking 8-12 glasses of water daily, rest in a cool environment, and avoid strenuous exercise until it subsides. If above 38°C or lasting more than a day, seek medical advice to rule out infections or other causes.';
+  }
+
+  @override
+  String tempNormalRecommendation(double temp) {
+    return 'Your body temperature ($temp°C) is normal. To maintain this, dress appropriately for the weather, stay hydrated with 6-8 glasses of water daily, and avoid extreme temperature changes. Regular monitoring helps catch any variations early.';
+  }
+
+  @override
+  String weightLowRecommendation(double weight) {
+    return 'Your weight ($weight kg) is on the lower side. To gain or maintain healthy weight, focus on a nutrient-dense diet with proteins like eggs, chicken, or beans, healthy fats like nuts or avocado, and complex carbs like whole grains. Aim for 3 balanced meals and 2 snacks daily, and consider light strength training exercises like small weight lifting to build muscle mass. If struggling to gain weight, consult a dietitian.';
+  }
+
+  @override
+  String weightHighRecommendation(double weight) {
+    return 'Your weight ($weight kg) is on the higher side. To manage, incorporate regular physical activity like walking, swimming, or yoga for 30-40 minutes most days of the week, and focus on a diet rich in vegetables, lean proteins, and whole grains while reducing sugary drinks and processed snacks. Set small, achievable goals (e.g., losing 0.5 kg per month) and track progress. A healthcare provider can offer tailored advice if needed.';
+  }
+
+  @override
+  String weightNormalRecommendation(double weight) {
+    return 'Your weight ($weight kg) is in a healthy range. To maintain this, continue a balanced diet filled with fruits, vegetables, and lean proteins, and get at least 150 minutes of moderate exercise per week. Regular weigh-ins help ensure consistency over time.';
+  }
+
+  @override
+  String bpSysIncreasedRecommendation(int prevBpSys, int bpSys) {
+    return 'Your systolic blood pressure has increased by more than 10 mmHg from your last measurement (from $prevBpSys to $bpSys). This could be due to situational factors (e.g., stress or diet), but monitor closely over the next few days. Reduce salt intake, avoid caffeine before bed, and try a 10-minute relaxation exercise daily to see if it stabilizes.';
+  }
+
+  @override
+  String hrIncreasedRecommendation(int prevHr, int hr) {
+    return 'Your heart rate has increased by more than 15 BPM compared to your previous entry (from $prevHr to $hr). This might reflect temporary stress or activity, but if you haven’t been exercising, consider what’s changed—too much coffee, poor sleep, or stress? Take time for a calming activity like reading or a warm bath to unwind.';
+  }
+
+  @override
+  String weightIncreasedRecommendation(double prevWeight, double weight) {
+    return 'Your weight has increased by more than 2 kg from your last record (from $prevWeight to $weight). This could be water retention or diet-related. Cut back on salty or carb-heavy meals for a few days and increase your water intake to flush out excess fluids. If persistent, reassess your calorie intake and activity level.';
+  }
+
+  @override
+  String allVitalsNormalRecommendation(int bpSys, int bpDia, int hr, double temp, double weight) {
+    return 'All your latest vitals (Blood Pressure: $bpSys/$bpDia mmHg, Heart Rate: $hr BPM, Temperature: $temp°C, Weight: $weight kg) are within normal ranges. Great job! Keep up your healthy habits, including a balanced diet, regular exercise (150 minutes per week), and consistent sleep (7-9 hours per night) to stay on track.';
+  }
+
+  @override
+  String get noDataRecommendation => 'No data available yet. Start entering your health metrics to receive personalized recommendations.';
+
+  @override
+  String tooltipBpSys(int value) {
+    return 'Blood Pressure Sys: $value mmHg';
+  }
+
+  @override
+  String tooltipHr(int value) {
+    return 'Heart Rate: $value BPM';
+  }
+
+  @override
+  String tooltipTemp(double value) {
+    return 'Temperature: $value°C';
+  }
+
+  @override
+  String tooltipWeight(double value) {
+    return 'Weight: $value kg';
+  }
+
+  @override
+  String get boysLabel => 'Boys';
+
+  @override
+  String get femaleGender => 'Female';
+
+  @override
+  String get girlsLabel => 'Girls';
+
+  @override
+  String get maleGender => 'Male';
+
+  @override
+  String noNamesAvailable(String category) {
+    return 'No names available for $category';
+  }
+
+  @override
+  String get pageTitleNameSuggestion => 'Baby Name Suggestion';
+
+  @override
+  String get tabAll => 'All';
+
+  @override
+  String get tabChristian => 'Christian';
+
+  @override
+  String get tabMuslim => 'Muslim';
+
+  @override
+  String get addNoteLabel => 'Add Note';
+
+  @override
+  String get deleteAction => 'Delete';
+
+  @override
+  String errorDeletingNote(Object error) {
+    return 'Error deleting note: $error';
+  }
+
+  @override
+  String get loginPrompt => 'Please log in';
+
+  @override
+  String get noNotesMatchSearch => 'No notes match your search';
+
+  @override
+  String get noNotesYet => 'No notes yet. Add one!';
+
+  @override
+  String get searchHint => 'Search notes by title...';
+
+  @override
+  String get aboutSection => 'About';
+
+  @override
+  String get appointmentAccepted => 'Appointment Accepted';
+
+  @override
+  String get appointmentCancelled => 'Appointment Cancelled';
+
+  @override
+  String get appointmentCancelledMessage => 'This appointment has been cancelled. The video call will end.';
+
+  @override
+  String appointmentWithDoctor(String doctorName) {
+    return 'Appointment with $doctorName';
+  }
+
+  @override
+  String get appointmentsLabel => 'Appointments';
+
+  @override
+  String get availableDoctors => 'Available Doctors';
+
+  @override
+  String get availableTimeSlots => 'Available Time Slots';
+
+  @override
+  String get beforeJoining => 'Before Joining';
+
+  @override
+  String get bookAppointment => 'Book Appointment';
+
+  @override
+  String bookAppointmentWith(String fullName) {
+    return 'Book Appointment with $fullName';
+  }
+
+  @override
+  String get bookNewAppointmentTooltip => 'Book a new appointment';
+
+  @override
+  String get bookingLabel => 'Booking';
+
+  @override
+  String callEnded(Object error) {
+    return 'Call ended: $error';
+  }
+
+  @override
+  String get connectedToCall => 'Connected to call';
+
+  @override
+  String get connectedToServer => 'Connected to server';
+
+  @override
+  String get connectingToCall => 'Connecting to call...';
+
+  @override
+  String get contactInformation => 'Contact Information';
+
+  @override
+  String get copiedToClipboard => 'Copied to clipboard';
+
+  @override
+  String get copyLinkTooltip => 'Copy link';
+
+  @override
+  String get couldNotCreateProfile => 'Could not create user profile. Please try again.';
+
+  @override
+  String doctorProfile(String fullName, String speciality) {
+    return 'Doctor Profile: $fullName, $speciality';
+  }
+
+  @override
+  String doctorRating(String fullName, String speciality) {
+    return 'Doctor $fullName, $speciality, 4.5 rating';
+  }
+
+  @override
+  String get doctorsLabel => 'Doctors';
+
+  @override
+  String get emailLabel => 'Email';
+
+  @override
+  String get ensureStableConnection => 'Ensure you have a stable internet connection';
+
+  @override
+  String get errorJoiningCall => 'Error joining call';
+
+  @override
+  String get errorPrefix => 'Error';
+
+  @override
+  String errorSendingRequest(Object error) {
+    return 'Error sending request: $error';
+  }
+
+  @override
+  String get findQuietSpace => 'Find a quiet, private space for your consultation';
+
+  @override
+  String get haveQuestionsReady => 'Have your questions ready for the doctor';
+
+  @override
+  String get inCall => 'In call';
+
+  @override
+  String get invalidDateFormat => 'Invalid date format';
+
+  @override
+  String get joinNow => 'Join Now';
+
+  @override
+  String get joinVideoCall => 'Join Video Call';
+
+  @override
+  String get joining => 'Joining...';
+
+  @override
+  String get joiningCall => 'Joining call...';
+
+  @override
+  String get later => 'Later';
+
+  @override
+  String get meetingInformation => 'Meeting Information';
+
+  @override
+  String get motherAppTitle => 'Mothers App';
+
+  @override
+  String get navigateToAppointments => 'Navigate to Appointments page';
+
+  @override
+  String get navigateToBooking => 'Navigate to Booking page';
+
+  @override
+  String get navigateToDoctors => 'Navigate to Doctors page';
+
+  @override
+  String get newMeetingLinkAvailable => 'New meeting link available';
+
+  @override
+  String get newMeetingLinkMessage => 'A new video conference link is available. Would you like to join with the new link?';
+
+  @override
+  String get noAcceptedAppointments => 'No accepted appointments.\nAccepted appointments will appear here.';
+
+  @override
+  String get noAvailabilityFound => 'No availability found for this doctor.';
+
+  @override
+  String get noDateAvailable => 'No date available';
+
+  @override
+  String get noDescriptionAvailable => 'No description available';
+
+  @override
+  String get noDoctorsAvailable => 'No doctors available';
+
+  @override
+  String get noPendingAppointments => 'No pending appointments.\nRequests you send will appear here.';
+
+  @override
+  String get noRejectedAppointments => 'No rejected appointments.\nRejected appointments will appear here.';
+
+  @override
+  String get notAvailable => 'Not available';
+
+  @override
+  String get notConnected => 'Not connected - appointments may not be sent';
+
+  @override
+  String get notSpecified => 'Not specified';
+
+  @override
+  String get okLabel => 'OK';
+
+  @override
+  String get pageTitleAppointments => 'My Appointments';
+
+  @override
+  String get phoneLabel => 'Phone';
+
+  @override
+  String get pleaseSelectDateTime => 'Please select a date and time';
+
+  @override
+  String get ratingLabel => '4.5 (245 reviews)';
+
+  @override
+  String get readyToJoin => 'Ready to join';
+
+  @override
+  String get refreshAppointmentsTooltip => 'Refresh appointments';
+
+  @override
+  String get requestAppointment => 'Request Appointment';
+
+  @override
+  String get requestSent => 'Appointment request sent! The doctor\'s response will arrive soon.';
+
+  @override
+  String get rescheduleAppointment => 'Reschedule Appointment';
+
+  @override
+  String get selectDateTime => 'Select Date and Time';
+
+  @override
+  String specialityLabel(String speciality) {
+    return 'Speciality: $speciality';
+  }
+
+  @override
+  String get startCall => 'Start Call';
+
+  @override
+  String get startVideoCall => 'Start Video Call';
+
+  @override
+  String get statusAccepted => 'Accepted';
+
+  @override
+  String get statusCancelled => 'Cancelled';
+
+  @override
+  String get statusPending => 'Pending';
+
+  @override
+  String get statusRejected => 'Rejected';
+
+  @override
+  String timeZoneLabel(String timeZone) {
+    return 'Time Zone: $timeZone';
+  }
+
+  @override
+  String get upcomingAppointments => 'Upcoming Appointments';
+
+  @override
+  String get viewProfile => 'View Profile';
+
+  @override
+  String get waitingForDoctor => 'Waiting for the doctor...';
+
+  @override
+  String get yourMeetingLink => 'Your meeting link';
+
+  @override
+  String get retryButton => 'Retry';
+
+  @override
+  String get searchNotesHint => 'Search your notes...';
+
+  @override
+  String get pleaseLogIn => 'Please log in to continue';
+
+  @override
+  String get noteDeleted => 'Note deleted successfully';
+
+  @override
+  String get appName => 'Adde Assistance App';
+
+  @override
+  String get noInternetTitle => 'No Internet Connection';
+
+  @override
+  String get noInternetMessage => 'Please check your internet connection and try again.';
+
+  @override
+  String get genderFemale => 'Female';
+
+  @override
+  String get genderMale => 'Male';
+
+  @override
+  String get genderOther => 'Other';
+
+  @override
+  String get editProfile => 'Edit Profile';
+
+  @override
+  String get themeMode => 'Theme Mode';
+
+  @override
+  String get consultationFee => 'Consultation Fee';
+
+  @override
+  String get unknownName => 'Unknown Name';
+
+  @override
+  String get welcomeMessage => 'Welcome to the Adde Assistance App!';
+
+  @override
+  String get testCameraMic => 'Test your camera and microphone';
+
+  @override
+  String get yourDoctorWillJoin => 'Your doctor will join the meeting shortly';
+
+  @override
+  String roomName(Object roomName) {
+    return 'Room: $roomName';
+  }
+
+  @override
+  String statusLabel(Object status) {
+    return 'Status: $status';
+  }
+
+  @override
+  String scheduledFor(Object date) {
+    return 'Scheduled for: $date';
+  }
+
+  @override
+  String get videoConsultationTitle => 'Video Consultation';
+
+  @override
+  String get videoConsultationMessage => 'Your video consultation is ready to start.';
+
+  @override
+  String tabPending(int count) {
+    return 'Pending ($count)';
+  }
+
+  @override
+  String tabAccepted(int count) {
+    return 'Accepted ($count)';
+  }
+
+  @override
+  String tabRejected(int count) {
+    return 'Rejected ($count)';
+  }
+
+  @override
+  String statusPrefix(String status) {
+    return 'Status: $status';
+  }
+
+  @override
+  String get retryLabel => 'Retry';
+
+  @override
+  String errorFetchingUserData(String error) {
+    return 'Error fetching user data: $error';
+  }
+
+  @override
+  String errorFetchingComments(String error) {
+    return 'Error fetching comments: $error';
+  }
+
+  @override
+  String get commentCannotBeEmpty => 'Comment cannot be empty';
+
+  @override
+  String errorAddingComment(String error) {
+    return 'Error adding comment: $error';
+  }
+
+  @override
+  String get commentDeletedSuccessfully => 'Comment deleted successfully';
+
+  @override
+  String errorDeletingComment(String error) {
+    return 'Error deleting comment: $error';
+  }
+
+  @override
+  String get postDetailTitle => 'Post Details';
+
+  @override
+  String profileOf(String fullName) {
+    return 'Profile of $fullName';
+  }
+
+  @override
+  String likesCountText(int count) {
+    return '$count likes';
+  }
+
+  @override
+  String commentsCountText(int count) {
+    return '$count comments';
+  }
+
+  @override
+  String commentBy(String fullName) {
+    return 'Comment by $fullName';
+  }
+
+  @override
+  String deleteCommentBy(String fullName) {
+    return 'Delete comment by $fullName';
+  }
+
+  @override
+  String get noCommentsYet => 'No comments yet';
+
+  @override
+  String get writeCommentHint => 'Write a comment...';
+
+  @override
+  String get sendCommentTooltip => 'Send comment';
+
+  @override
+  String get unableToLoadChat => 'Unable to load chat';
+
+  @override
+  String get chatServiceUnavailable => 'Chat service is currently unavailable';
+
+  @override
+  String get pleaseLogInChat => 'Please log in to access chat';
+
+  @override
+  String databaseError(String message) {
+    return 'Database error: $message';
+  }
+
+  @override
+  String get networkError => 'Network error, please check your connection';
+
+  @override
+  String failedToSendMessage(String error) {
+    return 'Failed to send message: $error';
+  }
+
+  @override
+  String startChatting(String receiverName) {
+    return 'Start chatting with $receiverName';
+  }
+
+  @override
+  String get chatUnavailableHint => 'Chat is currently unavailable';
+
+  @override
+  String get typeMessageHint => 'Type a message...';
+
+  @override
+  String get sendMessageTooltip => 'Send message';
+
+  @override
+  String postBy(String fullName) {
+    return 'Post by $fullName';
+  }
+
+  @override
+  String get editPost => 'Edit Post';
+
+  @override
+  String get deletePost => 'Delete Post';
+
+  @override
+  String get unlikePost => 'Unlike post';
+
+  @override
+  String get likePost => 'Like post';
+
+  @override
+  String get commentOnPost => 'Comment on post';
+
+  @override
+  String get commentPost => 'Comment';
+
+  @override
+  String get imageSizeError => 'Image size exceeds 5MB limit';
+
+  @override
+  String get emptyContentError => 'Post content cannot be empty';
+
+  @override
+  String get userDataNotLoaded => 'User data not loaded, please try again';
+
+  @override
+  String errorSavingPost(String error) {
+    return 'Error saving post: $error';
+  }
+
+  @override
+  String get closeTooltip => 'Close';
+
+  @override
+  String get editPostTitle => 'Edit Post';
+
+  @override
+  String get postButton => 'Post';
+
+  @override
+  String get updateButton => 'Update';
+
+  @override
+  String get removeImageTooltip => 'Remove Image';
+
+  @override
+  String get addImageTooltip => 'Add Image';
+
+  @override
+  String get createPostTitle => 'Create Post';
+
+  @override
+  String errorFetchingUser(String error) {
+    return 'Error fetching user: $error';
+  }
+
+  @override
+  String get searchPosts => 'Search posts';
+
+  @override
+  String get createNewPost => 'Create a new post';
+}
