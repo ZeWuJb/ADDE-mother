@@ -179,13 +179,9 @@ class _SocketTestPageState extends State<SocketTestPage>
 
         if (status == 'accepted') {
           accepted.add(appointmentMap);
-          if (appointmentMap['video_conference_link']?.toString().isNotEmpty ==
-                  true &&
-              !_processedAppointments.contains(appointmentMap['id'])) {
+          // Store the appointment ID in processed list to avoid duplicate notifications
+          if (!_processedAppointments.contains(appointmentMap['id'])) {
             _processedAppointments.add(appointmentMap['id']);
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _navigateToVideoCall(appointmentMap);
-            });
           }
         } else if (status == 'declined' || status == 'cancelled') {
           declined.add(appointmentMap);

@@ -1,5 +1,5 @@
 import 'package:adde/l10n/arb/app_localizations.dart'; // Import AppLocalizations
-import 'package:adde/pages/appointmentPages/calander_page.dart';
+import 'package:adde/pages/appointmentPages/doctors_page.dart';
 import 'package:adde/pages/community/community_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:adde/pages/home_screen.dart';
@@ -148,7 +148,7 @@ class _BottomPageNavigationState extends State<BottomPageNavigation> {
           ),
       const CommunityScreen(),
       const EducationPage(),
-      const CalendarPage(), // Localized placeholder
+      const DoctorsPage(), // Localized placeholder
     ];
 
     return Scaffold(

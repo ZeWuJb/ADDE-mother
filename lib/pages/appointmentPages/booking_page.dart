@@ -413,9 +413,9 @@ class _BookingPageState extends State<BookingPage> {
                     ),
                     Wrap(
                       children: List.generate(_availableTimes.length, (index) {
-                        final time = DateFormat(
-                          'HH:mm',
-                        ).format(_availableTimes[index]);
+                        final time = DateFormat('h:mm a').format(
+                          _availableTimes[index],
+                        ); // Changed to 12-hour format with AM/PM
                         return Padding(
                           padding: const EdgeInsets.all(4.0),
                           child: ChoiceChip(
