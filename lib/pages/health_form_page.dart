@@ -100,6 +100,30 @@ class _MotherFormPageState extends State<MotherFormPage> {
     }
   }
 
+  void _confirmSubmit() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text("Confirm Submission"),
+            content: const Text("Are you sure you want to submit the form?"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  formSubmit();
+                },
+                child: const Text("Submit"),
+              ),
+            ],
+          ),
+    );
+  }
+
   Future<void> formSubmit() async {
     if (!_formKey.currentState!.validate() || pregnancyStartDate == null) {
       _showSnackBar("Please fill all required fields!");
@@ -138,27 +162,23 @@ class _MotherFormPageState extends State<MotherFormPage> {
     };
 
     try {
-      final response =
-          await Supabase.instance.client
-              .from('mothers')
-              .insert(formData)
-              .select();
-      if (response.isNotEmpty) {
-        _showSnackBar("Form submitted successfully!", isSuccess: true);
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder:
-                (context) => BottomPageNavigation(
-                  email: widget.email,
-                  user_id: widget.user_id!,
-                ),
-          ),
-        );
-      } else {
-        _showSnackBar("Failed to submit form. Please try again.");
-      }
+      await Supabase.instance.client
+          .from('mothers')
+          .insert(formData)
+          .select()
+          .single(); // Use .single() for one row
+      _showSnackBar("Form submitted successfully!", isSuccess: true);
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder:
+              (context) => BottomPageNavigation(
+                email: widget.email,
+                user_id: widget.user_id!,
+              ),
+        ),
+      );
     } catch (error) {
-      _showSnackBar("Error submitting form: $error");
+      _showSnackBar("Error submitting form: ${error.toString()}");
     }
   }
 
@@ -698,7 +718,7 @@ class _MotherFormPageState extends State<MotherFormPage> {
     return Semantics(
       label: "Submit Form Button",
       child: ElevatedButton(
-        onPressed: formSubmit,
+        onPressed: _confirmSubmit,
         style: theme.elevatedButtonTheme.style?.copyWith(
           minimumSize: const WidgetStatePropertyAll(Size(double.infinity, 50)),
         ),
