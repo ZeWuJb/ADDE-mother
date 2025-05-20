@@ -260,7 +260,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get describeHealthIssue => 'Describe your health issue';
 
   @override
-  String get healthIssueHint => 'Describe your health history or issues here...';
+  String get healthIssueHint => 'Describe your health background or issues here...';
 
   @override
   String get saveProfileButton => 'Save Profile';
@@ -643,7 +643,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get doctorsLabel => 'Doctors';
 
   @override
-  String get emailLabel => 'Email';
+  String get emailLabel => 'Email Address';
 
   @override
   String get ensureStableConnection => 'Ensure you have a stable internet connection';
@@ -1072,4 +1072,276 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get createNewPost => 'Create a new post';
+
+  @override
+  String get welcomeBack => 'Welcome Back';
+
+  @override
+  String get passwordLabel => 'Password';
+
+  @override
+  String get forgetPassword => 'Forget password?';
+
+  @override
+  String get logIn => 'Log In';
+
+  @override
+  String get noAccount => 'Don\'t have an account?';
+
+  @override
+  String get register => 'Register';
+
+  @override
+  String get signInWithGoogle => 'Sign in with Google';
+
+  @override
+  String get emptyFieldsError => 'Please enter both email and password';
+
+  @override
+  String get loginFailedError => 'Login failed. Please try again';
+
+  @override
+  String get googleSignInCancelledError => 'Google Sign-In cancelled';
+
+  @override
+  String get googleSignInFailedError => 'Google Sign-In failed';
+
+  @override
+  String get googleAuthFailedError => 'Google authentication failed';
+
+  @override
+  String get invalidEmailError => 'Please enter a valid email address';
+
+  @override
+  String get invalidPasswordError => 'Password must be at least 6 characters';
+
+  @override
+  String get welcomeRegister => 'WELCOME';
+
+  @override
+  String get assistMessage => 'We Are Here, To Assist You!!!';
+
+  @override
+  String get confirmPasswordLabel => 'Confirm Password';
+
+  @override
+  String get signUpButton => 'Sign Up';
+
+  @override
+  String get alreadyHaveAccount => 'Already have an account?';
+
+  @override
+  String get loginLink => 'Login';
+
+  @override
+  String get signUpWithGoogle => 'Sign Up with Google';
+
+  @override
+  String get passwordsDoNotMatchError => 'Passwords do not match!';
+
+  @override
+  String get googleSignUpCancelledError => 'Google Sign-Up cancelled.';
+
+  @override
+  String get googleSignUpFailedError => 'Google Sign-Up failed. Please try again.';
+
+  @override
+  String get googleSignUpTokenError => 'Google Sign-Up Error: Missing tokens.';
+
+  @override
+  String get signUpFailedError => 'Signup failed. Please try again.';
+
+  @override
+  String get signUpSuccess => 'Signup successful!';
+
+  @override
+  String signUpError(Object error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get resetPasswordTitle => 'Reset Password';
+
+  @override
+  String get resetPasswordHeader => 'Reset Your Password';
+
+  @override
+  String get resetPasswordDescription => 'Enter your email to receive a reset link';
+
+  @override
+  String get resetLinkSentDescription => 'Check your email for the reset link';
+
+  @override
+  String get sendResetLinkButton => 'Send Reset Link';
+
+  @override
+  String get emailSentButton => 'Email Sent';
+
+  @override
+  String get emptyEmailError => 'Please enter your email address';
+
+  @override
+  String resetEmailSentSuccess(String email) {
+    return 'Password reset email sent to $email';
+  }
+
+  @override
+  String resetPasswordError(Object error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get welcomePageTitle1 => 'Adey Pregnancy And Child Care App';
+
+  @override
+  String get welcomePageContent1 => 'Welcome to Adey, your trusted partner for a safe and healthy pregnancy and child care journey.';
+
+  @override
+  String get welcomePageContent2 => 'Track your pregnancy and postpartum progress with tools that health status and give upgated recommedation.';
+
+  @override
+  String get welcomePageContent3 => 'Access educational resources on maternal health, including articles, weekly tips, and daily notification.';
+
+  @override
+  String get welcomePageContent4 => 'Connect with a community of users, share experiences, and receive support.';
+
+  @override
+  String get welcomePageContent5 => 'Use our chatbot for instant responses and guidance on pregnancy and child care queries.';
+
+  @override
+  String get skipButton => 'Skip';
+
+  @override
+  String get nextButton => 'Next';
+
+  @override
+  String get getStartedButton => 'Get Started';
+
+  @override
+  String get skipSemantics => 'Skip onboarding';
+
+  @override
+  String get nextSemantics => 'Next page';
+
+  @override
+  String get getStartedSemantics => 'Get started';
+
+  @override
+  String onboardingPageSemantics(int pageNumber) {
+    return 'Onboarding page $pageNumber';
+  }
+
+  @override
+  String get motherFormTitle => 'Welcome, Please Fill Below Form!';
+
+  @override
+  String get fullNameRequiredError => 'Full Name is required';
+
+  @override
+  String get selectGenderLabel => 'Select Gender';
+
+  @override
+  String get maleGenderOption => 'Male';
+
+  @override
+  String get femaleGenderOption => 'Female';
+
+  @override
+  String get selectAgeLabel => 'Select Your Age';
+
+  @override
+  String selectedAgeLabel(int age) {
+    return 'Selected Age: $age';
+  }
+
+  @override
+  String get enterHeightLabel => 'Enter Your Height';
+
+  @override
+  String get heightRequiredError => 'Height is required';
+
+  @override
+  String get heightInvalidError => 'Enter a valid number';
+
+  @override
+  String get bloodPressureRequiredError => 'Blood Pressure is required';
+
+  @override
+  String get bloodPressureInvalidError => 'Enter valid blood pressure (e.g., 120/80)';
+
+  @override
+  String get enterWeightLabel => 'Enter Your Weight';
+
+  @override
+  String get weightRequiredError => 'Weight is required';
+
+  @override
+  String get weightInvalidError => 'Enter a valid number';
+
+  @override
+  String get pregnancyStartDateLabel => 'Pregnancy Start Date';
+
+  @override
+  String get pregnancyStartDateNotSet => 'Not set';
+
+  @override
+  String get pregnancyStartDateQuestion => 'When Did You Become Pregnant?';
+
+  @override
+  String pregnancyDurationLabel(int weeks, int days) {
+    return 'Pregnancy Duration: $weeks weeks and $days days';
+  }
+
+  @override
+  String get healthConditionsLabel => 'Select Any Applicable Health Conditions';
+
+  @override
+  String get healthConditionDiabetes => 'Diabetes';
+
+  @override
+  String get healthConditionHypertension => 'Hypertension';
+
+  @override
+  String get healthConditionAsthma => 'Asthma';
+
+  @override
+  String get healthConditionHeartDisease => 'Heart Disease';
+
+  @override
+  String get healthConditionThyroidIssues => 'Thyroid Issues';
+
+  @override
+  String get healthConditionOther => 'Other';
+
+  @override
+  String get healthIssueDescriptionLabel => 'Describe Your Health Issue';
+
+  @override
+  String get submitButton => 'Submit';
+
+  @override
+  String get confirmSubmissionTitle => 'Confirm Submission';
+
+  @override
+  String get confirmSubmissionMessage => 'Are you sure you want to submit the form?';
+
+  @override
+  String get cancelButton => 'Cancel';
+
+  @override
+  String get requiredFieldsError => 'Please fill all required fields!';
+
+  @override
+  String get invalidNumberError => 'Please enter valid numbers for weight and height!';
+
+  @override
+  String get formSubmitSuccess => 'Form submitted successfully!';
+
+  @override
+  String formSubmitError(Object error) {
+    return 'Error submitting form: $error';
+  }
+
+  @override
+  String get popupNotifications => 'Pop-up Notifications';
 }

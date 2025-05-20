@@ -1,3 +1,4 @@
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:adde/component/input_fild.dart';
@@ -20,15 +21,16 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.jumpTo(0); // Ensure top is visible on load
+        _scrollController.jumpTo(0);
       }
     });
   }
 
   Future<void> _sendPasswordResetEmail() async {
     final email = emailController.text.trim();
+    final l10n = AppLocalizations.of(context)!;
     if (email.isEmpty) {
-      _showSnackBar('Please enter your email address');
+      _showSnackBar(l10n.emptyEmailError);
       return;
     }
 
@@ -36,7 +38,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     try {
       await Supabase.instance.client.auth.resetPasswordForEmail(
         email,
-        redirectTo: 'io.supabase.adde://reset-password/', // Optional: Deep link
+        redirectTo: 'io.supabase.adde://reset-password/',
       );
 
       setState(() {
@@ -44,10 +46,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         _isLoading = false;
       });
 
-      _showSnackBar('Password reset email sent to $email', isSuccess: true);
+      _showSnackBar(l10n.resetEmailSentSuccess(email), isSuccess: true);
     } catch (e) {
       setState(() => _isLoading = false);
-      _showSnackBar('Error: $e');
+      _showSnackBar(l10n.resetPasswordError(e.toString()));
     }
   }
 
@@ -87,11 +89,12 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenHeight = MediaQuery.of(context).size.height;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Reset Password",
+          l10n.resetPasswordTitle,
           style: theme.appBarTheme.titleTextStyle?.copyWith(
             color: theme.appBarTheme.foregroundColor,
           ),
@@ -101,7 +104,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       ),
       body: Stack(
         children: [
-          // Gradient Background
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -116,7 +118,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               ),
             ),
           ),
-          // Main Content
           SingleChildScrollView(
             controller: _scrollController,
             child: Center(
@@ -128,13 +129,13 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       SizedBox(height: screenHeight * 0.03),
-                      _buildTitle(theme),
+                      _buildTitle(theme, l10n),
                       SizedBox(height: screenHeight * 0.015),
-                      _buildDescription(theme),
+                      _buildDescription(theme, l10n),
                       SizedBox(height: screenHeight * 0.04),
-                      _buildEmailInput(theme),
+                      _buildEmailInput(theme, l10n),
                       SizedBox(height: screenHeight * 0.03),
-                      _buildSendButton(theme),
+                      _buildSendButton(theme, l10n),
                       SizedBox(height: screenHeight * 0.02),
                     ],
                   ),
@@ -158,9 +159,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     );
   }
 
-  Widget _buildTitle(ThemeData theme) {
+  Widget _buildTitle(ThemeData theme, AppLocalizations l10n) {
     return Text(
-      "Reset Your Password",
+      l10n.resetPasswordHeader,
       style: theme.textTheme.titleLarge?.copyWith(
         fontWeight: FontWeight.bold,
         color: theme.colorScheme.onSurface,
@@ -169,11 +170,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     );
   }
 
-  Widget _buildDescription(ThemeData theme) {
+  Widget _buildDescription(ThemeData theme, AppLocalizations l10n) {
     return Text(
       _isEmailSent
-          ? "Check your email for the reset link"
-          : "Enter your email to receive a reset link",
+          ? l10n.resetLinkSentDescription
+          : l10n.resetPasswordDescription,
       style: theme.textTheme.bodyMedium?.copyWith(
         color: theme.colorScheme.onSurfaceVariant,
       ),
@@ -181,23 +182,23 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     );
   }
 
-  Widget _buildEmailInput(ThemeData theme) {
+  Widget _buildEmailInput(ThemeData theme, AppLocalizations l10n) {
     return Semantics(
-      label: "Email Address Input",
+      label: l10n.emailLabel,
       child: InputFiled(
         controller: emailController,
-        hintText: "Email Address",
+        hintText: l10n.emailLabel,
         email: true,
         enabled: !_isEmailSent,
       ),
     );
   }
 
-  Widget _buildSendButton(ThemeData theme) {
+  Widget _buildSendButton(ThemeData theme, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Semantics(
-        label: _isEmailSent ? "Email Sent" : "Send Reset Link Button",
+        label: _isEmailSent ? l10n.emailSentButton : l10n.sendResetLinkButton,
         child: ElevatedButton(
           onPressed:
               _isLoading || _isEmailSent ? null : _sendPasswordResetEmail,
@@ -212,7 +213,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                     color: theme.colorScheme.onPrimary,
                   )
                   : Text(
-                    _isEmailSent ? "Email Sent" : "Send Reset Link",
+                    _isEmailSent
+                        ? l10n.emailSentButton
+                        : l10n.sendResetLinkButton,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.onPrimary,

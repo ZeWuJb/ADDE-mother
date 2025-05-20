@@ -1,4 +1,5 @@
 import 'package:adde/auth/register_page.dart';
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class WelcomePage extends StatefulWidget {
@@ -12,33 +13,13 @@ class _WelcomePageState extends State<WelcomePage> {
   int _currentPage = 0;
   final PageController _pageController = PageController();
 
-  static const List<Map<String, String>> _imageContent = [
-    {
-      "title": "Adey Pregnancy And Child Care App",
-      "image": "assets/woman.png",
-      "content":
-          "Welcome to Adey, your trusted partner for a safe and healthy pregnancy and child care journey.",
-    },
-    {
-      "image": "assets/woman-1.png",
-      "content":
-          "Track your pregnancy and postpartum progress with tools for weight tracking, contraction timing, and breastfeeding.",
-    },
-    {
-      "image": "assets/notebook.png",
-      "content":
-          "Access educational resources on maternal health, including articles, videos, and podcasts.",
-    },
-    {
-      "image": "assets/notebook.png",
-      "content":
-          "Connect with a community of users, share experiences, and receive support.",
-    },
-    {
-      "image": "assets/chatbot-1.png",
-      "content":
-          "Use our chatbot for instant responses and guidance on pregnancy and child care queries.",
-    },
+  // Define image paths as a constant list since they don't need localization
+  static const List<String> _imagePaths = [
+    "assets/woman.png",
+    "assets/woman-1.png",
+    "assets/notebook.png",
+    "assets/community.png",
+    "assets/chatbot-1.png",
   ];
 
   @override
@@ -58,12 +39,12 @@ class _WelcomePageState extends State<WelcomePage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenHeight = MediaQuery.of(context).size.height;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: Stack(
         children: [
-          // Gradient Background
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -78,31 +59,24 @@ class _WelcomePageState extends State<WelcomePage> {
               ),
             ),
           ),
-          // Main Content
           Column(
             children: [
-              // Carousel Section
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,
-                  itemCount: _imageContent.length,
+                  itemCount: _imagePaths.length,
                   onPageChanged:
                       (index) => setState(() => _currentPage = index),
                   itemBuilder:
-                      (context, index) => _buildPageContent(
-                        theme,
-                        _imageContent[index],
-                        screenHeight,
-                      ),
+                      (context, index) =>
+                          _buildPageContent(theme, l10n, index, screenHeight),
                 ),
               ),
-              // Bottom Section: Pagination Dots and Buttons
               Padding(
                 padding: EdgeInsets.all(screenHeight * 0.02),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Skip Button
                     TextButton(
                       onPressed: _navigateToRegister,
                       style: theme.textButtonTheme.style?.copyWith(
@@ -111,17 +85,16 @@ class _WelcomePageState extends State<WelcomePage> {
                         ),
                       ),
                       child: Text(
-                        "Skip",
+                        l10n.skipButton,
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
-                        semanticsLabel: "Skip onboarding",
+                        semanticsLabel: l10n.skipSemantics,
                       ),
                     ),
-                    // Pagination Dots
                     Row(
                       children: List.generate(
-                        _imageContent.length,
+                        _imagePaths.length,
                         (index) => Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4.0),
                           child: AnimatedContainer(
@@ -141,10 +114,9 @@ class _WelcomePageState extends State<WelcomePage> {
                         ),
                       ),
                     ),
-                    // Next Button
                     TextButton(
                       onPressed: () {
-                        if (_currentPage < _imageContent.length - 1) {
+                        if (_currentPage < _imagePaths.length - 1) {
                           _pageController.nextPage(
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeInOut,
@@ -159,16 +131,16 @@ class _WelcomePageState extends State<WelcomePage> {
                         ),
                       ),
                       child: Text(
-                        _currentPage == _imageContent.length - 1
-                            ? "Get Started"
-                            : "Next",
+                        _currentPage == _imagePaths.length - 1
+                            ? l10n.getStartedButton
+                            : l10n.nextButton,
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                         semanticsLabel:
-                            _currentPage == _imageContent.length - 1
-                                ? "Get started"
-                                : "Next page",
+                            _currentPage == _imagePaths.length - 1
+                                ? l10n.getStartedSemantics
+                                : l10n.nextSemantics,
                       ),
                     ),
                   ],
@@ -183,19 +155,31 @@ class _WelcomePageState extends State<WelcomePage> {
 
   Widget _buildPageContent(
     ThemeData theme,
-    Map<String, String> content,
+    AppLocalizations l10n,
+    int index,
     double screenHeight,
   ) {
+    // Map index to localized content
+    final String title = index == 0 ? l10n.welcomePageTitle1 : '';
+    final String content = switch (index) {
+      0 => l10n.welcomePageContent1,
+      1 => l10n.welcomePageContent2,
+      2 => l10n.welcomePageContent3,
+      3 => l10n.welcomePageContent4,
+      4 => l10n.welcomePageContent5,
+      _ => '',
+    };
+
     return Semantics(
-      label: "Onboarding page ${_currentPage + 1}",
+      label: l10n.onboardingPageSemantics(index + 1),
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: screenHeight * 0.02),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (content["title"] != null) ...[
+            if (title.isNotEmpty) ...[
               Text(
-                content["title"]!,
+                title,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
@@ -209,7 +193,7 @@ class _WelcomePageState extends State<WelcomePage> {
               width: screenHeight * 0.4,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage(content["image"]!),
+                  image: AssetImage(_imagePaths[index]),
                   fit: BoxFit.cover,
                 ),
                 borderRadius: BorderRadius.circular(16),
@@ -224,7 +208,7 @@ class _WelcomePageState extends State<WelcomePage> {
             ),
             SizedBox(height: screenHeight * 0.03),
             Text(
-              content["content"]!,
+              content,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w400,

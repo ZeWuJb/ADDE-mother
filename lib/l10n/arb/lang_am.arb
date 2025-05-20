@@ -994,5 +994,406 @@
   "createNewPost": "አዲስ ልጥፍ ፍጠር",
   "@createNewPost": {
     "description": "Accessibility label for the create post button"
-  }
+  },
+  "welcomeBack": "እንኳን ተመልሰሃል",
+  "@welcomeBack": {
+    "description": "Welcome message displayed on the login page"
+  },
+  "forgetPassword": "የይለፍ ቃል ረሳህው?",
+  "@forgetPassword": {
+    "description": "Label for the forget password link"
+  },
+  "logIn": "ግባ",
+  "@logIn": {
+    "description": "Label for the login button"
+  },
+  "noAccount": "መለያ የለህም?",
+  "@noAccount": {
+    "description": "Prompt for users without an account"
+  },
+  "register": "መዝግብ",
+  "@register": {
+    "description": "Label for the register link"
+  },
+  "signInWithGoogle": "በGoogle ግባ",
+  "@signInWithGoogle": {
+    "description": "Label for the Google Sign-In button"
+  },
+  "emptyFieldsError": "እባክህ ኢሜይል እና የይለፍ ቃል አስገባ",
+  "@emptyFieldsError": {
+    "description": "Error message when email or password fields are empty"
+  },
+  "loginFailedError": "መግባት አልተሳካም። እባክህ እንደገና ሞክር",
+  "@loginFailedError": {
+    "description": "Error message when login attempt fails"
+  },
+  "googleSignInCancelledError": "Google መግባት ተሰርዟል",
+  "@googleSignInCancelledError": {
+    "description": "Error message when Google Sign-In is cancelled"
+  },
+  "googleSignInFailedError": "Google መግባት አልተሳካም",
+  "@googleSignInFailedError": {
+    "description": "Error message when Google Sign-In fails"
+  },
+  "googleAuthFailedError": "Google ማረጋገጫ አልተሳካም",
+  "@googleAuthFailedError": {
+    "description": "Error message when Google authentication fails"
+  },
+  "invalidEmailError": "እባክህ ትክክለኛ ኢሜይል አድራሻ አስገባ",
+  "@invalidEmailError": {
+    "description": "Error message when email format is invalid"
+  },
+  "invalidPasswordError": "የይለፍ ቃል ቢያንስ 6 ቁምፊዎች መሆን አለበት",
+  "@invalidPasswordError": {
+    "description": "Error message when password is too short"
+  },
+ 
+  "passwordLabel": "የይለፍ ቃል",
+  "@passwordLabel": {
+    "description": "Label for the password input field"
+  },
+  "welcomeRegister": "እንኳን ደህና መጣህ",
+  "@welcomeRegister": {
+    "description": "Welcome message displayed on the register page"
+  },
+  "assistMessage": "እኛ እዚህ ነን፣ ለመርዳት!!!",
+  "@assistMessage": {
+    "description": "Assistance message displayed below the welcome text on the register page"
+  },
+  "emailLabel": "ኢሜይል አድራሻ",
+  "@emailLabel": {
+    "description": "Label for the email input field on the register page"
+  },
+  "passwordLabel": "የይለፍ ቃል",
+  "@passwordLabel": {
+    "description": "Label for the password input field on the register page"
+  },
+  "confirmPasswordLabel": "የይለፍ ቃል አረጋግጥ",
+  "@confirmPasswordLabel": {
+    "description": "Label for the confirm password input field on the register page"
+  },
+  "signUpButton": "ተመዝገብ",
+  "@signUpButton": {
+    "description": "Label for the sign-up button"
+  },
+  "alreadyHaveAccount": "መለያ አለህ?",
+  "@alreadyHaveAccount": {
+    "description": "Prompt for users who already have an account"
+  },
+  "loginLink": "ግባ",
+  "@loginLink": {
+    "description": "Label for the login link"
+  },
+  "signUpWithGoogle": "በGoogle ተመዝገብ",
+  "@signUpWithGoogle": {
+    "description": "Label for the Google Sign-Up button"
+  },
+  "passwordsDoNotMatchError": "የይለፍ ቃሎች አይዛመዱም!",
+  "@passwordsDoNotMatchError": {
+    "description": "Error message when passwords do not match"
+  },
+  "googleSignUpCancelledError": "Google መመዝገብ ተሰርዟል።",
+  "@googleSignUpCancelledError": {
+    "description": "Error message when Google Sign-Up is cancelled"
+  },
+  "googleSignUpFailedError": "Google መመዝገብ አልተሳካም። እባክህ እንደገና ሞክር።",
+  "@googleSignUpFailedError": {
+    "description": "Error message when Google Sign-Up fails"
+  },
+  "googleSignUpTokenError": "Google መመዝገብ ስህተት፡ ቶከኖች ጠፍተዋል።",
+  "@googleSignUpTokenError": {
+    "description": "Error message when Google Sign-Up fails due to missing tokens"
+  },
+  "signUpFailedError": "መመዝገብ አልተሳካም። እባክህ እንደገና ሞክር።",
+  "@signUpFailedError": {
+    "description": "Error message when signup attempt fails"
+  },
+  "signUpSuccess": "መመዝገብ ተሳክቷል!",
+  "@signUpSuccess": {
+    "description": "Success message when signup is successful"
+  },
+  "signUpError": "ስህተት፡ {error}",
+  "@signUpError": {
+    "description": "Generic error message for signup with placeholder",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+
+  "resetPasswordTitle": "የይለፍ ቃል ዳግም አስጀምር",
+  "@resetPasswordTitle": {
+    "description": "Title for the reset password page app bar"
+  },
+  "resetPasswordHeader": "የይለፍ ቃልህን ዳግም አስጀምር",
+  "@resetPasswordHeader": {
+    "description": "Header text for the reset password page"
+  },
+  "resetPasswordDescription": "የዳግም አስጀምር አገናኝ ለመቀበል ኢሜይልህን አስገባ",
+  "@resetPasswordDescription": {
+    "description": "Description prompting the user to enter their email for a reset link"
+  },
+  "resetLinkSentDescription": "የዳግም አስጀምር አገናኝ ለማግኘት ኢሜይልህን ፈትሽ",
+  "@resetLinkSentDescription": {
+    "description": "Description shown after the reset email is sent"
+  },
+  "sendResetLinkButton": "የዳግም አስጀምር አገናኝ ላክ",
+  "@sendResetLinkButton": {
+    "description": "Label for the button to send the reset link"
+  },
+  "emailSentButton": "ኢሜይል ተልኳል",
+  "@emailSentButton": {
+    "description": "Label for the button after the reset email is sent"
+  },
+  "emptyEmailError": "እባክህ ኢሜይል አድራሻህን አስገባ",
+  "@emptyEmailError": {
+    "description": "Error message when the email field is empty"
+  },
+  "resetEmailSentSuccess": "የይለፍ ቃል ዳግም አስጀምር ኢሜይል ወደ {email} ተልኳል",
+  "@resetEmailSentSuccess": {
+    "description": "Success message when the reset email is sent",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "resetPasswordError": "ስህተት፡ {error}",
+  "@resetPasswordError": {
+    "description": "Generic error message for password reset with placeholder",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "welcomePageTitle1": "አዴ እርግዝና እና የልጅ እንክብካቤ መተግበሪያ",
+  "@welcomePageTitle1": {
+    "description": "Title for the first onboarding page"
+  },
+  "welcomePageContent1": "እንኳን ወደ አዴ በደህና መጡ፣ ለአስተማማኝ እና ጤናማ እርግዝና እና የልጅ እንክብካቤ ጉዞ የእርስዎ ታማኝ አጋር።",
+  "@welcomePageContent1": {
+    "description": "Content for the first onboarding page"
+  },
+  "welcomePageContent2": "እርግዝናዎን እና ድህረ-ወሊድ እድገትን በጤና ሁኔታ መከታተያ እና የተሻሻሉ ምክሮች መሣሪያዎች ይከታተሉ።",
+  "@welcomePageContent2": {
+    "description": "Content for the second onboarding page"
+  },
+  "welcomePageContent3": "በእናቶች ጤና ላይ የትምህርት መረጃዎችን ይድረሱ፣ ጽሑፎችን፣ ሳምንታዊ ምክሮችን እና የዕለታዊ ማሳወቂያዎችን ጨምሮ።",
+  "@welcomePageContent3": {
+    "description": "Content for the third onboarding page"
+  },
+  "welcomePageContent4": "ከተጠቃሚዎች ማህበረሰብ ጋር ይገናኙ፣ ልምዶችን ያካፍሉ እና ድጋፍ ያግኙ።",
+  "@welcomePageContent4": {
+    "description": "Content for the fourth onboarding page"
+  },
+  "welcomePageContent5": "ለእርግዝና እና የልጅ እንክብካቤ ጥያቄዎች ፈጣን ምላሾች እና መመሪያ ለማግኘት የእኛን ቻትቦት ይጠቀሙ።",
+  "@welcomePageContent5": {
+    "description": "Content for the fifth onboarding page"
+  },
+  "skipButton": "ዝለል",
+  "@skipButton": {
+    "description": "Label for the skip button on the onboarding page"
+  },
+  "nextButton": "ቀጣይ",
+  "@nextButton": {
+    "description": "Label for the next button on the onboarding page"
+  },
+  "getStartedButton": "ጀምር",
+  "@getStartedButton": {
+    "description": "Label for the get started button on the final onboarding page"
+  },
+  "skipSemantics": "መግቢያውን ዝለል",
+  "@skipSemantics": {
+    "description": "Semantics label for the skip button"
+  },
+  "nextSemantics": "ቀጣይ ገፅ",
+  "@nextSemantics": {
+    "description": "Semantics label for the next button"
+  },
+  "getStartedSemantics": "ጀምር",
+  "@getStartedSemantics": {
+    "description": "Semantics label for the get started button"
+  },
+  "onboardingPageSemantics": "መግቢያ ገፅ {pageNumber}",
+  "@onboardingPageSemantics": {
+    "description": "Semantics label for each onboarding page",
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "motherFormTitle": "እንኳን ደህና መጡ፣ እባክዎ የሚከተለውን ቅጽ ይሙሉ!",
+  "@motherFormTitle": {
+    "description": "Title for the mother form page app bar"
+  },
+  "fullNameLabel": "ሙሉ ስም",
+  "@fullNameLabel": {
+    "description": "Label for the full name input field"
+  },
+  "fullNameRequiredError": "ሙሉ ስም ያስፈልጋል",
+  "@fullNameRequiredError": {
+    "description": "Error message when full name is empty"
+  },
+  "selectGenderLabel": "ፆታ ይምረጡ",
+  "@selectGenderLabel": {
+    "description": "Label for the gender selection section"
+  },
+  "maleGenderOption": "ወንድ",
+  "@maleGenderOption": {
+    "description": "Label for the male gender option"
+  },
+  "femaleGenderOption": "ሴት",
+  "@femaleGenderOption": {
+    "description": "Label for the female gender option"
+  },
+  "selectAgeLabel": "ዕድሜዎን ይምረጡ",
+  "@selectAgeLabel": {
+    "description": "Label for the age selection section"
+  },
+  "selectedAgeLabel": "የተመረጠው ዕድሜ፡ {age}",
+  "@selectedAgeLabel": {
+    "description": "Label showing the selected age with placeholder",
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "enterHeightLabel": "ቁመትዎን ያስገቡ",
+  "@enterHeightLabel": {
+    "description": "Label for the height input section"
+  },
+  "heightRequiredError": "ቁመት ያስፈልጋል",
+  "@heightRequiredError": {
+    "description": "Error message when height is empty"
+  },
+  "heightInvalidError": "ትክክለኛ ቁጥር ያስገቡ",
+  "@heightInvalidError": {
+    "description": "Error message when height is not a valid number"
+  },
+  "bloodPressureLabel": "የደም ግፊት (ለምሳሌ፣ 120/80)",
+  "@bloodPressureLabel": {
+    "description": "Label for the blood pressure input field"
+  },
+  "bloodPressureRequiredError": "የደም ግፊት ያስፈልጋል",
+  "@bloodPressureRequiredError": {
+    "description": "Error message when blood pressure is empty"
+  },
+  "bloodPressureInvalidError": "ትክክለኛ የደም ግፊት ያስገቡ (ለምሳሌ፣ 120/80)",
+  "@bloodPressureInvalidError": {
+    "description": "Error message when blood pressure format is invalid"
+  },
+  "enterWeightLabel": "ክብደትዎን ያስገቡ",
+  "@enterWeightLabel": {
+    "description": "Label for the weight input section"
+  },
+  "weightRequiredError": "ክብደት ያስፈልጋል",
+  "@weightRequiredError": {
+    "description": "Error message when weight is empty"
+  },
+  "weightInvalidError": "ትክክለኛ ቁጥር ያስገቡ",
+  "@weightInvalidError": {
+    "description": "Error message when weight is not a valid number"
+  },
+  "pregnancyStartDateLabel": "የእርግዝና መጀመሪያ ቀን",
+  "@pregnancyStartDateLabel": {
+    "description": "Label for the pregnancy start date input field"
+  },
+  "pregnancyStartDateNotSet": "አልተዘጋጀም",
+  "@pregnancyStartDateNotSet": {
+    "description": "Text shown when pregnancy start date is not set"
+  },
+  "pregnancyStartDateQuestion": "መቼ ነው እርጉዝ የሆኑት?",
+  "@pregnancyStartDateQuestion": {
+    "description": "Label for the pregnancy start date section"
+  },
+  "pregnancyDurationLabel": "የእርግዝና ጊዜ፡ {weeks} ሳምንታት እና {days} ቀናት",
+  "@pregnancyDurationLabel": {
+    "description": "Label showing the pregnancy duration with placeholders",
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "healthConditionsLabel": "የሚመለከታቸውን የጤና ሁኔታዎች ይምረጡ",
+  "@healthConditionsLabel": {
+    "description": "Label for the health conditions selection section"
+  },
+  "healthConditionDiabetes": "ስኳር በሽታ",
+  "@healthConditionDiabetes": {
+    "description": "Label for the diabetes health condition option"
+  },
+  "healthConditionHypertension": "ከፍተኛ የደም ግፊት",
+  "@healthConditionHypertension": {
+    "description": "Label for the hypertension health condition option"
+  },
+  "healthConditionAsthma": "አስም",
+  "@healthConditionAsthma": {
+    "description": "Label for the asthma health condition option"
+  },
+  "healthConditionHeartDisease": "የልብ በሽታ",
+  "@healthConditionHeartDisease": {
+    "description": "Label for the heart disease health condition option"
+  },
+  "healthConditionThyroidIssues": "የታይሮይድ ችግሮች",
+  "@healthConditionThyroidIssues": {
+    "description": "Label for the thyroid issues health condition option"
+  },
+  "healthConditionOther": "ሌላ",
+  "@healthConditionOther": {
+    "description": "Label for the other health condition option"
+  },
+  "healthIssueDescriptionLabel": "የጤና ችግርዎን ይግለፁ",
+  "@healthIssueDescriptionLabel": {
+    "description": "Label for the health issue description input field"
+  },
+  "healthIssueHint": "የጤና ታሪክዎን ወይም ችግሮችዎን እዚህ ይግለፁ...",
+  "@healthIssueHint": {
+    "description": "Hint text for the health issue description input field"
+  },
+  "submitButton": "አስገባ",
+  "@submitButton": {
+    "description": "Label for the submit button"
+  },
+  "confirmSubmissionTitle": "የቅጽ ማስገባት አረጋግጥ",
+  "@confirmSubmissionTitle": {
+    "description": "Title for the submission confirmation dialog"
+  },
+  "confirmSubmissionMessage": "ቅጹን ማስገባት እንደሚፈልጉ እርግጠኛ ነዎት?",
+  "@confirmSubmissionMessage": {
+    "description": "Message in the submission confirmation dialog"
+  },
+  "cancelButton": "መሰረዝ",
+  "@cancelButton": {
+    "description": "Label for the cancel button in the confirmation dialog"
+  },
+  "requiredFieldsError": "እባክዎ ሁሉንም አስፈላጊ መስኮች ይሙሉ!",
+  "@requiredFieldsError": {
+    "description": "Error message when required fields are not filled"
+  },
+  "invalidNumberError": "እባክዎ ለክብደት እና ቁመት ትክክለኛ ቁጥሮችን ያስገቡ!",
+  "@invalidNumberError": {
+    "description": "Error message when weight or height is not a valid number"
+  },
+  "formSubmitSuccess": "ቅጹ በተሳካ ሁኔታ ተመዝግቧል!",
+  "@formSubmitSuccess": {
+    "description": "Success message when the form is submitted"
+  },
+  "formSubmitError": "ቅጽ ማስገባት ላይ ስህተት፡ {error}",
+  "@formSubmitError": {
+    "description": "Error message when form submission fails with placeholder",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "popupNotifications": "ብቅ-ወጪ ማሳወቂያዎች"
 }

@@ -260,7 +260,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get describeHealthIssue => 'የጤና ችግርህን ግለጽ';
 
   @override
-  String get healthIssueHint => 'የጤና ታሪክህን ወይም ችግሮችህን እዚህ ግለጽ...';
+  String get healthIssueHint => 'የጤና ታሪክዎን ወይም ችግሮችዎን እዚህ ይግለፁ...';
 
   @override
   String get saveProfileButton => 'መገለጫ አስቀምጥ';
@@ -643,7 +643,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get doctorsLabel => 'ዶክተሮች';
 
   @override
-  String get emailLabel => 'ኢሜይል';
+  String get emailLabel => 'ኢሜይል አድራሻ';
 
   @override
   String get ensureStableConnection => 'የተረጋጋ የበይነመረብ ግንኙነት እንዳለዎት ያረጋግጡ';
@@ -1072,4 +1072,276 @@ class AppLocalizationsAm extends AppLocalizations {
 
   @override
   String get createNewPost => 'አዲስ ልጥፍ ፍጠር';
+
+  @override
+  String get welcomeBack => 'እንኳን ተመልሰሃል';
+
+  @override
+  String get passwordLabel => 'የይለፍ ቃል';
+
+  @override
+  String get forgetPassword => 'የይለፍ ቃል ረሳህው?';
+
+  @override
+  String get logIn => 'ግባ';
+
+  @override
+  String get noAccount => 'መለያ የለህም?';
+
+  @override
+  String get register => 'መዝግብ';
+
+  @override
+  String get signInWithGoogle => 'በGoogle ግባ';
+
+  @override
+  String get emptyFieldsError => 'እባክህ ኢሜይል እና የይለፍ ቃል አስገባ';
+
+  @override
+  String get loginFailedError => 'መግባት አልተሳካም። እባክህ እንደገና ሞክር';
+
+  @override
+  String get googleSignInCancelledError => 'Google መግባት ተሰርዟል';
+
+  @override
+  String get googleSignInFailedError => 'Google መግባት አልተሳካም';
+
+  @override
+  String get googleAuthFailedError => 'Google ማረጋገጫ አልተሳካም';
+
+  @override
+  String get invalidEmailError => 'እባክህ ትክክለኛ ኢሜይል አድራሻ አስገባ';
+
+  @override
+  String get invalidPasswordError => 'የይለፍ ቃል ቢያንስ 6 ቁምፊዎች መሆን አለበት';
+
+  @override
+  String get welcomeRegister => 'እንኳን ደህና መጣህ';
+
+  @override
+  String get assistMessage => 'እኛ እዚህ ነን፣ ለመርዳት!!!';
+
+  @override
+  String get confirmPasswordLabel => 'የይለፍ ቃል አረጋግጥ';
+
+  @override
+  String get signUpButton => 'ተመዝገብ';
+
+  @override
+  String get alreadyHaveAccount => 'መለያ አለህ?';
+
+  @override
+  String get loginLink => 'ግባ';
+
+  @override
+  String get signUpWithGoogle => 'በGoogle ተመዝገብ';
+
+  @override
+  String get passwordsDoNotMatchError => 'የይለፍ ቃሎች አይዛመዱም!';
+
+  @override
+  String get googleSignUpCancelledError => 'Google መመዝገብ ተሰርዟል።';
+
+  @override
+  String get googleSignUpFailedError => 'Google መመዝገብ አልተሳካም። እባክህ እንደገና ሞክር።';
+
+  @override
+  String get googleSignUpTokenError => 'Google መመዝገብ ስህተት፡ ቶከኖች ጠፍተዋል።';
+
+  @override
+  String get signUpFailedError => 'መመዝገብ አልተሳካም። እባክህ እንደገና ሞክር።';
+
+  @override
+  String get signUpSuccess => 'መመዝገብ ተሳክቷል!';
+
+  @override
+  String signUpError(Object error) {
+    return 'ስህተት፡ $error';
+  }
+
+  @override
+  String get resetPasswordTitle => 'የይለፍ ቃል ዳግም አስጀምር';
+
+  @override
+  String get resetPasswordHeader => 'የይለፍ ቃልህን ዳግም አስጀምር';
+
+  @override
+  String get resetPasswordDescription => 'የዳግም አስጀምር አገናኝ ለመቀበል ኢሜይልህን አስገባ';
+
+  @override
+  String get resetLinkSentDescription => 'የዳግም አስጀምር አገናኝ ለማግኘት ኢሜይልህን ፈትሽ';
+
+  @override
+  String get sendResetLinkButton => 'የዳግም አስጀምር አገናኝ ላክ';
+
+  @override
+  String get emailSentButton => 'ኢሜይል ተልኳል';
+
+  @override
+  String get emptyEmailError => 'እባክህ ኢሜይል አድራሻህን አስገባ';
+
+  @override
+  String resetEmailSentSuccess(String email) {
+    return 'የይለፍ ቃል ዳግም አስጀምር ኢሜይል ወደ $email ተልኳል';
+  }
+
+  @override
+  String resetPasswordError(Object error) {
+    return 'ስህተት፡ $error';
+  }
+
+  @override
+  String get welcomePageTitle1 => 'አዴ እርግዝና እና የልጅ እንክብካቤ መተግበሪያ';
+
+  @override
+  String get welcomePageContent1 => 'እንኳን ወደ አዴ በደህና መጡ፣ ለአስተማማኝ እና ጤናማ እርግዝና እና የልጅ እንክብካቤ ጉዞ የእርስዎ ታማኝ አጋር።';
+
+  @override
+  String get welcomePageContent2 => 'እርግዝናዎን እና ድህረ-ወሊድ እድገትን በጤና ሁኔታ መከታተያ እና የተሻሻሉ ምክሮች መሣሪያዎች ይከታተሉ።';
+
+  @override
+  String get welcomePageContent3 => 'በእናቶች ጤና ላይ የትምህርት መረጃዎችን ይድረሱ፣ ጽሑፎችን፣ ሳምንታዊ ምክሮችን እና የዕለታዊ ማሳወቂያዎችን ጨምሮ።';
+
+  @override
+  String get welcomePageContent4 => 'ከተጠቃሚዎች ማህበረሰብ ጋር ይገናኙ፣ ልምዶችን ያካፍሉ እና ድጋፍ ያግኙ።';
+
+  @override
+  String get welcomePageContent5 => 'ለእርግዝና እና የልጅ እንክብካቤ ጥያቄዎች ፈጣን ምላሾች እና መመሪያ ለማግኘት የእኛን ቻትቦት ይጠቀሙ።';
+
+  @override
+  String get skipButton => 'ዝለል';
+
+  @override
+  String get nextButton => 'ቀጣይ';
+
+  @override
+  String get getStartedButton => 'ጀምር';
+
+  @override
+  String get skipSemantics => 'መግቢያውን ዝለል';
+
+  @override
+  String get nextSemantics => 'ቀጣይ ገፅ';
+
+  @override
+  String get getStartedSemantics => 'ጀምር';
+
+  @override
+  String onboardingPageSemantics(int pageNumber) {
+    return 'መግቢያ ገፅ $pageNumber';
+  }
+
+  @override
+  String get motherFormTitle => 'እንኳን ደህና መጡ፣ እባክዎ የሚከተለውን ቅጽ ይሙሉ!';
+
+  @override
+  String get fullNameRequiredError => 'ሙሉ ስም ያስፈልጋል';
+
+  @override
+  String get selectGenderLabel => 'ፆታ ይምረጡ';
+
+  @override
+  String get maleGenderOption => 'ወንድ';
+
+  @override
+  String get femaleGenderOption => 'ሴት';
+
+  @override
+  String get selectAgeLabel => 'ዕድሜዎን ይምረጡ';
+
+  @override
+  String selectedAgeLabel(int age) {
+    return 'የተመረጠው ዕድሜ፡ $age';
+  }
+
+  @override
+  String get enterHeightLabel => 'ቁመትዎን ያስገቡ';
+
+  @override
+  String get heightRequiredError => 'ቁመት ያስፈልጋል';
+
+  @override
+  String get heightInvalidError => 'ትክክለኛ ቁጥር ያስገቡ';
+
+  @override
+  String get bloodPressureRequiredError => 'የደም ግፊት ያስፈልጋል';
+
+  @override
+  String get bloodPressureInvalidError => 'ትክክለኛ የደም ግፊት ያስገቡ (ለምሳሌ፣ 120/80)';
+
+  @override
+  String get enterWeightLabel => 'ክብደትዎን ያስገቡ';
+
+  @override
+  String get weightRequiredError => 'ክብደት ያስፈልጋል';
+
+  @override
+  String get weightInvalidError => 'ትክክለኛ ቁጥር ያስገቡ';
+
+  @override
+  String get pregnancyStartDateLabel => 'የእርግዝና መጀመሪያ ቀን';
+
+  @override
+  String get pregnancyStartDateNotSet => 'አልተዘጋጀም';
+
+  @override
+  String get pregnancyStartDateQuestion => 'መቼ ነው እርጉዝ የሆኑት?';
+
+  @override
+  String pregnancyDurationLabel(int weeks, int days) {
+    return 'የእርግዝና ጊዜ፡ $weeks ሳምንታት እና $days ቀናት';
+  }
+
+  @override
+  String get healthConditionsLabel => 'የሚመለከታቸውን የጤና ሁኔታዎች ይምረጡ';
+
+  @override
+  String get healthConditionDiabetes => 'ስኳር በሽታ';
+
+  @override
+  String get healthConditionHypertension => 'ከፍተኛ የደም ግፊት';
+
+  @override
+  String get healthConditionAsthma => 'አስም';
+
+  @override
+  String get healthConditionHeartDisease => 'የልብ በሽታ';
+
+  @override
+  String get healthConditionThyroidIssues => 'የታይሮይድ ችግሮች';
+
+  @override
+  String get healthConditionOther => 'ሌላ';
+
+  @override
+  String get healthIssueDescriptionLabel => 'የጤና ችግርዎን ይግለፁ';
+
+  @override
+  String get submitButton => 'አስገባ';
+
+  @override
+  String get confirmSubmissionTitle => 'የቅጽ ማስገባት አረጋግጥ';
+
+  @override
+  String get confirmSubmissionMessage => 'ቅጹን ማስገባት እንደሚፈልጉ እርግጠኛ ነዎት?';
+
+  @override
+  String get cancelButton => 'መሰረዝ';
+
+  @override
+  String get requiredFieldsError => 'እባክዎ ሁሉንም አስፈላጊ መስኮች ይሙሉ!';
+
+  @override
+  String get invalidNumberError => 'እባክዎ ለክብደት እና ቁመት ትክክለኛ ቁጥሮችን ያስገቡ!';
+
+  @override
+  String get formSubmitSuccess => 'ቅጹ በተሳካ ሁኔታ ተመዝግቧል!';
+
+  @override
+  String formSubmitError(Object error) {
+    return 'ቅጽ ማስገባት ላይ ስህተት፡ $error';
+  }
+
+  @override
+  String get popupNotifications => 'ብቅ-ወጪ ማሳወቂያዎች';
 }

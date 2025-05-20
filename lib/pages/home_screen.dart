@@ -3,6 +3,7 @@ import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:adde/pages/chatbot/chat_screen.dart';
 import 'package:adde/pages/name_suggestion/name_suggestion_page.dart';
 import 'package:adde/pages/note/journal_screen.dart';
+import 'package:adde/pages/notification/NotificationSettingsProvider.dart';
 import 'package:adde/pages/notification/notificatio_history_page.dart';
 import 'package:adde/pages/notification/notification_service.dart';
 import 'package:adde/pages/weekly_tips/weeklytip_page.dart';
@@ -12,6 +13,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:adde/auth/login_page.dart';
 import 'package:adde/pages/health_matrics_page.dart';
 import 'package:adde/pages/profile/profile_page.dart';
+import 'package:adde/pages/profile/locale_provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -42,9 +44,9 @@ class _HomeScreenState extends State<HomeScreen> {
   int _pregnancyWeeks = 0;
   int _pregnancyDays = 0;
   String? _profileImageBase64;
-  late Future<void> _notificationCheckFuture;
   List<Map<String, dynamic>> _weeklyTips = [];
-  bool _hasLoadedWeeklyTips = false; // Track if we've loaded tips
+  bool _hasLoadedWeeklyTips = false;
+  bool _hasShownTodaysTip = false;
 
   @override
   void initState() {
@@ -52,14 +54,21 @@ class _HomeScreenState extends State<HomeScreen> {
     _scrollController = ScrollController();
     _updatePregnancyProgress();
     _loadProfileImage();
-    _notificationCheckFuture = _checkUnreadNotifications();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkUnreadNotifications();
+        _scheduleHealthTips();
+        Future.delayed(const Duration(minutes: 1), () {
+          if (mounted && !_hasShownTodaysTip) {
+            _checkAndShowTodaysTip();
+            _hasShownTodaysTip = true;
+          }
+        });
+      }
       if (_scrollController.hasClients) {
         _scrollController.jumpTo(0);
       }
-      _scheduleHealthTips();
-      _checkAndShowTodaysTip();
     });
 
     Future.delayed(const Duration(days: 1), () {
@@ -70,6 +79,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Listen to locale changes via LocaleProvider
+    final localeProvider = Provider.of<LocaleProvider>(context);
+    if (localeProvider.locale != Localizations.localeOf(context)) {
+      // Locale has changed, reset and reload tips
+      _hasLoadedWeeklyTips = false;
+    }
     if (!_hasLoadedWeeklyTips) {
       _hasLoadedWeeklyTips = true;
       _loadWeeklyTips();
@@ -103,18 +118,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _checkUnreadNotifications() async {
-    final notificationService = Provider.of<NotificationService>(
-      context,
-      listen: false,
-    );
-    final locale = AppLocalizations.of(context)!.localeName; // Get the locale
-    final history = await notificationService.getNotificationHistory(
-      widget.user_id,
-      locale, // Add the locale parameter
-    );
-    setState(() {
-      _hasUnreadNotifications = history.any((n) => n['seen'] == false);
-    });
+    try {
+      final notificationService = Provider.of<NotificationService>(
+        context,
+        listen: false,
+      );
+      final locale = AppLocalizations.of(context)!.localeName;
+      final history = await notificationService.getNotificationHistory(
+        widget.user_id,
+        locale,
+      );
+      setState(() {
+        _hasUnreadNotifications = history.any((n) => n['seen'] == false);
+      });
+    } catch (e) {
+      print('Error checking unread notifications: $e');
+    }
   }
 
   Future<void> _scheduleHealthTips() async {
@@ -122,44 +141,65 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       listen: false,
     );
-    final l10n = AppLocalizations.of(context)!; // Access localized strings
-    final locale = l10n.localeName; // Get the locale
+    final l10n = AppLocalizations.of(context)!;
+    final locale = l10n.localeName;
     await notificationService.scheduleDailyHealthTips(
       widget.pregnancyStartDate,
       widget.user_id,
-      locale, // Add the locale
-      l10n.notificationChannelName, // Localized channel name ("Daily Tip")
-      l10n.notificationChannelDescription, // Localized description ("Health tips every 4 days")
+      locale,
+      l10n.notificationChannelName,
+      l10n.notificationChannelDescription,
     );
   }
 
   Future<void> _checkAndShowTodaysTip() async {
-    final notificationService = Provider.of<NotificationService>(
-      context,
-      listen: false,
-    );
-    final l10n = AppLocalizations.of(context)!; // Access localized strings
-    final locale = l10n.localeName; // Get the locale
-    await notificationService.checkAndShowTodaysTip(
-      widget.user_id,
-      widget.pregnancyStartDate,
-      locale, // Add the locale
-      l10n.notificationChannelName, // Localized channel name ("Daily Tip")
-      l10n.notificationChannelDescription, // Localized description ("Health tips every 4 days")
-    );
+    try {
+      final notificationService = Provider.of<NotificationService>(
+        context,
+        listen: false,
+      );
+      final notificationSettingsProvider =
+          Provider.of<NotificationSettingsProvider>(context, listen: false);
+      final l10n = AppLocalizations.of(context)!;
+      final locale = l10n.localeName;
+
+      await notificationService.checkAndShowTodaysTip(
+        widget.user_id,
+        widget.pregnancyStartDate,
+        locale,
+        l10n.notificationChannelName,
+        l10n.notificationChannelDescription,
+        showPopup: notificationSettingsProvider.showPopupNotifications,
+      );
+    } catch (e) {
+      print('Error showing today\'s tip: $e');
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.errorLoadingEntries(e.toString())),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            action: SnackBarAction(
+              label: l10n.retryButton,
+              onPressed: _checkAndShowTodaysTip,
+              textColor: Theme.of(context).colorScheme.onError,
+            ),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _loadWeeklyTips() async {
     print('Starting _loadWeeklyTips...');
     final l10n = AppLocalizations.of(context)!;
     final currentLocale = Localizations.localeOf(context).languageCode;
-    final titleField = currentLocale == 'am' ? 'title_am' : 'title_en';
-    print('Locale: $currentLocale, Title Field: $titleField');
+    print('Locale: $currentLocale');
 
     try {
       final response = await Supabase.instance.client
           .from('weekly_tips')
-          .select('id, week, $titleField, image')
+          .select('id, week, title_en, title_am, image')
           .order('week', ascending: true)
           .limit(3);
       print('Supabase response: $response');
@@ -170,7 +210,8 @@ class _HomeScreenState extends State<HomeScreen> {
               return {
                 'id': tip['id'],
                 'week': tip['week'],
-                'title': tip[titleField] ?? tip['title_en'] ?? l10n.noTitle,
+                'title_en': tip['title_en'] ?? l10n.noTitle,
+                'title_am': tip['title_am'] ?? l10n.noTitle,
                 'image': tip['image'],
               };
             }).toList();
@@ -196,34 +237,27 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return SafeArea(
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: _buildAppBar(context),
-        floatingActionButton: _buildFloatingActionButton(context),
-        body: Container(
-          decoration: _buildBackgroundGradient(),
-          child: CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              SliverToBoxAdapter(child: _buildPregnancyJourneySection()),
-              SliverPadding(
-                padding: const EdgeInsets.all(20),
-                sliver: SliverToBoxAdapter(
-                  child: _buildWeeklyTipsSection(context),
-                ),
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: _buildAppBar(context),
+      floatingActionButton: _buildFloatingActionButton(context),
+      body: Container(
+        decoration: _buildBackgroundGradient(),
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            SliverToBoxAdapter(child: _buildPregnancyJourneySection()),
+            SliverPadding(
+              padding: const EdgeInsets.all(20),
+              sliver: SliverToBoxAdapter(
+                child: _buildWeeklyTipsSection(context),
               ),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ),
-                sliver: SliverToBoxAdapter(
-                  child: _buildFeaturesSection(context),
-                ),
-              ),
-            ],
-          ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              sliver: SliverToBoxAdapter(child: _buildFeaturesSection(context)),
+            ),
+          ],
         ),
       ),
     );
@@ -233,7 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).colorScheme.primary,
       elevation: 0,
       title: Row(
         children: [
@@ -278,65 +312,48 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       actions: [
-        FutureBuilder<void>(
-          future: _notificationCheckFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return SizedBox(
-                width: 36,
-                height: 36,
-                child: CircularProgressIndicator(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  strokeWidth: 2,
-                ),
-              );
-            }
-            return Stack(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.notifications,
-                    color:
-                        Theme.of(context).brightness == Brightness.light
-                            ? Theme.of(context).colorScheme.onPrimary
-                            : Theme.of(context).colorScheme.primary,
-                    size: 28,
+        Stack(
+          children: [
+            IconButton(
+              icon: Icon(
+                Icons.notifications,
+                color:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Theme.of(context).colorScheme.primary,
+                size: 28,
+              ),
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (_) => NotificationHistoryPage(userId: widget.user_id),
                   ),
-                  onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) =>
-                                NotificationHistoryPage(userId: widget.user_id),
+                );
+                await _checkUnreadNotifications();
+              },
+            ),
+            if (_hasUnreadNotifications)
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.error,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).colorScheme.shadow,
+                        blurRadius: 2,
                       ),
-                    );
-                    _notificationCheckFuture = _checkUnreadNotifications();
-                    setState(() {});
-                  },
-                ),
-                if (_hasUnreadNotifications)
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.error,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Theme.of(context).colorScheme.shadow,
-                            blurRadius: 2,
-                          ),
-                        ],
-                      ),
-                    ),
+                    ],
                   ),
-              ],
-            );
-          },
+                ),
+              ),
+          ],
         ),
         IconButton(
           icon: Icon(
@@ -489,6 +506,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildWeeklyTipsSection(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final currentLocale = Localizations.localeOf(context).languageCode;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -520,6 +538,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     itemCount: _weeklyTips.length,
                     itemBuilder: (context, index) {
                       final tip = _weeklyTips[index];
+                      final title =
+                          currentLocale == 'am'
+                              ? tip['title_am']
+                              : tip['title_en'];
                       return Padding(
                         padding: const EdgeInsets.only(right: 12),
                         child: GestureDetector(
@@ -607,7 +629,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        tip['title'] ?? l10n.noTitle,
+                                        title ?? l10n.noTitle,
                                         style: TextStyle(
                                           fontSize: 14,
                                           color:

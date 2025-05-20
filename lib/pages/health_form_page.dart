@@ -1,3 +1,4 @@
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:adde/pages/bottom_page_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -34,22 +35,12 @@ class _MotherFormPageState extends State<MotherFormPage> {
   final FocusNode _heightFocus = FocusNode();
   final FocusNode _healthInfoFocus = FocusNode();
 
-  // Predefined list of common health conditions
-  static const List<String> healthConditions = [
-    "Diabetes",
-    "Hypertension",
-    "Asthma",
-    "Heart Disease",
-    "Thyroid Issues",
-    "Other",
-  ];
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.jumpTo(0); // Ensure top is visible on load
+        _scrollController.jumpTo(0);
       }
     });
   }
@@ -79,6 +70,7 @@ class _MotherFormPageState extends State<MotherFormPage> {
   }
 
   Future<void> _selectPregnancyStartDate(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     final picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now().subtract(const Duration(days: 280)),
@@ -101,23 +93,24 @@ class _MotherFormPageState extends State<MotherFormPage> {
   }
 
   void _confirmSubmit() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text("Confirm Submission"),
-            content: const Text("Are you sure you want to submit the form?"),
+            title: Text(l10n.confirmSubmissionTitle),
+            content: Text(l10n.confirmSubmissionMessage),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text("Cancel"),
+                child: Text(l10n.cancelButton),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
                   formSubmit();
                 },
-                child: const Text("Submit"),
+                child: Text(l10n.submitButton),
               ),
             ],
           ),
@@ -125,15 +118,16 @@ class _MotherFormPageState extends State<MotherFormPage> {
   }
 
   Future<void> formSubmit() async {
+    final l10n = AppLocalizations.of(context)!;
     if (!_formKey.currentState!.validate() || pregnancyStartDate == null) {
-      _showSnackBar("Please fill all required fields!");
+      _showSnackBar(l10n.requiredFieldsError);
       return;
     }
 
     final weight = double.tryParse(weightController.text.trim());
     final height = double.tryParse(heightController.text.trim());
     if (weight == null || height == null) {
-      _showSnackBar("Please enter valid numbers for weight and height!");
+      _showSnackBar(l10n.invalidNumberError);
       return;
     }
 
@@ -166,8 +160,8 @@ class _MotherFormPageState extends State<MotherFormPage> {
           .from('mothers')
           .insert(formData)
           .select()
-          .single(); // Use .single() for one row
-      _showSnackBar("Form submitted successfully!", isSuccess: true);
+          .single();
+      _showSnackBar(l10n.formSubmitSuccess, isSuccess: true);
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder:
@@ -178,7 +172,7 @@ class _MotherFormPageState extends State<MotherFormPage> {
         ),
       );
     } catch (error) {
-      _showSnackBar("Error submitting form: ${error.toString()}");
+      _showSnackBar(l10n.formSubmitError(error.toString()));
     }
   }
 
@@ -211,11 +205,12 @@ class _MotherFormPageState extends State<MotherFormPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenHeight = MediaQuery.of(context).size.height;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Welcome, Please Fill Below Form!",
+          l10n.motherFormTitle,
           style: theme.appBarTheme.titleTextStyle?.copyWith(
             color: theme.appBarTheme.foregroundColor,
           ),
@@ -250,23 +245,27 @@ class _MotherFormPageState extends State<MotherFormPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildNameField(theme),
+                      _buildNameField(theme, l10n),
                       SizedBox(height: screenHeight * 0.02),
-                      _buildGenderSection(theme),
+                      _buildGenderSection(theme, l10n),
                       SizedBox(height: screenHeight * 0.02),
-                      _buildAgeSection(theme, screenHeight),
+                      _buildAgeSection(theme, l10n, screenHeight),
                       SizedBox(height: screenHeight * 0.02),
-                      _buildHeightSection(theme),
+                      _buildHeightSection(theme, l10n),
                       SizedBox(height: screenHeight * 0.02),
-                      _buildBloodPressureField(theme),
+                      _buildBloodPressureField(theme, l10n),
                       SizedBox(height: screenHeight * 0.02),
-                      _buildWeightSection(theme),
+                      _buildWeightSection(theme, l10n),
                       SizedBox(height: screenHeight * 0.02),
-                      _buildPregnancyStartDateSection(theme, screenHeight),
+                      _buildPregnancyStartDateSection(
+                        theme,
+                        l10n,
+                        screenHeight,
+                      ),
                       SizedBox(height: screenHeight * 0.02),
-                      _buildHealthConditionsSection(theme, screenHeight),
+                      _buildHealthConditionsSection(theme, l10n, screenHeight),
                       SizedBox(height: screenHeight * 0.02),
-                      _buildSubmitButton(theme),
+                      _buildSubmitButton(theme, l10n),
                       SizedBox(height: screenHeight * 0.02),
                     ],
                   ),
@@ -279,14 +278,14 @@ class _MotherFormPageState extends State<MotherFormPage> {
     );
   }
 
-  Widget _buildNameField(ThemeData theme) {
+  Widget _buildNameField(ThemeData theme, AppLocalizations l10n) {
     return Semantics(
-      label: "Full Name Input",
+      label: l10n.fullNameLabel,
       child: TextFormField(
         controller: nameController,
         focusNode: _nameFocus,
         decoration: InputDecoration(
-          labelText: "Full Name",
+          labelText: l10n.fullNameLabel,
           prefixIcon: Icon(Icons.person, color: theme.colorScheme.primary),
           border:
               theme.inputDecorationTheme.border ?? const OutlineInputBorder(),
@@ -299,19 +298,20 @@ class _MotherFormPageState extends State<MotherFormPage> {
         style: theme.textTheme.bodyMedium,
         textInputAction: TextInputAction.next,
         validator:
-            (value) => value!.trim().isEmpty ? "Full Name is required" : null,
+            (value) =>
+                value!.trim().isEmpty ? l10n.fullNameRequiredError : null,
         onFieldSubmitted:
             (_) => FocusScope.of(context).requestFocus(_heightFocus),
       ),
     );
   }
 
-  Widget _buildGenderSection(ThemeData theme) {
+  Widget _buildGenderSection(ThemeData theme, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Select Gender",
+          l10n.selectGenderLabel,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onSurface,
@@ -322,9 +322,12 @@ class _MotherFormPageState extends State<MotherFormPage> {
           children: [
             Expanded(
               child: Semantics(
-                label: "Male Gender Option",
+                label: l10n.maleGenderOption,
                 child: RadioListTile<String>(
-                  title: Text("Male", style: theme.textTheme.bodyMedium),
+                  title: Text(
+                    l10n.maleGenderOption,
+                    style: theme.textTheme.bodyMedium,
+                  ),
                   value: "Male",
                   groupValue: selectedGender,
                   onChanged: (value) => setState(() => selectedGender = value!),
@@ -334,9 +337,12 @@ class _MotherFormPageState extends State<MotherFormPage> {
             ),
             Expanded(
               child: Semantics(
-                label: "Female Gender Option",
+                label: l10n.femaleGenderOption,
                 child: RadioListTile<String>(
-                  title: Text("Female", style: theme.textTheme.bodyMedium),
+                  title: Text(
+                    l10n.femaleGenderOption,
+                    style: theme.textTheme.bodyMedium,
+                  ),
                   value: "Female",
                   groupValue: selectedGender,
                   onChanged: (value) => setState(() => selectedGender = value!),
@@ -350,12 +356,16 @@ class _MotherFormPageState extends State<MotherFormPage> {
     );
   }
 
-  Widget _buildAgeSection(ThemeData theme, double screenHeight) {
+  Widget _buildAgeSection(
+    ThemeData theme,
+    AppLocalizations l10n,
+    double screenHeight,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Select Your Age",
+          l10n.selectAgeLabel,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onSurface,
@@ -363,7 +373,7 @@ class _MotherFormPageState extends State<MotherFormPage> {
         ),
         const SizedBox(height: 8),
         Semantics(
-          label: "Age Slider, Selected Age: $selectedAge",
+          label: l10n.selectedAgeLabel(selectedAge),
           child: Slider(
             value: selectedAge.toDouble(),
             min: 18,
@@ -376,7 +386,7 @@ class _MotherFormPageState extends State<MotherFormPage> {
           ),
         ),
         Text(
-          "Selected Age: $selectedAge",
+          l10n.selectedAgeLabel(selectedAge),
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.w600,
             color: theme.colorScheme.onSurface,
@@ -386,12 +396,12 @@ class _MotherFormPageState extends State<MotherFormPage> {
     );
   }
 
-  Widget _buildHeightSection(ThemeData theme) {
+  Widget _buildHeightSection(ThemeData theme, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Enter Your Height",
+          l10n.enterHeightLabel,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onSurface,
@@ -402,13 +412,13 @@ class _MotherFormPageState extends State<MotherFormPage> {
           children: [
             Expanded(
               child: Semantics(
-                label: "Height Input",
+                label: l10n.enterHeightLabel,
                 child: TextFormField(
                   controller: heightController,
                   focusNode: _heightFocus,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: "Height",
+                    labelText: l10n.enterHeightLabel,
                     prefixIcon: Icon(
                       Icons.height,
                       color: theme.colorScheme.primary,
@@ -426,10 +436,9 @@ class _MotherFormPageState extends State<MotherFormPage> {
                   style: theme.textTheme.bodyMedium,
                   textInputAction: TextInputAction.next,
                   validator: (value) {
-                    if (value!.trim().isEmpty) return "Height is required";
-                    if (double.tryParse(value.trim()) == null) {
-                      return "Enter a valid number";
-                    }
+                    if (value!.trim().isEmpty) return l10n.heightRequiredError;
+                    if (double.tryParse(value.trim()) == null)
+                      return l10n.heightInvalidError;
                     return null;
                   },
                   onFieldSubmitted:
@@ -439,7 +448,7 @@ class _MotherFormPageState extends State<MotherFormPage> {
             ),
             const SizedBox(width: 10),
             Semantics(
-              label: "Height Unit Selector",
+              label: l10n.enterHeightLabel,
               child: DropdownButton<String>(
                 value: selectedHeightUnit,
                 items:
@@ -462,15 +471,15 @@ class _MotherFormPageState extends State<MotherFormPage> {
     );
   }
 
-  Widget _buildBloodPressureField(ThemeData theme) {
+  Widget _buildBloodPressureField(ThemeData theme, AppLocalizations l10n) {
     return Semantics(
-      label: "Blood Pressure Input",
+      label: l10n.bloodPressureLabel,
       child: TextFormField(
         controller: bloodPressureController,
         focusNode: _bloodPressureFocus,
         keyboardType: TextInputType.text,
         decoration: InputDecoration(
-          labelText: "Blood Pressure (e.g., 120/80)",
+          labelText: l10n.bloodPressureLabel,
           prefixIcon: Icon(
             Icons.monitor_heart,
             color: theme.colorScheme.primary,
@@ -486,9 +495,9 @@ class _MotherFormPageState extends State<MotherFormPage> {
         style: theme.textTheme.bodyMedium,
         textInputAction: TextInputAction.next,
         validator: (value) {
-          if (value!.trim().isEmpty) return "Blood Pressure is required";
+          if (value!.trim().isEmpty) return l10n.bloodPressureRequiredError;
           if (!RegExp(r'^\d{2,3}/\d{2,3}$').hasMatch(value.trim())) {
-            return "Enter valid blood pressure (e.g., 120/80)";
+            return l10n.bloodPressureInvalidError;
           }
           return null;
         },
@@ -498,12 +507,12 @@ class _MotherFormPageState extends State<MotherFormPage> {
     );
   }
 
-  Widget _buildWeightSection(ThemeData theme) {
+  Widget _buildWeightSection(ThemeData theme, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Enter Your Weight",
+          l10n.enterWeightLabel,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onSurface,
@@ -514,13 +523,13 @@ class _MotherFormPageState extends State<MotherFormPage> {
           children: [
             Expanded(
               child: Semantics(
-                label: "Weight Input",
+                label: l10n.enterWeightLabel,
                 child: TextFormField(
                   controller: weightController,
                   focusNode: _weightFocus,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: "Weight",
+                    labelText: l10n.enterWeightLabel,
                     prefixIcon: Icon(
                       Icons.scale,
                       color: theme.colorScheme.primary,
@@ -538,10 +547,9 @@ class _MotherFormPageState extends State<MotherFormPage> {
                   style: theme.textTheme.bodyMedium,
                   textInputAction: TextInputAction.next,
                   validator: (value) {
-                    if (value!.trim().isEmpty) return "Weight is required";
-                    if (double.tryParse(value.trim()) == null) {
-                      return "Enter a valid number";
-                    }
+                    if (value!.trim().isEmpty) return l10n.weightRequiredError;
+                    if (double.tryParse(value.trim()) == null)
+                      return l10n.weightInvalidError;
                     return null;
                   },
                   onFieldSubmitted:
@@ -553,7 +561,7 @@ class _MotherFormPageState extends State<MotherFormPage> {
             ),
             const SizedBox(width: 10),
             Semantics(
-              label: "Weight Unit Selector",
+              label: l10n.enterWeightLabel,
               child: DropdownButton<String>(
                 value: selectedWeightUnit,
                 items:
@@ -576,12 +584,16 @@ class _MotherFormPageState extends State<MotherFormPage> {
     );
   }
 
-  Widget _buildPregnancyStartDateSection(ThemeData theme, double screenHeight) {
+  Widget _buildPregnancyStartDateSection(
+    ThemeData theme,
+    AppLocalizations l10n,
+    double screenHeight,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "When Did You Become Pregnant?",
+          l10n.pregnancyStartDateQuestion,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onSurface,
@@ -589,7 +601,7 @@ class _MotherFormPageState extends State<MotherFormPage> {
         ),
         const SizedBox(height: 8),
         Semantics(
-          label: "Pregnancy Start Date Selector",
+          label: l10n.pregnancyStartDateLabel,
           child: GestureDetector(
             onTap: () => _selectPregnancyStartDate(context),
             child: AbsorbPointer(
@@ -598,10 +610,10 @@ class _MotherFormPageState extends State<MotherFormPage> {
                   text:
                       pregnancyStartDate != null
                           ? DateFormat('yyyy-MM-dd').format(pregnancyStartDate!)
-                          : "Not set",
+                          : l10n.pregnancyStartDateNotSet,
                 ),
                 decoration: InputDecoration(
-                  labelText: "Pregnancy Start Date",
+                  labelText: l10n.pregnancyStartDateLabel,
                   suffixIcon: Icon(
                     Icons.calendar_today,
                     color: theme.colorScheme.primary,
@@ -624,7 +636,10 @@ class _MotherFormPageState extends State<MotherFormPage> {
         if (pregnancyStartDate != null) ...[
           const SizedBox(height: 8),
           Text(
-            "Pregnancy Duration: ${calculatePregnancyDuration(pregnancyStartDate!)['weeks']} weeks and ${calculatePregnancyDuration(pregnancyStartDate!)['days']} days",
+            l10n.pregnancyDurationLabel(
+              calculatePregnancyDuration(pregnancyStartDate!)['weeks']!,
+              calculatePregnancyDuration(pregnancyStartDate!)['days']!,
+            ),
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSurface,
@@ -635,12 +650,26 @@ class _MotherFormPageState extends State<MotherFormPage> {
     );
   }
 
-  Widget _buildHealthConditionsSection(ThemeData theme, double screenHeight) {
+  Widget _buildHealthConditionsSection(
+    ThemeData theme,
+    AppLocalizations l10n,
+    double screenHeight,
+  ) {
+    // Map health conditions to localized labels
+    final healthConditionLabels = {
+      "Diabetes": l10n.healthConditionDiabetes,
+      "Hypertension": l10n.healthConditionHypertension,
+      "Asthma": l10n.healthConditionAsthma,
+      "Heart Disease": l10n.healthConditionHeartDisease,
+      "Thyroid Issues": l10n.healthConditionThyroidIssues,
+      "Other": l10n.healthConditionOther,
+    };
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Select Any Applicable Health Conditions",
+          l10n.healthConditionsLabel,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onSurface,
@@ -651,11 +680,13 @@ class _MotherFormPageState extends State<MotherFormPage> {
           spacing: 8,
           runSpacing: 8,
           children:
-              healthConditions.map((condition) {
+              healthConditionLabels.entries.map((entry) {
+                final condition = entry.key;
+                final label = entry.value;
                 return Semantics(
-                  label: "$condition Health Condition Checkbox",
+                  label: "$label Health Condition Checkbox",
                   child: FilterChip(
-                    label: Text(condition, style: theme.textTheme.bodyMedium),
+                    label: Text(label, style: theme.textTheme.bodyMedium),
                     selected: selectedHealthConditions.contains(condition),
                     onSelected: (isSelected) {
                       setState(() {
@@ -676,7 +707,7 @@ class _MotherFormPageState extends State<MotherFormPage> {
         if (selectedHealthConditions.contains("Other")) ...[
           SizedBox(height: screenHeight * 0.02),
           Text(
-            "Describe Your Health Issue",
+            l10n.healthIssueDescriptionLabel,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.onSurface,
@@ -684,13 +715,13 @@ class _MotherFormPageState extends State<MotherFormPage> {
           ),
           const SizedBox(height: 8),
           Semantics(
-            label: "Health Issue Description Input",
+            label: l10n.healthIssueDescriptionLabel,
             child: TextFormField(
               controller: healthInfoController,
               focusNode: _healthInfoFocus,
               maxLines: null,
               decoration: InputDecoration(
-                hintText: "Describe your health background or issues here...",
+                hintText: l10n.healthIssueHint,
                 prefixIcon: Icon(
                   Icons.health_and_safety,
                   color: theme.colorScheme.primary,
@@ -714,16 +745,16 @@ class _MotherFormPageState extends State<MotherFormPage> {
     );
   }
 
-  Widget _buildSubmitButton(ThemeData theme) {
+  Widget _buildSubmitButton(ThemeData theme, AppLocalizations l10n) {
     return Semantics(
-      label: "Submit Form Button",
+      label: l10n.submitButton,
       child: ElevatedButton(
         onPressed: _confirmSubmit,
         style: theme.elevatedButtonTheme.style?.copyWith(
           minimumSize: const WidgetStatePropertyAll(Size(double.infinity, 50)),
         ),
         child: Text(
-          "Submit",
+          l10n.submitButton,
           style: theme.textTheme.bodyLarge?.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onPrimary,

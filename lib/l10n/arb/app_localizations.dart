@@ -515,7 +515,7 @@ abstract class AppLocalizations {
   /// **'Personal Information'**
   String get personalInformation;
 
-  /// No description provided for @fullNameLabel.
+  /// Label for the full name input field
   ///
   /// In en, this message translates to:
   /// **'Full Name'**
@@ -539,7 +539,7 @@ abstract class AppLocalizations {
   /// **'Height'**
   String get heightLabel;
 
-  /// No description provided for @bloodPressureLabel.
+  /// Label for the blood pressure input field
   ///
   /// In en, this message translates to:
   /// **'Blood Pressure (e.g., 120/80)'**
@@ -557,10 +557,10 @@ abstract class AppLocalizations {
   /// **'Describe your health issue'**
   String get describeHealthIssue;
 
-  /// No description provided for @healthIssueHint.
+  /// Hint text for the health issue description input field
   ///
   /// In en, this message translates to:
-  /// **'Describe your health history or issues here...'**
+  /// **'Describe your health background or issues here...'**
   String get healthIssueHint;
 
   /// No description provided for @saveProfileButton.
@@ -1127,10 +1127,10 @@ abstract class AppLocalizations {
   /// **'Doctors'**
   String get doctorsLabel;
 
-  /// No description provided for @emailLabel.
+  /// Label for the email input field on the register page
   ///
   /// In en, this message translates to:
-  /// **'Email'**
+  /// **'Email Address'**
   String get emailLabel;
 
   /// No description provided for @ensureStableConnection.
@@ -1888,6 +1888,522 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create a new post'**
   String get createNewPost;
+
+  /// No description provided for @welcomeBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome Back'**
+  String get welcomeBack;
+
+  /// Label for the password input field on the register page
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get passwordLabel;
+
+  /// No description provided for @forgetPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget password?'**
+  String get forgetPassword;
+
+  /// No description provided for @logIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Log In'**
+  String get logIn;
+
+  /// No description provided for @noAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t have an account?'**
+  String get noAccount;
+
+  /// No description provided for @register.
+  ///
+  /// In en, this message translates to:
+  /// **'Register'**
+  String get register;
+
+  /// No description provided for @signInWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Google'**
+  String get signInWithGoogle;
+
+  /// No description provided for @emptyFieldsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter both email and password'**
+  String get emptyFieldsError;
+
+  /// No description provided for @loginFailedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Login failed. Please try again'**
+  String get loginFailedError;
+
+  /// No description provided for @googleSignInCancelledError.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Sign-In cancelled'**
+  String get googleSignInCancelledError;
+
+  /// No description provided for @googleSignInFailedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Sign-In failed'**
+  String get googleSignInFailedError;
+
+  /// No description provided for @googleAuthFailedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Google authentication failed'**
+  String get googleAuthFailedError;
+
+  /// No description provided for @invalidEmailError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email address'**
+  String get invalidEmailError;
+
+  /// No description provided for @invalidPasswordError.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters'**
+  String get invalidPasswordError;
+
+  /// Welcome message displayed on the register page
+  ///
+  /// In en, this message translates to:
+  /// **'WELCOME'**
+  String get welcomeRegister;
+
+  /// Assistance message displayed below the welcome text on the register page
+  ///
+  /// In en, this message translates to:
+  /// **'We Are Here, To Assist You!!!'**
+  String get assistMessage;
+
+  /// Label for the confirm password input field on the register page
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Password'**
+  String get confirmPasswordLabel;
+
+  /// Label for the sign-up button
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Up'**
+  String get signUpButton;
+
+  /// Prompt for users who already have an account
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account?'**
+  String get alreadyHaveAccount;
+
+  /// Label for the login link
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get loginLink;
+
+  /// Label for the Google Sign-Up button
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Up with Google'**
+  String get signUpWithGoogle;
+
+  /// Error message when passwords do not match
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match!'**
+  String get passwordsDoNotMatchError;
+
+  /// Error message when Google Sign-Up is cancelled
+  ///
+  /// In en, this message translates to:
+  /// **'Google Sign-Up cancelled.'**
+  String get googleSignUpCancelledError;
+
+  /// Error message when Google Sign-Up fails
+  ///
+  /// In en, this message translates to:
+  /// **'Google Sign-Up failed. Please try again.'**
+  String get googleSignUpFailedError;
+
+  /// Error message when Google Sign-Up fails due to missing tokens
+  ///
+  /// In en, this message translates to:
+  /// **'Google Sign-Up Error: Missing tokens.'**
+  String get googleSignUpTokenError;
+
+  /// Error message when signup attempt fails
+  ///
+  /// In en, this message translates to:
+  /// **'Signup failed. Please try again.'**
+  String get signUpFailedError;
+
+  /// Success message when signup is successful
+  ///
+  /// In en, this message translates to:
+  /// **'Signup successful!'**
+  String get signUpSuccess;
+
+  /// Generic error message for signup with placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String signUpError(Object error);
+
+  /// Title for the reset password page app bar
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Password'**
+  String get resetPasswordTitle;
+
+  /// Header text for the reset password page
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Your Password'**
+  String get resetPasswordHeader;
+
+  /// Description prompting the user to enter their email for a reset link
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email to receive a reset link'**
+  String get resetPasswordDescription;
+
+  /// Description shown after the reset email is sent
+  ///
+  /// In en, this message translates to:
+  /// **'Check your email for the reset link'**
+  String get resetLinkSentDescription;
+
+  /// Label for the button to send the reset link
+  ///
+  /// In en, this message translates to:
+  /// **'Send Reset Link'**
+  String get sendResetLinkButton;
+
+  /// Label for the button after the reset email is sent
+  ///
+  /// In en, this message translates to:
+  /// **'Email Sent'**
+  String get emailSentButton;
+
+  /// Error message when the email field is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your email address'**
+  String get emptyEmailError;
+
+  /// Success message when the reset email is sent
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset email sent to {email}'**
+  String resetEmailSentSuccess(String email);
+
+  /// Generic error message for password reset with placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String resetPasswordError(Object error);
+
+  /// Title for the first onboarding page
+  ///
+  /// In en, this message translates to:
+  /// **'Adey Pregnancy And Child Care App'**
+  String get welcomePageTitle1;
+
+  /// Content for the first onboarding page
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Adey, your trusted partner for a safe and healthy pregnancy and child care journey.'**
+  String get welcomePageContent1;
+
+  /// Content for the second onboarding page
+  ///
+  /// In en, this message translates to:
+  /// **'Track your pregnancy and postpartum progress with tools that health status and give upgated recommedation.'**
+  String get welcomePageContent2;
+
+  /// Content for the third onboarding page
+  ///
+  /// In en, this message translates to:
+  /// **'Access educational resources on maternal health, including articles, weekly tips, and daily notification.'**
+  String get welcomePageContent3;
+
+  /// Content for the fourth onboarding page
+  ///
+  /// In en, this message translates to:
+  /// **'Connect with a community of users, share experiences, and receive support.'**
+  String get welcomePageContent4;
+
+  /// Content for the fifth onboarding page
+  ///
+  /// In en, this message translates to:
+  /// **'Use our chatbot for instant responses and guidance on pregnancy and child care queries.'**
+  String get welcomePageContent5;
+
+  /// Label for the skip button on the onboarding page
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get skipButton;
+
+  /// Label for the next button on the onboarding page
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get nextButton;
+
+  /// Label for the get started button on the final onboarding page
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get getStartedButton;
+
+  /// Semantics label for the skip button
+  ///
+  /// In en, this message translates to:
+  /// **'Skip onboarding'**
+  String get skipSemantics;
+
+  /// Semantics label for the next button
+  ///
+  /// In en, this message translates to:
+  /// **'Next page'**
+  String get nextSemantics;
+
+  /// Semantics label for the get started button
+  ///
+  /// In en, this message translates to:
+  /// **'Get started'**
+  String get getStartedSemantics;
+
+  /// Semantics label for each onboarding page
+  ///
+  /// In en, this message translates to:
+  /// **'Onboarding page {pageNumber}'**
+  String onboardingPageSemantics(int pageNumber);
+
+  /// Title for the mother form page app bar
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome, Please Fill Below Form!'**
+  String get motherFormTitle;
+
+  /// Error message when full name is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name is required'**
+  String get fullNameRequiredError;
+
+  /// Label for the gender selection section
+  ///
+  /// In en, this message translates to:
+  /// **'Select Gender'**
+  String get selectGenderLabel;
+
+  /// Label for the male gender option
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get maleGenderOption;
+
+  /// Label for the female gender option
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get femaleGenderOption;
+
+  /// Label for the age selection section
+  ///
+  /// In en, this message translates to:
+  /// **'Select Your Age'**
+  String get selectAgeLabel;
+
+  /// Label showing the selected age with placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Selected Age: {age}'**
+  String selectedAgeLabel(int age);
+
+  /// Label for the height input section
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Your Height'**
+  String get enterHeightLabel;
+
+  /// Error message when height is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Height is required'**
+  String get heightRequiredError;
+
+  /// Error message when height is not a valid number
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid number'**
+  String get heightInvalidError;
+
+  /// Error message when blood pressure is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Blood Pressure is required'**
+  String get bloodPressureRequiredError;
+
+  /// Error message when blood pressure format is invalid
+  ///
+  /// In en, this message translates to:
+  /// **'Enter valid blood pressure (e.g., 120/80)'**
+  String get bloodPressureInvalidError;
+
+  /// Label for the weight input section
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Your Weight'**
+  String get enterWeightLabel;
+
+  /// Error message when weight is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Weight is required'**
+  String get weightRequiredError;
+
+  /// Error message when weight is not a valid number
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid number'**
+  String get weightInvalidError;
+
+  /// Label for the pregnancy start date input field
+  ///
+  /// In en, this message translates to:
+  /// **'Pregnancy Start Date'**
+  String get pregnancyStartDateLabel;
+
+  /// Text shown when pregnancy start date is not set
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get pregnancyStartDateNotSet;
+
+  /// Label for the pregnancy start date section
+  ///
+  /// In en, this message translates to:
+  /// **'When Did You Become Pregnant?'**
+  String get pregnancyStartDateQuestion;
+
+  /// Label showing the pregnancy duration with placeholders
+  ///
+  /// In en, this message translates to:
+  /// **'Pregnancy Duration: {weeks} weeks and {days} days'**
+  String pregnancyDurationLabel(int weeks, int days);
+
+  /// Label for the health conditions selection section
+  ///
+  /// In en, this message translates to:
+  /// **'Select Any Applicable Health Conditions'**
+  String get healthConditionsLabel;
+
+  /// Label for the diabetes health condition option
+  ///
+  /// In en, this message translates to:
+  /// **'Diabetes'**
+  String get healthConditionDiabetes;
+
+  /// Label for the hypertension health condition option
+  ///
+  /// In en, this message translates to:
+  /// **'Hypertension'**
+  String get healthConditionHypertension;
+
+  /// Label for the asthma health condition option
+  ///
+  /// In en, this message translates to:
+  /// **'Asthma'**
+  String get healthConditionAsthma;
+
+  /// Label for the heart disease health condition option
+  ///
+  /// In en, this message translates to:
+  /// **'Heart Disease'**
+  String get healthConditionHeartDisease;
+
+  /// Label for the thyroid issues health condition option
+  ///
+  /// In en, this message translates to:
+  /// **'Thyroid Issues'**
+  String get healthConditionThyroidIssues;
+
+  /// Label for the other health condition option
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get healthConditionOther;
+
+  /// Label for the health issue description input field
+  ///
+  /// In en, this message translates to:
+  /// **'Describe Your Health Issue'**
+  String get healthIssueDescriptionLabel;
+
+  /// Label for the submit button
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get submitButton;
+
+  /// Title for the submission confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Submission'**
+  String get confirmSubmissionTitle;
+
+  /// Message in the submission confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to submit the form?'**
+  String get confirmSubmissionMessage;
+
+  /// Label for the cancel button in the confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancelButton;
+
+  /// Error message when required fields are not filled
+  ///
+  /// In en, this message translates to:
+  /// **'Please fill all required fields!'**
+  String get requiredFieldsError;
+
+  /// Error message when weight or height is not a valid number
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter valid numbers for weight and height!'**
+  String get invalidNumberError;
+
+  /// Success message when the form is submitted
+  ///
+  /// In en, this message translates to:
+  /// **'Form submitted successfully!'**
+  String get formSubmitSuccess;
+
+  /// Error message when form submission fails with placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Error submitting form: {error}'**
+  String formSubmitError(Object error);
+
+  /// No description provided for @popupNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Pop-up Notifications'**
+  String get popupNotifications;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

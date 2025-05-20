@@ -11,7 +11,6 @@ class NotificationService {
   bool get isInitialized => _isInitialized;
 
   NotificationService() {
-    // We can't initialize with localized strings here because we don't have context
     // Initialization will be done with locale-specific strings when called
   }
 
@@ -38,19 +37,20 @@ class NotificationService {
         ) async {
           if (response.payload != null) {
             final parts = response.payload!.split('|');
-            if (parts.length == 4) {
+            if (parts.length >= 4) {
               final userId = parts[0];
               final day = int.parse(parts[1]);
               final title = parts[2];
               final scheduledDate = DateTime.parse(parts[3]);
+              final locale = parts.length > 4 ? parts[4] : 'en';
               await Future.wait([
                 _saveDeliveredNotification(
                   userId,
                   day,
                   title,
                   scheduledDate,
-                  parts[4],
-                ), // Pass locale from payload
+                  locale,
+                ),
                 markNotificationAsSeen(userId, day),
               ]);
             }
@@ -69,8 +69,8 @@ class NotificationService {
 
         final AndroidNotificationChannel channel = AndroidNotificationChannel(
           'daily_channel_id',
-          channelName, // Use the localized channel name
-          description: channelDescription, // Use the localized description
+          channelName,
+          description: channelDescription,
           importance: Importance.max,
           playSound: true,
           enableVibration: true,
@@ -91,8 +91,8 @@ class NotificationService {
   }) => NotificationDetails(
     android: AndroidNotificationDetails(
       'daily_channel_id',
-      channelName, // Use the localized channel name
-      channelDescription: channelDescription, // Use the localized description
+      channelName,
+      channelDescription: channelDescription,
       importance: Importance.max,
       priority: Priority.high,
       showWhen: true,
@@ -194,8 +194,9 @@ class NotificationService {
     DateTime startDate,
     String locale,
     String channelName,
-    String channelDescription,
-  ) async {
+    String channelDescription, {
+    bool showPopup = true,
+  }) async {
     await _initNotification(
       channelName: channelName,
       channelDescription: channelDescription,
@@ -222,15 +223,8 @@ class NotificationService {
       final tip = tips[tipIndex];
       final title = tip['title'];
       final body = tip['body'];
-      await showNotification(
-        id: tip['id'],
-        title: title,
-        body: body,
-        payload:
-            '$userId|$todayIntervalDay|$title|${now.toIso8601String()}|$locale',
-        channelName: channelName,
-        channelDescription: channelDescription,
-      );
+
+      // Always save to history
       await _saveDeliveredNotification(
         userId,
         todayIntervalDay,
@@ -238,6 +232,19 @@ class NotificationService {
         now,
         locale,
       );
+
+      // Show pop-up only if enabled
+      if (showPopup) {
+        await showNotification(
+          id: tip['id'],
+          title: title,
+          body: body,
+          payload:
+              '$userId|$todayIntervalDay|$title|${now.toIso8601String()}|$locale',
+          channelName: channelName,
+          channelDescription: channelDescription,
+        );
+      }
     }
   }
 
@@ -334,23 +341,20 @@ class NotificationService {
         return {
           'id': tip['id'],
           'day': tip['day'],
-          'title': tip[titleColumn] ?? 'Fallback Tip', // Fallback if null
+          'title': tip[titleColumn] ?? 'Fallback Tip',
           'body': tip[bodyColumn] ?? 'Consult your doctor.',
           'relevance': tip['relevance'],
         };
       }).toList();
     } catch (e) {
       print('Error fetching health tips: $e');
-      // Use localized fallback tips
       return List.generate(
-        70, // 280 days / 4 = 70 tips
+        70,
         (index) => {
           'id': index,
           'day': index * 4,
-          'title':
-              'ምክር ${index + 1}', // Localized fallback title (Amharic example)
-          'body':
-              'ለመከረው ሐኪምዎን ያማክሩ።', // Localized fallback body (Amharic example)
+          'title': locale == 'am' ? 'ምክር ${index + 1}' : 'Tip ${index + 1}',
+          'body': locale == 'am' ? 'ለመከረው ሐኪምዎን ያማክሩ።' : 'Consult your doctor.',
         },
       );
     }

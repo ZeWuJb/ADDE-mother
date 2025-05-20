@@ -993,5 +993,367 @@
   "createNewPost": "Create a new post",
   "@createNewPost": {
     "description": "Accessibility label for the create post button"
-  }
+  },
+
+
+  "welcomeBack": "Welcome Back",
+  "passwordLabel": "Password",
+  "@passwordLabel": {
+    "description": "Label for the password input field"
+  },
+  "forgetPassword": "Forget password?",
+  "logIn": "Log In",
+  "noAccount": "Don't have an account?",
+  "register": "Register",
+  "signInWithGoogle": "Sign in with Google",
+  "emptyFieldsError": "Please enter both email and password",
+  "loginFailedError": "Login failed. Please try again",
+  "googleSignInCancelledError": "Google Sign-In cancelled",
+  "googleSignInFailedError": "Google Sign-In failed",
+  "googleAuthFailedError": "Google authentication failed",
+  "invalidEmailError": "Please enter a valid email address",
+  "invalidPasswordError": "Password must be at least 6 characters",
+  "welcomeRegister": "WELCOME",
+  "@welcomeRegister": {
+    "description": "Welcome message displayed on the register page"
+  },
+  "assistMessage": "We Are Here, To Assist You!!!",
+  "@assistMessage": {
+    "description": "Assistance message displayed below the welcome text on the register page"
+  },
+  "emailLabel": "Email Address",
+  "@emailLabel": {
+    "description": "Label for the email input field on the register page"
+  },
+  "passwordLabel": "Password",
+  "@passwordLabel": {
+    "description": "Label for the password input field on the register page"
+  },
+  "confirmPasswordLabel": "Confirm Password",
+  "@confirmPasswordLabel": {
+    "description": "Label for the confirm password input field on the register page"
+  },
+  "signUpButton": "Sign Up",
+  "@signUpButton": {
+    "description": "Label for the sign-up button"
+  },
+  "alreadyHaveAccount": "Already have an account?",
+  "@alreadyHaveAccount": {
+    "description": "Prompt for users who already have an account"
+  },
+  "loginLink": "Login",
+  "@loginLink": {
+    "description": "Label for the login link"
+  },
+  "signUpWithGoogle": "Sign Up with Google",
+  "@signUpWithGoogle": {
+    "description": "Label for the Google Sign-Up button"
+  },
+  "passwordsDoNotMatchError": "Passwords do not match!",
+  "@passwordsDoNotMatchError": {
+    "description": "Error message when passwords do not match"
+  },
+  "googleSignUpCancelledError": "Google Sign-Up cancelled.",
+  "@googleSignUpCancelledError": {
+    "description": "Error message when Google Sign-Up is cancelled"
+  },
+  "googleSignUpFailedError": "Google Sign-Up failed. Please try again.",
+  "@googleSignUpFailedError": {
+    "description": "Error message when Google Sign-Up fails"
+  },
+  "googleSignUpTokenError": "Google Sign-Up Error: Missing tokens.",
+  "@googleSignUpTokenError": {
+    "description": "Error message when Google Sign-Up fails due to missing tokens"
+  },
+  "signUpFailedError": "Signup failed. Please try again.",
+  "@signUpFailedError": {
+    "description": "Error message when signup attempt fails"
+  },
+  "signUpSuccess": "Signup successful!",
+  "@signUpSuccess": {
+    "description": "Success message when signup is successful"
+  },
+  "signUpError": "Error: {error}",
+  "@signUpError": {
+    "description": "Generic error message for signup with placeholder",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "resetPasswordTitle": "Reset Password",
+  "@resetPasswordTitle": {
+    "description": "Title for the reset password page app bar"
+  },
+  "resetPasswordHeader": "Reset Your Password",
+  "@resetPasswordHeader": {
+    "description": "Header text for the reset password page"
+  },
+  "resetPasswordDescription": "Enter your email to receive a reset link",
+  "@resetPasswordDescription": {
+    "description": "Description prompting the user to enter their email for a reset link"
+  },
+  "resetLinkSentDescription": "Check your email for the reset link",
+  "@resetLinkSentDescription": {
+    "description": "Description shown after the reset email is sent"
+  },
+  "sendResetLinkButton": "Send Reset Link",
+  "@sendResetLinkButton": {
+    "description": "Label for the button to send the reset link"
+  },
+  "emailSentButton": "Email Sent",
+  "@emailSentButton": {
+    "description": "Label for the button after the reset email is sent"
+  },
+  "emptyEmailError": "Please enter your email address",
+  "@emptyEmailError": {
+    "description": "Error message when the email field is empty"
+  },
+  "resetEmailSentSuccess": "Password reset email sent to {email}",
+  "@resetEmailSentSuccess": {
+    "description": "Success message when the reset email is sent",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "resetPasswordError": "Error: {error}",
+  "@resetPasswordError": {
+    "description": "Generic error message for password reset with placeholder",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "welcomePageTitle1": "Adey Pregnancy And Child Care App",
+  "@welcomePageTitle1": {
+    "description": "Title for the first onboarding page"
+  },
+  "welcomePageContent1": "Welcome to Adey, your trusted partner for a safe and healthy pregnancy and child care journey.",
+  "@welcomePageContent1": {
+    "description": "Content for the first onboarding page"
+  },
+  "welcomePageContent2": "Track your pregnancy and postpartum progress with tools that health status and give upgated recommedation.",
+  "@welcomePageContent2": {
+    "description": "Content for the second onboarding page"
+  },
+  "welcomePageContent3": "Access educational resources on maternal health, including articles, weekly tips, and daily notification.",
+  "@welcomePageContent3": {
+    "description": "Content for the third onboarding page"
+  },
+  "welcomePageContent4": "Connect with a community of users, share experiences, and receive support.",
+  "@welcomePageContent4": {
+    "description": "Content for the fourth onboarding page"
+  },
+  "welcomePageContent5": "Use our chatbot for instant responses and guidance on pregnancy and child care queries.",
+  "@welcomePageContent5": {
+    "description": "Content for the fifth onboarding page"
+  },
+  "skipButton": "Skip",
+  "@skipButton": {
+    "description": "Label for the skip button on the onboarding page"
+  },
+  "nextButton": "Next",
+  "@nextButton": {
+    "description": "Label for the next button on the onboarding page"
+  },
+  "getStartedButton": "Get Started",
+  "@getStartedButton": {
+    "description": "Label for the get started button on the final onboarding page"
+  },
+  "skipSemantics": "Skip onboarding",
+  "@skipSemantics": {
+    "description": "Semantics label for the skip button"
+  },
+  "nextSemantics": "Next page",
+  "@nextSemantics": {
+    "description": "Semantics label for the next button"
+  },
+  "getStartedSemantics": "Get started",
+  "@getStartedSemantics": {
+    "description": "Semantics label for the get started button"
+  },
+  "onboardingPageSemantics": "Onboarding page {pageNumber}",
+  "@onboardingPageSemantics": {
+    "description": "Semantics label for each onboarding page",
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "motherFormTitle": "Welcome, Please Fill Below Form!",
+  "@motherFormTitle": {
+    "description": "Title for the mother form page app bar"
+  },
+  "fullNameLabel": "Full Name",
+  "@fullNameLabel": {
+    "description": "Label for the full name input field"
+  },
+  "fullNameRequiredError": "Full Name is required",
+  "@fullNameRequiredError": {
+    "description": "Error message when full name is empty"
+  },
+  "selectGenderLabel": "Select Gender",
+  "@selectGenderLabel": {
+    "description": "Label for the gender selection section"
+  },
+  "maleGenderOption": "Male",
+  "@maleGenderOption": {
+    "description": "Label for the male gender option"
+  },
+  "femaleGenderOption": "Female",
+  "@femaleGenderOption": {
+    "description": "Label for the female gender option"
+  },
+  "selectAgeLabel": "Select Your Age",
+  "@selectAgeLabel": {
+    "description": "Label for the age selection section"
+  },
+  "selectedAgeLabel": "Selected Age: {age}",
+  "@selectedAgeLabel": {
+    "description": "Label showing the selected age with placeholder",
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "enterHeightLabel": "Enter Your Height",
+  "@enterHeightLabel": {
+    "description": "Label for the height input section"
+  },
+  "heightRequiredError": "Height is required",
+  "@heightRequiredError": {
+    "description": "Error message when height is empty"
+  },
+  "heightInvalidError": "Enter a valid number",
+  "@heightInvalidError": {
+    "description": "Error message when height is not a valid number"
+  },
+  "bloodPressureLabel": "Blood Pressure (e.g., 120/80)",
+  "@bloodPressureLabel": {
+    "description": "Label for the blood pressure input field"
+  },
+  "bloodPressureRequiredError": "Blood Pressure is required",
+  "@bloodPressureRequiredError": {
+    "description": "Error message when blood pressure is empty"
+  },
+  "bloodPressureInvalidError": "Enter valid blood pressure (e.g., 120/80)",
+  "@bloodPressureInvalidError": {
+    "description": "Error message when blood pressure format is invalid"
+  },
+  "enterWeightLabel": "Enter Your Weight",
+  "@enterWeightLabel": {
+    "description": "Label for the weight input section"
+  },
+  "weightRequiredError": "Weight is required",
+  "@weightRequiredError": {
+    "description": "Error message when weight is empty"
+  },
+  "weightInvalidError": "Enter a valid number",
+  "@weightInvalidError": {
+    "description": "Error message when weight is not a valid number"
+  },
+  "pregnancyStartDateLabel": "Pregnancy Start Date",
+  "@pregnancyStartDateLabel": {
+    "description": "Label for the pregnancy start date input field"
+  },
+  "pregnancyStartDateNotSet": "Not set",
+  "@pregnancyStartDateNotSet": {
+    "description": "Text shown when pregnancy start date is not set"
+  },
+  "pregnancyStartDateQuestion": "When Did You Become Pregnant?",
+  "@pregnancyStartDateQuestion": {
+    "description": "Label for the pregnancy start date section"
+  },
+  "pregnancyDurationLabel": "Pregnancy Duration: {weeks} weeks and {days} days",
+  "@pregnancyDurationLabel": {
+    "description": "Label showing the pregnancy duration with placeholders",
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "healthConditionsLabel": "Select Any Applicable Health Conditions",
+  "@healthConditionsLabel": {
+    "description": "Label for the health conditions selection section"
+  },
+  "healthConditionDiabetes": "Diabetes",
+  "@healthConditionDiabetes": {
+    "description": "Label for the diabetes health condition option"
+  },
+  "healthConditionHypertension": "Hypertension",
+  "@healthConditionHypertension": {
+    "description": "Label for the hypertension health condition option"
+  },
+  "healthConditionAsthma": "Asthma",
+  "@healthConditionAsthma": {
+    "description": "Label for the asthma health condition option"
+  },
+  "healthConditionHeartDisease": "Heart Disease",
+  "@healthConditionHeartDisease": {
+    "description": "Label for the heart disease health condition option"
+  },
+  "healthConditionThyroidIssues": "Thyroid Issues",
+  "@healthConditionThyroidIssues": {
+    "description": "Label for the thyroid issues health condition option"
+  },
+  "healthConditionOther": "Other",
+  "@healthConditionOther": {
+    "description": "Label for the other health condition option"
+  },
+  "healthIssueDescriptionLabel": "Describe Your Health Issue",
+  "@healthIssueDescriptionLabel": {
+    "description": "Label for the health issue description input field"
+  },
+  "healthIssueHint": "Describe your health background or issues here...",
+  "@healthIssueHint": {
+    "description": "Hint text for the health issue description input field"
+  },
+  "submitButton": "Submit",
+  "@submitButton": {
+    "description": "Label for the submit button"
+  },
+  "confirmSubmissionTitle": "Confirm Submission",
+  "@confirmSubmissionTitle": {
+    "description": "Title for the submission confirmation dialog"
+  },
+  "confirmSubmissionMessage": "Are you sure you want to submit the form?",
+  "@confirmSubmissionMessage": {
+    "description": "Message in the submission confirmation dialog"
+  },
+  "cancelButton": "Cancel",
+  "@cancelButton": {
+    "description": "Label for the cancel button in the confirmation dialog"
+  },
+  "requiredFieldsError": "Please fill all required fields!",
+  "@requiredFieldsError": {
+    "description": "Error message when required fields are not filled"
+  },
+  "invalidNumberError": "Please enter valid numbers for weight and height!",
+  "@invalidNumberError": {
+    "description": "Error message when weight or height is not a valid number"
+  },
+  "formSubmitSuccess": "Form submitted successfully!",
+  "@formSubmitSuccess": {
+    "description": "Success message when the form is submitted"
+  },
+  "formSubmitError": "Error submitting form: {error}",
+  "@formSubmitError": {
+    "description": "Error message when form submission fails with placeholder",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+"popupNotifications": "Pop-up Notifications"
 }

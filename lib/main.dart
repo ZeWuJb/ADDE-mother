@@ -3,17 +3,18 @@ import 'package:adde/pages/community/chat_provider.dart';
 import 'package:adde/pages/community/post_provider.dart';
 import 'package:adde/pages/name_suggestion/name_provider.dart';
 import 'package:adde/pages/note/note_provider.dart';
+import 'package:adde/pages/notification/NotificationSettingsProvider.dart';
 import 'package:adde/pages/notification/notification_service.dart';
 import 'package:adde/pages/profile/locale_provider.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:adde/auth/authentication_gate.dart';
 import 'package:adde/pages/bottom_page_navigation.dart';
 import 'package:adde/theme/theme_data.dart';
 import 'package:adde/theme/theme_provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -28,19 +29,22 @@ Future<void> main() async {
 
   final session = await getSavedSession();
   final localeProvider = LocaleProvider();
-  await localeProvider.loadLocale(); // Load saved locale
+  await localeProvider.loadLocale();
+  final themeProvider = ThemeProvider();
+  await themeProvider.loadTheme();
+  final notificationSettingsProvider = NotificationSettingsProvider();
+  await notificationSettingsProvider.loadSettings();
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider.value(value: themeProvider),
         ChangeNotifierProvider(create: (_) => PostProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => NoteProvider()),
         ChangeNotifierProvider(create: (_) => NameProvider()),
-        ChangeNotifierProvider.value(
-          value: localeProvider,
-        ), // Add LocaleProvider
+        ChangeNotifierProvider.value(value: localeProvider),
+        ChangeNotifierProvider.value(value: notificationSettingsProvider),
         Provider(create: (context) => NotificationService()),
       ],
       child: MyApp(session: session),
@@ -213,7 +217,7 @@ class MyApp extends StatelessWidget {
             GlobalCupertinoLocalizations.delegate,
           ],
           localeResolutionCallback: (deviceLocale, supportedLocales) {
-            return localeProvider.locale; // Use the provider's locale
+            return localeProvider.locale;
           },
           home: SplashScreen(session: session),
         );

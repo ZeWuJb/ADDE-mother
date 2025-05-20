@@ -1,4 +1,5 @@
 import 'package:adde/auth/authentication_service.dart';
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:adde/pages/health_form_page.dart';
 import 'package:flutter/material.dart';
 import 'package:adde/component/input_fild.dart';
@@ -27,7 +28,7 @@ class _RegisterPageState extends State<RegisterPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.jumpTo(0); // Ensure top is visible on load
+        _scrollController.jumpTo(0);
       }
     });
   }
@@ -36,6 +37,7 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _isLoading = true);
     const webClientId =
         '455569810410-jjrlbek9hmpi5i9ia9c40ijusmnbrhhj.apps.googleusercontent.com';
+    final l10n = AppLocalizations.of(context)!;
 
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn(
@@ -43,7 +45,7 @@ class _RegisterPageState extends State<RegisterPage> {
       );
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
-        _showSnackBar('Google Sign-Up cancelled.');
+        _showSnackBar(l10n.googleSignUpCancelledError);
         return;
       }
 
@@ -53,7 +55,7 @@ class _RegisterPageState extends State<RegisterPage> {
       final String? idToken = googleAuth.idToken;
 
       if (accessToken == null || idToken == null) {
-        throw 'Google Sign-Up Error: Missing tokens.';
+        throw l10n.googleSignUpTokenError;
       }
 
       final response = await Supabase.instance.client.auth.signInWithIdToken(
@@ -76,18 +78,19 @@ class _RegisterPageState extends State<RegisterPage> {
           );
         }
       } else {
-        _showSnackBar('Google Sign-Up failed. Please try again.');
+        _showSnackBar(l10n.googleSignUpFailedError);
       }
     } catch (e) {
-      _showSnackBar('Google Sign-Up Error: $e');
+      _showSnackBar(l10n.signUpError(e.toString()));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _signUp(String email, String password) async {
+    final l10n = AppLocalizations.of(context)!;
     if (password != confirmPasswordController.text) {
-      _showSnackBar('Passwords do not match!');
+      _showSnackBar(l10n.passwordsDoNotMatchError);
       return;
     }
 
@@ -99,7 +102,7 @@ class _RegisterPageState extends State<RegisterPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                "Signup successful!",
+                l10n.signUpSuccess,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -123,10 +126,10 @@ class _RegisterPageState extends State<RegisterPage> {
           );
         }
       } else {
-        _showSnackBar('Signup failed. Please try again.');
+        _showSnackBar(l10n.signUpFailedError);
       }
     } catch (e) {
-      _showSnackBar('Error: $e');
+      _showSnackBar(l10n.signUpError(e.toString()));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -164,11 +167,11 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenHeight = MediaQuery.of(context).size.height;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Gradient Background
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -183,58 +186,43 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
           ),
-          // Main Content
           SingleChildScrollView(
             controller: _scrollController,
             child: Center(
               child: Padding(
-                padding: EdgeInsets.only(top: screenHeight * 0.1, bottom: 20),
+                padding: EdgeInsets.only(top: screenHeight * 0.06, bottom: 20),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 400),
                   child: Column(
                     children: [
-                      // Profile Image
                       _buildProfileImage(theme),
                       SizedBox(height: screenHeight * 0.03),
-
-                      // Welcome Text
-                      _buildWelcomeText(theme),
+                      _buildWelcomeText(theme, l10n),
                       SizedBox(height: screenHeight * 0.03),
-
-                      // Email Input Field
                       InputFiled(
                         controller: emailController,
-                        hintText: "Email Address",
+                        hintText: l10n.emailLabel,
                         email: true,
                       ),
                       SizedBox(height: screenHeight * 0.02),
-
-                      // Password Input Field
                       InputFiled(
                         controller: passwordController,
-                        hintText: "Password",
+                        hintText: l10n.passwordLabel,
                         obscure: true,
                       ),
                       SizedBox(height: screenHeight * 0.02),
-
-                      // Confirm Password Input Field
                       InputFiled(
                         controller: confirmPasswordController,
-                        hintText: "Confirm Password",
+                        hintText: l10n.confirmPasswordLabel,
                         obscure: true,
                       ),
                       SizedBox(height: screenHeight * 0.03),
-
-                      // SignUp Button
-                      _buildSignUpButton(theme),
+                      _buildSignUpButton(theme, l10n),
                       SizedBox(height: screenHeight * 0.02),
-
-                      // Login Link
-                      _buildLoginLink(theme),
+                      _buildLoginLink(theme, l10n),
                       SizedBox(height: screenHeight * 0.06),
-
-                      // Google Sign-In Button
-                      _buildGoogleSignInButton(theme),
+                      _buildGoogleSignInButton(theme, l10n),
+                      SizedBox(height: screenHeight * 0.04),
                     ],
                   ),
                 ),
@@ -278,18 +266,18 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget _buildWelcomeText(ThemeData theme) {
+  Widget _buildWelcomeText(ThemeData theme, AppLocalizations l10n) {
     return Column(
       children: [
         Text(
-          "WELCOME",
+          l10n.welcomeRegister,
           style: theme.textTheme.displayMedium?.copyWith(
             color: theme.colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          "We Are Here, To Assist You!!!",
+          l10n.assistMessage,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -298,7 +286,7 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget _buildSignUpButton(ThemeData theme) {
+  Widget _buildSignUpButton(ThemeData theme, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ElevatedButton(
@@ -310,7 +298,7 @@ class _RegisterPageState extends State<RegisterPage> {
           minimumSize: const WidgetStatePropertyAll(Size(double.infinity, 50)),
         ),
         child: Text(
-          "Sign Up",
+          l10n.signUpButton,
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onPrimary,
@@ -320,12 +308,12 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget _buildLoginLink(ThemeData theme) {
+  Widget _buildLoginLink(ThemeData theme, AppLocalizations l10n) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          "Already have an account? ",
+          l10n.alreadyHaveAccount,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -337,7 +325,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 MaterialPageRoute(builder: (context) => const LoginPage()),
               ),
           child: Text(
-            "Login",
+            l10n.loginLink,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.primary,
@@ -348,7 +336,7 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget _buildGoogleSignInButton(ThemeData theme) {
+  Widget _buildGoogleSignInButton(ThemeData theme, AppLocalizations l10n) {
     return GestureDetector(
       onTap: _isLoading ? null : _nativeGoogleSignIn,
       child: Container(
@@ -373,7 +361,7 @@ class _RegisterPageState extends State<RegisterPage> {
               Image.asset("assets/google.png", width: 24),
               const SizedBox(width: 10),
               Text(
-                "Sign Up with Google",
+                l10n.signUpWithGoogle,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                   color: theme.colorScheme.onSurface,

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:adde/l10n/arb/app_localizations.dart';
+import 'package:adde/pages/notification/NotificationSettingsProvider.dart';
 import 'package:adde/pages/profile/locale_provider.dart';
 import 'package:adde/pages/profile/profile_edit_page.dart';
 import 'package:adde/theme/theme_provider.dart';
@@ -64,6 +65,8 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final localeProvider = Provider.of<LocaleProvider>(context);
+    final notificationSettingsProvider =
+        Provider.of<NotificationSettingsProvider>(context);
     final email = supabase.auth.currentUser?.email ?? 'No email';
     final l10n = AppLocalizations.of(context)!;
 
@@ -174,9 +177,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       const SizedBox(height: 20),
                       ListTile(
                         leading: Icon(
-                          themeProvider.themeMode == ThemeMode.light
-                              ? Icons.light_mode
-                              : Icons.dark_mode,
+                          themeProvider.isDarkMode
+                              ? Icons.dark_mode
+                              : Icons.light_mode,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                         title: Text(
@@ -189,9 +192,39 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                         trailing: Switch(
-                          value: themeProvider.themeMode == ThemeMode.dark,
-                          onChanged:
-                              (value) => themeProvider.toggleTheme(value),
+                          value: themeProvider.isDarkMode,
+                          onChanged: (value) {
+                            themeProvider.toggleTheme(value);
+                          },
+                          activeColor: Theme.of(context).colorScheme.primary,
+                          inactiveTrackColor:
+                              Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                      ListTile(
+                        leading: Icon(
+                          notificationSettingsProvider.showPopupNotifications
+                              ? Icons.notifications_active
+                              : Icons.notifications_off,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        title: Text(
+                          l10n.popupNotifications,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        trailing: Switch(
+                          value:
+                              notificationSettingsProvider
+                                  .showPopupNotifications,
+                          onChanged: (value) {
+                            notificationSettingsProvider
+                                .togglePopupNotifications(value);
+                          },
                           activeColor: Theme.of(context).colorScheme.primary,
                           inactiveTrackColor:
                               Theme.of(context).colorScheme.outline,
@@ -229,5 +262,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
     );
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    ageController.dispose();
+    super.dispose();
   }
 }

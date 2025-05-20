@@ -4,7 +4,7 @@ import 'package:adde/pages/education/favorite_edu_page.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:adde/l10n/arb/app_localizations.dart';
-import 'package:intl/intl.dart'; // For date formatting
+import 'package:intl/intl.dart';
 
 class EducationPage extends StatefulWidget {
   const EducationPage({super.key});
@@ -16,17 +16,33 @@ class EducationPage extends StatefulWidget {
 class _EducationPageState extends State<EducationPage> {
   List<Map<String, dynamic>> _entries = [];
   bool _isLoading = false;
+  bool _hasError = false;
   Set<int> expandedEntries = {};
 
   @override
   void initState() {
     super.initState();
-    _fetchDiaryEntries();
+    // Fetch will be triggered in didChangeDependencies to ensure context is ready
   }
 
-  /// Function to fetch diary entries
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Fetch entries only if not already loading or fetched
+    if (!_isLoading && _entries.isEmpty && !_hasError) {
+      _fetchDiaryEntries();
+    }
+  }
+
+  /// Function to fetch diary entries with timeout and improved error handling
   Future<void> _fetchDiaryEntries() async {
-    setState(() => _isLoading = true);
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+      _hasError = false;
+    });
+
     final l10n = AppLocalizations.of(context)!;
     final currentLocale = Localizations.localeOf(context).languageCode;
     final titleField = currentLocale == 'am' ? 'title_am' : 'title_en';
@@ -34,25 +50,44 @@ class _EducationPageState extends State<EducationPage> {
 
     try {
       final supabase = Supabase.instance.client;
+
+      // Check authentication status
+      if (supabase.auth.currentUser == null) {
+        throw Exception('User is not authenticated');
+      }
+
+      print('Fetching entries from info1 for locale: $currentLocale');
       final response = await supabase
           .from('info1')
           .select('id, $titleField, $textField, image, is_favorite, created_at')
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .timeout(const Duration(seconds: 10));
+
+      print('Supabase response: $response');
+
+      if (!mounted) return;
 
       setState(() {
         _entries =
             List<Map<String, dynamic>>.from(response).map((entry) {
               return {
                 'id': entry['id'],
-                'title': entry[titleField],
-                'text': entry[textField],
+                'title': entry[titleField] ?? l10n.noTitle,
+                'text': entry[textField] ?? l10n.noContent,
                 'image': entry['image'],
-                'is_favorite': entry['is_favorite'],
-                'created_at': entry['created_at'],
+                'is_favorite': entry['is_favorite'] ?? false,
+                'created_at':
+                    entry['created_at'] ?? DateTime.now().toIso8601String(),
               };
             }).toList();
       });
     } catch (e) {
+      print('Error fetching entries: $e');
+      if (!mounted) return;
+
+      setState(() {
+        _hasError = true;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.errorLoadingEntries(e.toString())),
@@ -65,10 +100,13 @@ class _EducationPageState extends State<EducationPage> {
         ),
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
+  /// Toggle favorite status for an entry
   Future<void> _toggleFavorite(String entryId, bool currentStatus) async {
     final l10n = AppLocalizations.of(context)!;
 
@@ -76,10 +114,14 @@ class _EducationPageState extends State<EducationPage> {
       final supabase = Supabase.instance.client;
       final newStatus = !currentStatus;
 
+      print('Toggling favorite for entry $entryId to $newStatus');
       await supabase
           .from('info1')
           .update({'is_favorite': newStatus})
-          .eq('id', entryId);
+          .eq('id', entryId)
+          .timeout(const Duration(seconds: 5));
+
+      if (!mounted) return;
 
       setState(() {
         final entryIndex = _entries.indexWhere(
@@ -99,6 +141,9 @@ class _EducationPageState extends State<EducationPage> {
         ),
       );
     } catch (e) {
+      print('Error toggling favorite: $e');
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.errorUpdatingFavorite(e.toString())),
@@ -189,6 +234,43 @@ class _EducationPageState extends State<EducationPage> {
                       ? Center(
                         child: CircularProgressIndicator(
                           color: Theme.of(context).colorScheme.primary,
+                        ),
+                      )
+                      : _hasError
+                      ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 60,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              l10n.errorLoadingEntries(
+                                'Failed to load articles',
+                              ),
+                              style: TextStyle(
+                                fontSize: 18,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            ElevatedButton(
+                              onPressed: _fetchDiaryEntries,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.primary,
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.onPrimary,
+                              ),
+                              child: Text(l10n.retryButton),
+                            ),
+                          ],
                         ),
                       )
                       : _entries.isEmpty
@@ -393,5 +475,10 @@ class _EducationPageState extends State<EducationPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }
