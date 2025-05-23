@@ -16,7 +16,7 @@ class ChatProvider with ChangeNotifier {
           .or(
             'sender_id.eq.$currentUserId,receiver_id.eq.$otherUserId,sender_id.eq.$otherUserId,receiver_id.eq.$currentUserId',
           )
-          .order('created_at', ascending: true);
+          .order('created_at', ascending: false);
 
       _messages = response.map<Message>((map) => Message.fromMap(map)).toList();
       notifyListeners();
