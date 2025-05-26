@@ -10,11 +10,13 @@ import 'package:adde/pages/notification/notification_service.dart';
 import 'package:adde/pages/weekly_tips/weeklytip_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:adde/auth/login_page.dart';
 import 'package:adde/pages/profile/profile_page.dart';
 import 'package:adde/pages/profile/locale_provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_iconly/flutter_iconly.dart'; // For modern icons
 
 class HomeScreen extends StatefulWidget {
   final String user_id;
@@ -26,12 +28,12 @@ class HomeScreen extends StatefulWidget {
 
   const HomeScreen({
     super.key,
+    required this.user_id,
     required this.fullName,
     required this.weight,
     required this.weightUnit,
     required this.height,
     required this.pregnancyStartDate,
-    required this.user_id,
   });
 
   @override
@@ -40,18 +42,24 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late final ScrollController _scrollController;
+  late AnimationController _backgroundAnimationController;
+  late Animation<Color?> _gradientColorAnimation;
   bool _hasUnreadNotifications = false;
   int _pregnancyWeeks = 0;
   int _pregnancyDays = 0;
   String? _profileImageBase64;
   List<Map<String, dynamic>> _weeklyTips = [];
-  bool _hasLoadedWeeklyTips = false;
   bool _hasShownTodaysTip = false;
+  String? _lastLocale;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+    _backgroundAnimationController = AnimationController(
+      duration: const Duration(seconds: 4),
+      vsync: this,
+    )..repeat(reverse: true);
     _updatePregnancyProgress();
     _loadProfileImage();
 
@@ -59,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       if (mounted) {
         _checkUnreadNotifications();
         _scheduleHealthTips();
-        Future.delayed(const Duration(seconds: 1), () {
+        Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted && !_hasShownTodaysTip) {
             _checkAndShowTodaysTip();
             _hasShownTodaysTip = true;
@@ -70,24 +78,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _scrollController.jumpTo(0);
       }
     });
-
-    // Schedule periodic pregnancy progress updates
-    Future.delayed(const Duration(days: 1), () {
-      if (mounted) _updatePregnancyProgress();
-    });
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final theme = Theme.of(context);
     final localeProvider = Provider.of<LocaleProvider>(context);
-    if (localeProvider.locale != Localizations.localeOf(context)) {
-      _hasLoadedWeeklyTips = false;
-    }
-    if (!_hasLoadedWeeklyTips) {
-      _hasLoadedWeeklyTips = true;
+    final currentLocale = localeProvider.locale.languageCode;
+
+    if (_lastLocale != currentLocale) {
+      _lastLocale = currentLocale;
       _loadWeeklyTips();
     }
+
+    _gradientColorAnimation = ColorTween(
+      begin: theme.colorScheme.primary.withOpacity(0.1),
+      end: theme.colorScheme.secondary.withOpacity(0.1),
+    ).animate(
+      CurvedAnimation(
+        parent: _backgroundAnimationController,
+        curve: Curves.easeInOutCubic,
+      ),
+    );
   }
 
   void _updatePregnancyProgress() {
@@ -102,12 +115,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _loadProfileImage() async {
     try {
-      final response =
-          await Supabase.instance.client
-              .from('mothers')
-              .select('profile_url')
-              .eq('user_id', widget.user_id)
-              .single();
+      final response = await Supabase.instance.client
+          .from('mothers')
+          .select('profile_url')
+          .eq('user_id', widget.user_id)
+          .single()
+          .timeout(const Duration(seconds: 10));
       setState(() {
         _profileImageBase64 = response['profile_url'];
       });
@@ -174,16 +187,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       print('Error showing today\'s tip: $e');
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.errorLoadingEntries(e.toString())),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            action: SnackBarAction(
-              label: l10n.retryButton,
-              onPressed: _checkAndShowTodaysTip,
-              textColor: Theme.of(context).colorScheme.onError,
-            ),
-          ),
+        _showSnackBar(
+          l10n.errorLoadingEntries(e.toString()),
+          retry: _checkAndShowTodaysTip,
         );
       }
     }
@@ -191,13 +197,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _loadWeeklyTips() async {
     final l10n = AppLocalizations.of(context)!;
-
     try {
       final response = await Supabase.instance.client
           .from('weekly_tips')
           .select('id, week, title_en, title_am, image')
           .order('week', ascending: true)
-          .limit(3);
+          .limit(3)
+          .timeout(const Duration(seconds: 10));
 
       setState(() {
         _weeklyTips =
@@ -213,48 +219,106 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       });
     } catch (e) {
       print('Error loading weekly tips: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.errorLoadingEntries(e.toString())),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          action: SnackBarAction(
-            label: l10n.retryButton,
-            onPressed: _loadWeeklyTips,
-            textColor: Theme.of(context).colorScheme.onError,
-          ),
-        ),
-      );
+      if (mounted) {
+        _showSnackBar(
+          l10n.errorLoadingEntries(e.toString()),
+          retry: _loadWeeklyTips,
+        );
+      }
     }
+  }
+
+  void _showSnackBar(String message, {VoidCallback? retry}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+            content: Text(
+              message,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onErrorContainer,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Theme.of(context).colorScheme.errorContainer,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 4,
+            action:
+                retry != null
+                    ? SnackBarAction(
+                      label: AppLocalizations.of(context)!.retryButton,
+                      onPressed: retry,
+                      textColor: Theme.of(context).colorScheme.onErrorContainer,
+                    )
+                    : null,
+          ).animate().fadeIn(duration: 300.ms)
+          as SnackBar,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: _buildAppBar(context),
-      floatingActionButton: _buildFloatingActionButton(context),
-      body: Container(
-        decoration: _buildBackgroundGradient(),
-        child: CustomScrollView(
-          controller: _scrollController,
-          physics: const BouncingScrollPhysics(), // Smoother scrolling
-          slivers: [
-            SliverToBoxAdapter(child: _buildPregnancyJourneySection()),
-            SliverPadding(
-              padding: const EdgeInsets.all(20),
-              sliver: SliverToBoxAdapter(
-                child: _buildWeeklyTipsSection(context),
-              ),
+    final theme = Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    return SafeArea(
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: _buildAppBar(context),
+        floatingActionButton: _buildFloatingActionButton(context),
+        body: Stack(
+          children: [
+            AnimatedBuilder(
+              animation: _backgroundAnimationController,
+              builder: (context, child) {
+                return Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        _gradientColorAnimation.value ??
+                            theme.colorScheme.primary.withOpacity(0.1),
+                        theme.colorScheme.surface,
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                );
+              },
             ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate(
-                  _buildFeaturesSection(
-                    context,
-                  ).map((widget) => widget).toList(),
+            CustomScrollView(
+              controller: _scrollController,
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: screenHeight * 0.02),
+                    child: _buildPregnancyJourneySection(context),
+                  ),
                 ),
-              ),
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverToBoxAdapter(
+                    child: _buildWeeklyTipsSection(context),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate(
+                      _buildFeaturesSection(
+                        context,
+                      ).map((widget) => widget).toList(),
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(child: SizedBox(height: screenHeight * 0.1)),
+              ],
             ),
           ],
         ),
@@ -263,53 +327,36 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   AppBar _buildAppBar(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
 
     return AppBar(
-      backgroundColor:
-          Theme.of(context).brightness == Brightness.light
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.onPrimary,
+      backgroundColor: theme.colorScheme.secondary,
       elevation: 0,
       title: Row(
         children: [
-          GestureDetector(
-            onTap:
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProfilePage()),
-                ).then((_) => _loadProfileImage()),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.3),
-              backgroundImage:
-                  _profileImageBase64 != null
-                      ? MemoryImage(base64Decode(_profileImageBase64!))
-                      : const AssetImage('assets/user.png') as ImageProvider,
-            ).animate().scale(duration: 500.ms, curve: Curves.easeOutQuad),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              l10n.greeting(widget.fullName),
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Theme.of(context).colorScheme.onPrimary
-                        : Theme.of(context).colorScheme.primary,
-                shadows: [
-                  Shadow(
-                    color: Theme.of(context).colorScheme.shadow,
-                    blurRadius: 4,
-                  ),
-                ],
-              ),
-              overflow: TextOverflow.ellipsis,
-            ).animate().fadeIn(duration: 600.ms, curve: Curves.easeOut),
+          Semantics(
+            child: GestureDetector(
+              onTap:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ProfilePage()),
+                  ).then((_) => _loadProfileImage()),
+              child: CircleAvatar(
+                radius: 20,
+                backgroundColor: theme.colorScheme.surfaceContainer,
+                backgroundImage:
+                    _profileImageBase64 != null
+                        ? MemoryImage(base64Decode(_profileImageBase64!))
+                        : const AssetImage('assets/user.png') as ImageProvider,
+                child:
+                    _profileImageBase64 == null
+                        ? Icon(
+                          Icons.person,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        )
+                        : null,
+              ).animate().scale(duration: 400.ms, curve: Curves.easeOutCubic),
+            ),
           ),
         ],
       ),
@@ -318,12 +365,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           children: [
             IconButton(
               icon: Icon(
-                Icons.notifications,
-                color:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Theme.of(context).colorScheme.onPrimary
-                        : Theme.of(context).colorScheme.primary,
-                size: 28,
+                IconlyLight.notification,
+                color: theme.colorScheme.onPrimary,
+                size: 30,
               ),
               onPressed: () async {
                 await Navigator.push(
@@ -335,40 +379,37 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 );
                 await _checkUnreadNotifications();
               },
-            ).animate().scale(duration: 500.ms, curve: Curves.easeOutQuad),
+            ).animate().scale(duration: 400.ms, delay: 200.ms),
             if (_hasUnreadNotifications)
               Positioned(
                 right: 8,
                 top: 8,
                 child: Container(
-                  width: 12,
-                  height: 12,
+                  width: 15,
+                  height: 15,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.error,
+                    color: theme.colorScheme.error,
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context).colorScheme.shadow,
-                        blurRadius: 2,
-                      ),
-                    ],
+                    border: Border.all(
+                      color: theme.colorScheme.surface,
+                      width: 1,
+                    ),
                   ),
-                ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
+                ).animate().fadeIn(duration: 400.ms, delay: 300.ms),
               ),
           ],
         ),
         IconButton(
           icon: Icon(
-            Icons.logout,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Theme.of(context).colorScheme.onPrimary
-                    : Theme.of(context).colorScheme.primary,
-            size: 28,
+            IconlyLight.logout,
+            color: theme.colorScheme.onPrimary,
+            size: 30,
           ),
           onPressed: () async {
             try {
               await Supabase.instance.client.auth.signOut();
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove('supabase_session');
               if (mounted) {
                 Navigator.pushAndRemoveUntil(
                   context,
@@ -377,99 +418,69 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 );
               }
             } catch (e) {
-              print('Error during logout: $e');
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l10n.errorLoggingOut(e.toString())),
-                    backgroundColor: Theme.of(context).colorScheme.error,
-                    action: SnackBarAction(
-                      label: l10n.retryButton,
-                      onPressed: () async {
-                        await Supabase.instance.client.auth.signOut();
-                        if (mounted) {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const LoginPage(),
-                            ),
-                            (Route<dynamic> route) => false,
-                          );
-                        }
-                      },
-                      textColor: Theme.of(context).colorScheme.onError,
-                    ),
-                  ),
+                final l10n = AppLocalizations.of(context)!;
+                _showSnackBar(
+                  l10n.errorLoggingOut(e.toString()),
+                  retry: () async {
+                    await Supabase.instance.client.auth.signOut();
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.remove('supabase_session');
+                    if (mounted) {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginPage()),
+                        (Route<dynamic> route) => false,
+                      );
+                    }
+                  },
                 );
               }
             }
           },
-        ).animate().scale(duration: 500.ms, curve: Curves.easeOutQuad),
+        ).animate().scale(duration: 400.ms, delay: 400.ms),
       ],
     );
   }
 
   Widget _buildFloatingActionButton(BuildContext context) {
+    final theme = Theme.of(context);
     return FloatingActionButton(
-          onPressed:
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ChatScreen()),
-              ),
-          backgroundColor:
-              Theme.of(context).colorScheme.surfaceContainerHighest,
-          elevation: 6,
-          child: Icon(
-            Icons.chat,
-            color: Theme.of(context).colorScheme.primary,
-            size: 28,
+      onPressed:
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ChatScreen()),
           ),
-        )
-        .animate()
-        .scale(duration: 600.ms, curve: Curves.elasticOut)
-        .fadeIn(duration: 600.ms);
-  }
-
-  BoxDecoration _buildBackgroundGradient() {
-    return BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Theme.of(context).colorScheme.secondary.withOpacity(0.3),
-          Theme.of(context).colorScheme.surface,
-        ],
+      backgroundColor: theme.colorScheme.primary,
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Icon(
+        IconlyLight.chat,
+        color: theme.colorScheme.onPrimary,
+        size: 24,
       ),
+    ).animate().scale(
+      duration: 400.ms,
+      curve: Curves.easeOutCubic,
+      delay: 500.ms,
     );
   }
 
-  Widget _buildPregnancyJourneySection() {
+  Widget _buildPregnancyJourneySection(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 100, 20, 40),
+      padding: const EdgeInsets.only(left: 20, right: 20, top: 10, bottom: 35),
+      margin: const EdgeInsets.only(top: 38),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).brightness == Brightness.light
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.onPrimary,
-            Theme.of(context).brightness == Brightness.light
-                ? Theme.of(context).colorScheme.secondary
-                : Theme.of(context).colorScheme.onSecondary,
-          ],
-        ),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(40),
-          bottomRight: Radius.circular(40),
-        ),
+        color: theme.colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: theme.colorScheme.shadow.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -477,65 +488,62 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         children: [
           Text(
             l10n.pregnancyJourney,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Theme.of(context).colorScheme.onPrimary
-                      : Theme.of(context).colorScheme.primary,
-              letterSpacing: 1.2,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
             ),
-          ).animate().fadeIn(duration: 800.ms, curve: Curves.easeOutQuad),
-          const SizedBox(height: 24),
+            textAlign: TextAlign.center,
+          ).animate().fadeIn(duration: 400.ms),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildCounterBox(_pregnancyWeeks, l10n.weeksLabel),
-              const SizedBox(width: 20),
+              _buildCounterBox(_pregnancyWeeks, l10n.weeksLabel, 200.ms),
+              const SizedBox(width: 16),
               CircleAvatar(
-                radius: 70,
-                backgroundColor: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withOpacity(0.9),
+                radius: 60,
+                backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
                 child: ClipOval(
                   child: Image.asset(
                     "assets/embryo.gif",
                     fit: BoxFit.cover,
-                    width: 120,
-                    height: 120,
+                    width: 100,
+                    height: 100,
                   ),
                 ),
-              ).animate().scale(duration: 800.ms, curve: Curves.easeOutBack),
-              const SizedBox(width: 20),
-              _buildCounterBox(_pregnancyDays, l10n.daysLabel),
+              ).animate().scale(
+                duration: 400.ms,
+                curve: Curves.easeOutCubic,
+                delay: 300.ms,
+              ),
+              const SizedBox(width: 16),
+              _buildCounterBox(_pregnancyDays, l10n.daysLabel, 400.ms),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Stack(
               children: [
                 Container(
-                  height: 10,
+                  height: 8,
                   decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(5),
+                    color: theme.colorScheme.onSurface.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                 ),
                 FractionallySizedBox(
                   widthFactor: (_pregnancyWeeks / 40).clamp(0.0, 1.0),
                   child: Container(
-                    height: 10,
+                    height: 8,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      borderRadius: BorderRadius.circular(5),
+                      color: theme.colorScheme.primary,
+                      borderRadius: BorderRadius.circular(4),
                     ),
                   ).animate().slideX(
-                    duration: 1000.ms,
-                    curve: Curves.easeInOut,
+                    duration: 400.ms,
+                    delay: 500.ms,
+                    curve: Curves.easeOutCubic,
                   ),
                 ),
               ],
@@ -543,11 +551,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 600.ms, delay: 200.ms);
+    );
   }
 
   Widget _buildWeeklyTipsSection(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
     final currentLocale = Localizations.localeOf(context).languageCode;
 
     return Column(
@@ -555,25 +564,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       children: [
         Text(
           l10n.weeklyTips,
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.primary,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.primary,
           ),
-        ).animate().fadeIn(duration: 600.ms, curve: Curves.easeOutQuad),
+        ).animate().fadeIn(duration: 400.ms),
         const SizedBox(height: 12),
         SizedBox(
-          height: 180,
+          height: 200,
           child:
               _weeklyTips.isEmpty
                   ? Center(
                     child: Text(
                       l10n.noTipsYet,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 16,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
                       ),
-                    ).animate().fadeIn(duration: 500.ms, delay: 300.ms),
+                    ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
                   )
                   : ListView.builder(
                     scrollDirection: Axis.horizontal,
@@ -601,128 +609,118 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               ),
                             );
                           },
-                          child: Container(
-                            width: 200,
-                            decoration: BoxDecoration(
-                              color:
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.shadow.withValues(alpha: 0.2),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
+                          child: Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(20),
-                                  ),
-                                  child:
-                                      tip['image'] != null
-                                          ? Image.memory(
-                                            base64Decode(tip['image']),
-                                            height: 100,
-                                            width: double.infinity,
-                                            fit: BoxFit.cover,
-                                            frameBuilder: (
-                                              context,
-                                              child,
-                                              frame,
-                                              wasSynchronouslyLoaded,
-                                            ) {
-                                              return child.animate().fadeIn(
-                                                duration: 400.ms,
-                                                delay: (index * 200).ms,
-                                              );
-                                            },
-                                            errorBuilder:
-                                                (
-                                                  context,
-                                                  error,
-                                                  stackTrace,
-                                                ) => Container(
-                                                  height: 100,
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .onSurface
-                                                      .withValues(alpha: 0.1),
-                                                  child: Icon(
-                                                    Icons.broken_image,
-                                                    size: 40,
-                                                    color:
-                                                        Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurfaceVariant,
+                            child: Container(
+                              width: 220,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surfaceContainer,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(16),
+                                    ),
+                                    child:
+                                        tip['image'] != null
+                                            ? Image.memory(
+                                              base64Decode(tip['image']),
+                                              height: 100,
+                                              width: double.infinity,
+                                              fit: BoxFit.cover,
+                                              frameBuilder: (
+                                                context,
+                                                child,
+                                                frame,
+                                                wasSynchronouslyLoaded,
+                                              ) {
+                                                return child.animate().fadeIn(
+                                                  duration: 400.ms,
+                                                  delay: (index * 200).ms,
+                                                );
+                                              },
+                                              errorBuilder:
+                                                  (
+                                                    context,
+                                                    error,
+                                                    stackTrace,
+                                                  ) => Container(
+                                                    height: 100,
+                                                    color: theme
+                                                        .colorScheme
+                                                        .onSurface
+                                                        .withOpacity(0.1),
+                                                    child: Icon(
+                                                      IconlyLight.image,
+                                                      size: 40,
+                                                      color:
+                                                          theme
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                    ),
                                                   ),
-                                                ),
-                                          )
-                                          : Container(
-                                            height: 100,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onSurface
-                                                .withValues(alpha: 0.1),
-                                            child: Icon(
-                                              Icons.image,
-                                              size: 40,
-                                              color:
-                                                  Theme.of(context)
-                                                      .colorScheme
-                                                      .onSurfaceVariant,
+                                            )
+                                            : Container(
+                                              height: 150,
+                                              color: theme.colorScheme.onSurface
+                                                  .withOpacity(0.1),
+                                              child: Icon(
+                                                IconlyLight.image,
+                                                size: 40,
+                                                color:
+                                                    theme
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
+                                              ),
                                             ),
-                                          ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        l10n.weekLabel(tip['week']),
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.primary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        title ?? l10n.noTitle,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.onSurfaceVariant,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
                                   ),
-                                ),
-                              ],
+                                  Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          l10n.weekLabel(tip['week']),
+                                          style: theme.textTheme.titleMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                                color:
+                                                    theme.colorScheme.primary,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          title ?? l10n.noTitle,
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(
+                                                color:
+                                                    theme
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
+                                              ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ).animate().slideX(
+                        ).animate().slideY(
                           begin: 0.2,
                           end: 0,
-                          duration: 600.ms,
+                          duration: 400.ms,
                           delay: (index * 200).ms,
-                          curve: Curves.easeOutQuad,
+                          curve: Curves.easeOutCubic,
                         ),
                       );
                     },
@@ -734,10 +732,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   List<Widget> _buildFeaturesSection(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    Theme.of(context);
 
     final features = [
       {
-        "icon": "assets/bmi.png",
+        "icon": IconlyLight.heart,
         "name": l10n.featureHealthMetrics,
         "description": l10n.featureHealthMetricsDescription,
         "navigation":
@@ -749,7 +748,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
       },
       {
-        "icon": "assets/diary.png",
+        "icon": IconlyLight.document,
         "name": l10n.featureJournal,
         "description": l10n.featureJournalDescription,
         "navigation":
@@ -759,7 +758,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
       },
       {
-        "icon": "assets/label.png",
+        "icon": IconlyLight.star,
         "name": l10n.featureNameSuggestion,
         "description": l10n.featureNameSuggestionDescription,
         "navigation":
@@ -775,96 +774,78 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final feature = entry.value;
       return Padding(
         padding: const EdgeInsets.only(bottom: 12),
-        child: _buildFeatureCard(feature).animate().slideY(
-          begin: 0.2,
-          end: 0,
-          duration: 400.ms,
-          delay: (index * 150).ms,
-          curve: Curves.easeOutQuad,
-        ),
+        child: _buildFeatureCard(feature, index),
       );
     }).toList();
   }
 
-  Widget _buildCounterBox(int value, String label) {
+  Widget _buildCounterBox(int value, String label, Duration delay) {
+    final theme = Theme.of(context);
     return Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.shadow.withValues(alpha: 0.2),
-                    blurRadius: 4,
-                  ),
-                ],
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainer,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.shadow.withOpacity(0.1),
+                blurRadius: 4,
               ),
-              child: Text(
-                "$value",
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.primary,
-                ),
-              ),
+            ],
+          ),
+          child: Text(
+            "$value",
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
             ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                color:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Theme.of(context).colorScheme.onPrimary
-                        : Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        )
-        .animate()
-        .fadeIn(duration: 600.ms, curve: Curves.easeOutQuad)
-        .scale(duration: 600.ms, curve: Curves.easeOutBack);
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    ).animate().fadeIn(
+      duration: 400.ms,
+      delay: delay,
+      curve: Curves.easeOutCubic,
+    );
   }
 
-  Widget _buildFeatureCard(Map<String, dynamic> feature) {
+  Widget _buildFeatureCard(Map<String, dynamic> feature, int index) {
+    final theme = Theme.of(context);
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: feature["navigation"],
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(20),
+            color: theme.colorScheme.surfaceContainer,
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.secondary.withValues(alpha: 0.2),
+                  color: theme.colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Image.asset(
+                child: Icon(
                   feature["icon"],
-                  width: 40,
-                  height: 40,
-                  color: Theme.of(context).colorScheme.primary,
-                ).animate().fadeIn(duration: 500.ms, curve: Curves.easeOut),
+                  size: 32,
+                  color: theme.colorScheme.primary,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -873,38 +854,43 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   children: [
                     Text(
                       feature["name"],
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.primary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       feature["description"],
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
                 ),
               ),
               Icon(
-                Icons.arrow_forward_ios,
-                size: 18,
-                color: Theme.of(context).colorScheme.primary,
-              ).animate().fadeIn(duration: 500.ms, delay: 100.ms),
+                IconlyLight.arrowRight,
+                size: 20,
+                color: theme.colorScheme.primary,
+              ).animate().scale(duration: 400.ms, delay: 100.ms),
             ],
           ),
         ),
       ),
+    ).animate().slideY(
+      begin: 0.2,
+      end: 0,
+      duration: 400.ms,
+      delay: (index * 200).ms,
+      curve: Curves.easeOutCubic,
     );
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _backgroundAnimationController.dispose();
     super.dispose();
   }
 }

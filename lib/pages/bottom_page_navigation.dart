@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:flutter_iconly/flutter_iconly.dart'; // For modern icons
 
 class BottomPageNavigation extends StatefulWidget {
   final String? email;
@@ -48,7 +49,6 @@ class _BottomPageNavigationState extends State<BottomPageNavigation>
         throw Exception("Email is null, cannot fetch mother info.");
       }
 
-      print("Fetching data for email: ${widget.email}");
       final response =
           await Supabase.instance.client
               .from('mothers')
@@ -56,8 +56,6 @@ class _BottomPageNavigationState extends State<BottomPageNavigation>
               .eq('email', widget.email!)
               .limit(1)
               .single();
-
-      print("Supabase response: $response");
 
       setState(() {
         fullName = response['full_name'] as String? ?? 'Unknown';
@@ -86,7 +84,6 @@ class _BottomPageNavigationState extends State<BottomPageNavigation>
         isLoading = false;
       });
     } catch (error) {
-      print("Error fetching mother info: $error");
       setState(() {
         isLoading = false;
       });
@@ -102,20 +99,24 @@ class _BottomPageNavigationState extends State<BottomPageNavigation>
       SnackBar(
             content: Text(
               message,
-              style: TextStyle(color: Theme.of(context).colorScheme.onError),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onErrorContainer,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             behavior: SnackBarBehavior.floating,
-            backgroundColor: Theme.of(context).colorScheme.error,
+            backgroundColor: Theme.of(context).colorScheme.errorContainer,
             margin: const EdgeInsets.all(16),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
             ),
+            elevation: 4,
             action:
                 retry != null
                     ? SnackBarAction(
                       label: AppLocalizations.of(context)!.retryButton,
                       onPressed: retry,
-                      textColor: Theme.of(context).colorScheme.onError,
+                      textColor: Theme.of(context).colorScheme.onErrorContainer,
                     )
                     : null,
           ).animate().fadeIn(duration: 200.ms)
@@ -132,16 +133,15 @@ class _BottomPageNavigationState extends State<BottomPageNavigation>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
 
     final pages = [
       isLoading
           ? Center(
             child: CircularProgressIndicator(
-                  color: Theme.of(context).colorScheme.primary,
-                )
-                .animate()
-                .fadeIn(duration: 250.ms)
-                .scale(curve: Curves.easeOutQuad),
+              color: theme.colorScheme.primary,
+              strokeWidth: 3,
+            ).animate().fadeIn(duration: 250.ms).scale(curve: Curves.easeOut),
           )
           : (fullName != null &&
               weight != null &&
@@ -162,22 +162,33 @@ class _BottomPageNavigationState extends State<BottomPageNavigation>
               children: [
                 Text(
                   l10n.failedToLoadUserData,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 16,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
                   ),
+                  textAlign: TextAlign.center,
                 ).animate().fadeIn(duration: 300.ms, curve: Curves.easeOut),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: fetchMotherInfo,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    elevation: 2,
+                  ),
+                  child: Text(
+                    l10n.retryButton,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  child: Text(l10n.retryButton),
                 ).animate().scale(duration: 300.ms, curve: Curves.easeOutQuad),
               ],
             ),
@@ -188,7 +199,7 @@ class _BottomPageNavigationState extends State<BottomPageNavigation>
     ];
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: theme.colorScheme.surface,
       body: Stack(
         children: [
           Positioned.fill(
@@ -196,10 +207,8 @@ class _BottomPageNavigationState extends State<BottomPageNavigation>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: 0.2),
-                    Theme.of(context).colorScheme.surface,
+                    theme.colorScheme.primary.withOpacity(0.1),
+                    theme.colorScheme.surface,
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -208,10 +217,15 @@ class _BottomPageNavigationState extends State<BottomPageNavigation>
             ).animate().fadeIn(duration: 400.ms, curve: Curves.easeOut),
           ),
           AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
+            duration: const Duration(milliseconds: 300),
             transitionBuilder:
-                (child, animation) =>
-                    FadeTransition(opacity: animation, child: child),
+                (child, animation) => FadeTransition(
+                  opacity: animation.drive(CurveTween(curve: Curves.easeInOut)),
+                  child: ScaleTransition(
+                    scale: animation.drive(Tween(begin: 0.95, end: 1.0)),
+                    child: child,
+                  ),
+                ),
             child: IndexedStack(
               key: ValueKey<int>(_selectedIndex),
               index: _selectedIndex,
@@ -222,131 +236,99 @@ class _BottomPageNavigationState extends State<BottomPageNavigation>
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          color: theme.colorScheme.surfaceContainer,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           boxShadow: [
             BoxShadow(
-              blurRadius: 20,
-              color: Colors.black.withValues(alpha: 0.1),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              spreadRadius: 2,
+              offset: const Offset(0, -2),
             ),
           ],
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: GNav(
-              rippleColor: Colors.grey[800]!,
-              hoverColor: Colors.grey[700]!,
+              rippleColor: theme.colorScheme.primary.withOpacity(0.2),
+              hoverColor: theme.colorScheme.primary.withOpacity(0.1),
               haptic: true,
-              tabBorderRadius: 15,
+              tabBorderRadius: 16,
               tabActiveBorder: Border.all(
-                color: Theme.of(context).colorScheme.primary,
-                width: 1,
+                color: theme.colorScheme.primary,
+                width: 1.5,
               ),
               tabBorder: Border.all(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                color: theme.colorScheme.outline.withOpacity(0.3),
                 width: 1,
               ),
               tabShadow: [
                 BoxShadow(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.1),
+                  color: theme.colorScheme.primary.withOpacity(0.1),
                   blurRadius: 8,
                 ),
               ],
-              curve: Curves.easeOutExpo,
-              duration: const Duration(milliseconds: 900),
-              gap: 8,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              activeColor: Theme.of(context).colorScheme.primary,
+              curve: Curves.easeInOutCubic,
+              duration: const Duration(milliseconds: 600),
+              gap: 6,
+              color: theme.colorScheme.onSurfaceVariant,
+              activeColor: theme.colorScheme.primary,
               iconSize: 24,
-              tabBackgroundColor: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.1),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              tabBackgroundColor: theme.colorScheme.primary.withOpacity(0.05),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               selectedIndex: _selectedIndex,
               onTabChange: _onItemTapped,
               tabs: [
                 GButton(
-                  icon: _selectedIndex == 0 ? Icons.home : Icons.home_outlined,
-                  iconActiveColor:
-                      _selectedIndex == 0
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.primary,
-                  textColor:
-                      _selectedIndex == 0
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.primary,
-                  backgroundColor:
-                      _selectedIndex == 0
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.onPrimary,
+                  icon:
+                      _selectedIndex == 0 ? IconlyBold.home : IconlyLight.home,
                   text: l10n.bottomNavHome,
+                  iconColor: theme.colorScheme.onSurfaceVariant,
+                  iconActiveColor: theme.colorScheme.onPrimary,
+                  textColor: theme.colorScheme.onPrimary,
+                  backgroundColor: theme.colorScheme.primary,
                 ),
                 GButton(
                   icon:
-                      _selectedIndex == 1 ? Icons.people : Icons.people_outline,
-                  iconActiveColor:
                       _selectedIndex == 1
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.primary,
-                  textColor:
-                      _selectedIndex == 1
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.primary,
-                  backgroundColor:
-                      _selectedIndex == 1
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.onPrimary,
+                          ? IconlyBold.user2
+                          : IconlyLight.user2,
                   text: l10n.bottomNavCommunity,
+                  iconColor: theme.colorScheme.onSurfaceVariant,
+                  iconActiveColor: theme.colorScheme.onPrimary,
+                  textColor: theme.colorScheme.onPrimary,
+                  backgroundColor: theme.colorScheme.primary,
                 ),
                 GButton(
                   icon:
                       _selectedIndex == 2
-                          ? Icons.menu_book
-                          : Icons.menu_book_outlined,
-                  iconActiveColor:
-                      _selectedIndex == 2
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.primary,
-                  textColor:
-                      _selectedIndex == 2
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.primary,
-                  backgroundColor:
-                      _selectedIndex == 2
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.onPrimary,
+                          ? IconlyBold.bookmark
+                          : IconlyLight.bookmark,
                   text: l10n.bottomNavEducation,
+                  iconColor: theme.colorScheme.onSurfaceVariant,
+                  iconActiveColor: theme.colorScheme.onPrimary,
+                  textColor: theme.colorScheme.onPrimary,
+                  backgroundColor: theme.colorScheme.primary,
                 ),
                 GButton(
                   icon:
-                      _selectedIndex == 3
-                          ? Icons.video_call
-                          : Icons.video_call_outlined,
-                  iconActiveColor:
-                      _selectedIndex == 3
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.primary,
-                  textColor:
-                      _selectedIndex == 3
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.primary,
-                  backgroundColor:
-                      _selectedIndex == 3
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.onPrimary,
+                      _selectedIndex == 3 ? IconlyBold.call : IconlyLight.call,
                   text: l10n.bottomNavConsult,
+                  iconColor: theme.colorScheme.onSurfaceVariant,
+                  iconActiveColor: theme.colorScheme.onPrimary,
+                  textColor: theme.colorScheme.onPrimary,
+                  backgroundColor: theme.colorScheme.primary,
                 ),
               ],
             ),
           ),
         ),
       ).animate().slideY(
-        begin: 0.1,
+        begin: 0.2,
         end: 0,
-        duration: 300.ms,
-        curve: Curves.easeOutQuad,
+        duration: 400.ms,
+        curve: Curves.easeOutCubic,
       ),
     );
   }

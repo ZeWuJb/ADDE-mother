@@ -1614,4 +1614,111 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get healthIssueEmptyError => 'Please describe your health issue';
+
+  @override
+  String get signInSuccess => 'Signed in successfully!';
+
+  @override
+  String get googleSignInConfigError => 'Google Sign-In configuration is missing';
+
+  @override
+  String get googleSignUpConfigError => 'Google Sign-Up configuration error';
+
+  @override
+  String get appointmentPayment => 'Appointment Payment';
+
+  @override
+  String get paymentRequired => 'Payment Required';
+
+  @override
+  String doctorName(Object name) {
+    return 'Doctor: $name';
+  }
+
+  @override
+  String get paymentAutoFillMessage => 'Your details will be automatically filled';
+
+  @override
+  String get initializingPayment => 'Initializing payment...';
+
+  @override
+  String get paymentInitializationFailed => 'Failed to initialize payment';
+
+  @override
+  String get checkPaymentStatus => 'Check Status';
+
+  @override
+  String get paymentSuccessful => 'Payment Successful!';
+
+  @override
+  String get paymentCompleted => 'Payment Completed';
+
+  @override
+  String get paymentSuccessMessage => 'Your payment has been processed successfully. You can now join the video consultation.';
+
+  @override
+  String get paymentProcessingMessage => 'Your payment is being processed. Please wait a moment.';
+
+  @override
+  String get payNow => 'Pay Now';
+
+  @override
+  String get paymentRequiredMessage => 'Payment is required before joining the video call';
+
+  @override
+  String get videoLinkPending => 'Video link will be available after payment';
+
+  @override
+  String get errorLoadingPaymentData => 'Error loading payment information';
+
+  @override
+  String get paymentStillPending => 'Payment is still pending';
+
+  @override
+  String get errorCheckingPayment => 'Error checking payment status';
+
+  @override
+  String get paid => 'Paid';
+
+  @override
+  String get unpaid => 'Payment Required';
+
+  @override
+  String get accepted => 'Accepted';
+
+  @override
+  String get pending => 'Pending';
+
+  @override
+  String get declined => 'Declined';
+
+  @override
+  String get unknown => 'Unknown';
+
+  @override
+  String get appointmentCompleted => 'Appointment completed';
+
+  @override
+  String get waitingForDoctorResponse => 'Waiting for doctor\'s response';
+
+  @override
+  String get appointmentDeclined => 'Appointment was declined';
+
+  @override
+  String get myAppointments => 'My Appointments';
+
+  @override
+  String get noAppointmentsScheduled => 'No appointments scheduled';
+
+  @override
+  String get unknownDoctor => 'Unknown Doctor';
+
+  @override
+  String get couldNotLaunchVideoCall => 'Could not launch video call';
+
+  @override
+  String get videoLinkNotAvailable => 'Video link not available';
+
+  @override
+  String get cancelLabel => 'Cancel';
 }

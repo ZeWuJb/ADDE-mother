@@ -1614,4 +1614,111 @@ class AppLocalizationsAm extends AppLocalizations {
 
   @override
   String get healthIssueEmptyError => 'እባክዎ የጤና ችግርዎን ይግለጹ';
+
+  @override
+  String get signInSuccess => 'በተሳካ ሁኔታ ገብተዋል!';
+
+  @override
+  String get googleSignInConfigError => 'የGoogle መግቢያ ውቅር ጠፍቷል';
+
+  @override
+  String get googleSignUpConfigError => 'የGoogle መመዝገቢያ ውቅር ስህተት';
+
+  @override
+  String get appointmentPayment => 'የቀጠሮ ክፍያ';
+
+  @override
+  String get paymentRequired => 'ክፍያ ያስፈልጋል';
+
+  @override
+  String doctorName(Object name) {
+    return 'ዶክተር: $name';
+  }
+
+  @override
+  String get paymentAutoFillMessage => 'የእርስዎ ዝርዝሮች በራስ-ሰር ይሞላሉ';
+
+  @override
+  String get initializingPayment => 'ክፍያ በማዘጋጀት ላይ...';
+
+  @override
+  String get paymentInitializationFailed => 'ክፍያ ማዘጋጀት አልተሳካም';
+
+  @override
+  String get checkPaymentStatus => 'ሁኔታ ይመልከቱ';
+
+  @override
+  String get paymentSuccessful => 'ክፍያ ተሳክቷል!';
+
+  @override
+  String get paymentCompleted => 'ክፍያ ተጠናቋል';
+
+  @override
+  String get paymentSuccessMessage => 'የእርስዎ ክፍያ በተሳካ ሁኔታ ተሰርቷል። አሁን የቪዲዮ ምክክር መቀላቀል ይችላሉ።';
+
+  @override
+  String get paymentProcessingMessage => 'የእርስዎ ክፍያ በሂደት ላይ ነው። እባክዎ ትንሽ ይጠብቁ።';
+
+  @override
+  String get payNow => 'አሁን ይክፈሉ';
+
+  @override
+  String get paymentRequiredMessage => 'የቪዲዮ ጥሪ ከመቀላቀል በፊት ክፍያ ያስፈልጋል';
+
+  @override
+  String get videoLinkPending => 'የቪዲዮ ሊንክ ከክፍያ በኋላ ይገኛል';
+
+  @override
+  String get errorLoadingPaymentData => 'የክፍያ መረጃ በመጫን ላይ ስህተት';
+
+  @override
+  String get paymentStillPending => 'ክፍያ አሁንም በመጠባበቅ ላይ ነው';
+
+  @override
+  String get errorCheckingPayment => 'የክፍያ ሁኔታ በማረጋገጥ ላይ ስህተት';
+
+  @override
+  String get paid => 'ተከፍሏል';
+
+  @override
+  String get unpaid => 'ክፍያ ያስፈልጋል';
+
+  @override
+  String get accepted => 'ተቀባይነት አግኝቷል';
+
+  @override
+  String get pending => 'በመጠባበቅ ላይ';
+
+  @override
+  String get declined => 'ተቋርጧል';
+
+  @override
+  String get unknown => 'አይታወቅም';
+
+  @override
+  String get appointmentCompleted => 'ቀጠሮ ተጠናቋል';
+
+  @override
+  String get waitingForDoctorResponse => 'የዶክተር ምላሽ በመጠባበቅ ላይ';
+
+  @override
+  String get appointmentDeclined => 'ቀጠሮ ተቋርጧል';
+
+  @override
+  String get myAppointments => 'የእኔ ቀጠሮዎች';
+
+  @override
+  String get noAppointmentsScheduled => 'ምንም ቀጠሮ አልተያዘም';
+
+  @override
+  String get unknownDoctor => 'ያልታወቀ ዶክተር';
+
+  @override
+  String get couldNotLaunchVideoCall => 'የቪዲዮ ጥሪ መጀመር አልተቻለም';
+
+  @override
+  String get videoLinkNotAvailable => 'የቪዲዮ ሊንክ አይገኝም';
+
+  @override
+  String get cancelLabel => 'ይሰርዙ';
 }

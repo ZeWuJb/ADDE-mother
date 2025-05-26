@@ -38,6 +38,7 @@ dependencies:
   flutter_dotenv: ^5.2.1
   curved_navigation_bar: ^1.0.6
   line_icons: ^2.0.3
+  flutter_iconly: ^1.0.2
 
 dev_dependencies:
   flutter_test:
