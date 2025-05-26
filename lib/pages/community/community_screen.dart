@@ -10,7 +10,6 @@ import 'package:adde/pages/community/create_post_screen.dart';
 import 'package:adde/pages/community/post_detail_screen.dart';
 import 'package:adde/pages/community/search_screen.dart';
 import 'package:adde/pages/community/messages_screen.dart';
-import 'package:adde/pages/community/post_model.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
