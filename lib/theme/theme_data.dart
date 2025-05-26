@@ -11,7 +11,7 @@ class ThemeModes {
       onSecondary: Colors.black87,
       tertiary: const Color(0xFFffcad4), // Soft pink for highlights
       onTertiary: Colors.black87,
-      error: Colors.redAccent,
+      error: Colors.red,
       onError: Colors.white,
       surface: const Color(0xFFffe5ec), // Light pink surface
       onSurface: const Color(0xFFfb6f92),

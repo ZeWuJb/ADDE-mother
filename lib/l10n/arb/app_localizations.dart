@@ -2896,6 +2896,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please describe your health issue'**
   String get healthIssueEmptyError;
+
+  /// Success message for successful sign-in
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in successfully!'**
+  String get signInSuccess;
+
+  /// Error message when Google Sign-In WEB_CLIENT_ID is not configured
+  ///
+  /// In en, this message translates to:
+  /// **'Google Sign-In configuration is missing'**
+  String get googleSignInConfigError;
+
+  /// Error message for missing Google Sign-Up configuration
+  ///
+  /// In en, this message translates to:
+  /// **'Google Sign-Up configuration error'**
+  String get googleSignUpConfigError;
+
+  /// No description provided for @appointmentPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment Payment'**
+  String get appointmentPayment;
+
+  /// No description provided for @paymentRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Required'**
+  String get paymentRequired;
+
+  /// No description provided for @doctorName.
+  ///
+  /// In en, this message translates to:
+  /// **'Doctor: {name}'**
+  String doctorName(Object name);
+
+  /// No description provided for @paymentAutoFillMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your details will be automatically filled'**
+  String get paymentAutoFillMessage;
+
+  /// No description provided for @initializingPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Initializing payment...'**
+  String get initializingPayment;
+
+  /// No description provided for @paymentInitializationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to initialize payment'**
+  String get paymentInitializationFailed;
+
+  /// No description provided for @checkPaymentStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Check Status'**
+  String get checkPaymentStatus;
+
+  /// No description provided for @paymentSuccessful.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Successful!'**
+  String get paymentSuccessful;
+
+  /// No description provided for @paymentCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Completed'**
+  String get paymentCompleted;
+
+  /// No description provided for @paymentSuccessMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payment has been processed successfully. You can now join the video consultation.'**
+  String get paymentSuccessMessage;
+
+  /// No description provided for @paymentProcessingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payment is being processed. Please wait a moment.'**
+  String get paymentProcessingMessage;
+
+  /// No description provided for @payNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay Now'**
+  String get payNow;
+
+  /// No description provided for @paymentRequiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment is required before joining the video call'**
+  String get paymentRequiredMessage;
+
+  /// No description provided for @videoLinkPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Video link will be available after payment'**
+  String get videoLinkPending;
+
+  /// No description provided for @errorLoadingPaymentData.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading payment information'**
+  String get errorLoadingPaymentData;
+
+  /// No description provided for @paymentStillPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment is still pending'**
+  String get paymentStillPending;
+
+  /// No description provided for @errorCheckingPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Error checking payment status'**
+  String get errorCheckingPayment;
+
+  /// No description provided for @paid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get paid;
+
+  /// No description provided for @unpaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Required'**
+  String get unpaid;
+
+  /// No description provided for @accepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted'**
+  String get accepted;
+
+  /// No description provided for @pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pending;
+
+  /// No description provided for @declined.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined'**
+  String get declined;
+
+  /// No description provided for @unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get unknown;
+
+  /// No description provided for @appointmentCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment completed'**
+  String get appointmentCompleted;
+
+  /// No description provided for @waitingForDoctorResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for doctor\'s response'**
+  String get waitingForDoctorResponse;
+
+  /// No description provided for @appointmentDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment was declined'**
+  String get appointmentDeclined;
+
+  /// No description provided for @myAppointments.
+  ///
+  /// In en, this message translates to:
+  /// **'My Appointments'**
+  String get myAppointments;
+
+  /// No description provided for @noAppointmentsScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'No appointments scheduled'**
+  String get noAppointmentsScheduled;
+
+  /// No description provided for @unknownDoctor.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown Doctor'**
+  String get unknownDoctor;
+
+  /// No description provided for @couldNotLaunchVideoCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not launch video call'**
+  String get couldNotLaunchVideoCall;
+
+  /// No description provided for @videoLinkNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Video link not available'**
+  String get videoLinkNotAvailable;
+
+  /// No description provided for @cancelLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancelLabel;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

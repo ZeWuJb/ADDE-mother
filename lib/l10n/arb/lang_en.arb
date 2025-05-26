@@ -1601,8 +1601,53 @@
   "heightEmptyError": "Please enter your height",
   "bloodPressureEmptyError": "Please enter your blood pressure",
   "pregnancyStartDateError": "Please select your pregnancy start date",
-  "healthIssueEmptyError": "Please describe your health issue"
-}
+  "healthIssueEmptyError": "Please describe your health issue",
+    "signInSuccess": "Signed in successfully!",
+    "@signInSuccess": {
+      "description": "Success message for successful sign-in"
+    },
+  "googleSignInConfigError": "Google Sign-In configuration is missing",
+  "@googleSignInConfigError": {
+        "description": "Error message when Google Sign-In WEB_CLIENT_ID is not configured"
+      },
+  "googleSignUpConfigError": "Google Sign-Up configuration error",
+  "@googleSignUpConfigError": {
+          "description": "Error message for missing Google Sign-Up configuration"
+      },
+  "appointmentPayment": "Appointment Payment",
+"paymentRequired": "Payment Required",
+"doctorName": "Doctor: {name}",
+"paymentAutoFillMessage": "Your details will be automatically filled",
+"initializingPayment": "Initializing payment...",
+"paymentInitializationFailed": "Failed to initialize payment",
+"checkPaymentStatus": "Check Status",
+"paymentSuccessful": "Payment Successful!",
+"paymentCompleted": "Payment Completed",
+"paymentSuccessMessage": "Your payment has been processed successfully. You can now join the video consultation.",
+"paymentProcessingMessage": "Your payment is being processed. Please wait a moment.",
+"payNow": "Pay Now",
+"paymentRequiredMessage": "Payment is required before joining the video call",
+"videoLinkPending": "Video link will be available after payment",
+"errorLoadingPaymentData": "Error loading payment information",
+"paymentStillPending": "Payment is still pending",
+"errorCheckingPayment": "Error checking payment status",
+"paid": "Paid",
+"unpaid": "Payment Required",
+"accepted": "Accepted",
+"pending": "Pending",
+"declined": "Declined",
+"unknown": "Unknown",
+"appointmentCompleted": "Appointment completed",
+"waitingForDoctorResponse": "Waiting for doctor's response",
+"appointmentDeclined": "Appointment was declined",
+"myAppointments": "My Appointments",
+"noAppointmentsScheduled": "No appointments scheduled",
+"unknownDoctor": "Unknown Doctor",
+"couldNotLaunchVideoCall": "Could not launch video call",
+"videoLinkNotAvailable": "Video link not available",
+"cancelLabel": "Cancel"
+
+  }
   
   
 

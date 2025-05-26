@@ -1,8 +1,7 @@
 import 'dart:convert';
-
 import 'package:adde/auth/change_password_page.dart';
+import 'package:adde/auth/register_page.dart';
 import 'package:adde/l10n/arb/app_localizations.dart';
-import 'package:adde/pages/welcome_page.dart';
 import 'package:flutter/material.dart';
 import 'package:adde/pages/bottom_page_navigation.dart';
 import 'package:adde/auth/authentication_service.dart';
@@ -11,6 +10,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -30,26 +30,15 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   bool _isLoading = false;
+  String? _lastLocale;
 
   @override
   void initState() {
     super.initState();
-    // Background gradient animation
     _backgroundAnimationController = AnimationController(
       duration: const Duration(seconds: 5),
       vsync: this,
-    )..repeat(reverse: true);
-    _gradientColorAnimation = ColorTween(
-      begin: Colors.blue.withOpacity(0.2),
-      end: Colors.purple.withOpacity(0.2),
-    ).animate(
-      CurvedAnimation(
-        parent: _backgroundAnimationController,
-        curve: Curves.easeInOut,
-      ),
     );
-
-    // Fade animation for loading overlay
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -66,8 +55,29 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   }
 
   @override
-  void didUpdateWidget(LoginPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final theme = Theme.of(context);
+    final currentLocale = Localizations.localeOf(context).languageCode;
+
+    if (_lastLocale != currentLocale) {
+      _lastLocale = currentLocale;
+      setState(() {});
+    }
+
+    if (!_backgroundAnimationController.isAnimating) {
+      _gradientColorAnimation = ColorTween(
+        begin: theme.colorScheme.primary.withOpacity(0.2),
+        end: theme.colorScheme.secondary.withOpacity(0.2),
+      ).animate(
+        CurvedAnimation(
+          parent: _backgroundAnimationController,
+          curve: Curves.easeInOut,
+        ),
+      );
+      _backgroundAnimationController.repeat(reverse: true);
+    }
+
     if (_isLoading) {
       _fadeController.forward();
     } else {
@@ -76,63 +86,94 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   }
 
   Future<void> _saveSession(Session session) async {
-    final prefs = await SharedPreferences.getInstance();
-    final sessionJson = session.toJson();
-    final sessionString = jsonEncode(sessionJson);
-    await prefs.setString('supabase_session', sessionString);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final sessionJson = session.toJson();
+      final sessionString = jsonEncode(sessionJson);
+      await prefs.setString('supabase_session', sessionString);
+      print('Session saved successfully');
+    } catch (e) {
+      print('Error saving session: $e');
+      if (mounted) {
+        _showSnackBar(AppLocalizations.of(context)!.errorLabel(e.toString()));
+      }
+    }
   }
 
   Future<void> _nativeGoogleSignIn() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
-    var webClientId = dotenv.env['WEB_CLIENT_ID']!;
+
     final l10n = AppLocalizations.of(context)!;
+    final webClientId = dotenv.env['WEB_CLIENT_ID'];
+
+    if (webClientId == null || webClientId.isEmpty) {
+      _showSnackBar(l10n.googleSignInConfigError);
+      setState(() => _isLoading = false);
+      return;
+    }
 
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn(
         serverClientId: webClientId,
       );
       final googleUser = await googleSignIn.signIn();
-      if (googleUser == null) throw l10n.googleSignInCancelledError;
+      if (googleUser == null) {
+        throw l10n.googleSignInCancelledError;
+      }
 
       final googleAuth = await googleUser.authentication;
       if (googleAuth.accessToken == null || googleAuth.idToken == null) {
         throw l10n.googleAuthFailedError;
       }
 
-      final response = await supabase.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: googleAuth.idToken!,
-        accessToken: googleAuth.accessToken!,
-      );
+      final response = await supabase.auth
+          .signInWithIdToken(
+            provider: OAuthProvider.google,
+            idToken: googleAuth.idToken!,
+            accessToken: googleAuth.accessToken!,
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.session != null && mounted) {
         await _saveSession(response.session!);
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => BottomPageNavigation(
-                  user_id: response.user!.id,
-                  email: response.user?.email,
-                ),
-            settings: const RouteSettings(name: '/bottom_navigation'),
-          ),
-        );
+        _showSnackBar(l10n.signInSuccess, isSuccess: true);
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => BottomPageNavigation(
+                    user_id: response.user!.id,
+                    email: response.user?.email ?? googleUser.email,
+                  ),
+              settings: const RouteSettings(name: '/bottom_navigation'),
+            ),
+          );
+        }
       } else {
-        _showSnackBar(l10n.googleSignInFailedError);
+        throw l10n.googleSignInFailedError;
       }
     } catch (e) {
-      _showSnackBar(
-        e.toString().contains('cancelled')
-            ? l10n.googleSignInCancelledError
-            : l10n.errorLabel(e.toString()),
-      );
+      print('Google Sign-In error: $e');
+      if (mounted) {
+        _showSnackBar(
+          e.toString().contains('cancelled')
+              ? l10n.googleSignInCancelledError
+              : l10n.errorLabel(e.toString()),
+        );
+      }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   Future<void> _login() async {
+    if (!mounted) return;
+
     final email = userNameController.text.trim();
     final password = passwordController.text.trim();
     final l10n = AppLocalizations.of(context)!;
@@ -151,52 +192,82 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     }
 
     setState(() => _isLoading = true);
+
     try {
-      final response = await authenticationService.signInWithEmailAndPassword(
-        email,
-        password,
-      );
+      final response = await authenticationService
+          .signInWithEmailAndPassword(email, password)
+          .timeout(const Duration(seconds: 10));
+
       if (response.session != null && mounted) {
         await _saveSession(response.session!);
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => BottomPageNavigation(
-                  email: email,
-                  user_id: supabase.auth.currentUser!.id,
-                ),
-            settings: const RouteSettings(name: '/bottom_navigation'),
-          ),
-        );
+        final user = response.user;
+        if (user == null) {
+          throw l10n.loginFailedError;
+        }
+        _showSnackBar(l10n.signInSuccess, isSuccess: true);
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => BottomPageNavigation(
+                    user_id: user.id,
+                    email: user.email ?? email,
+                  ),
+              settings: const RouteSettings(name: '/bottom_navigation'),
+            ),
+          );
+        }
       } else {
-        _showSnackBar(l10n.loginFailedError);
+        throw l10n.loginFailedError;
       }
     } catch (e) {
-      _showSnackBar(l10n.errorLabel(e.toString()));
+      print('Login error: $e');
+      if (mounted) {
+        _showSnackBar(l10n.errorLabel(e.toString()));
+      }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  void _showSnackBar(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            message,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onError,
-            ),
+  void _showSnackBar(String message, {bool isSuccess = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color:
+                isSuccess
+                    ? Colors.white
+                    : Theme.of(context).colorScheme.onError,
           ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          duration: const Duration(seconds: 3),
         ),
-      );
-    }
+        backgroundColor:
+            isSuccess
+                ? Colors.green.shade400
+                : Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        action: SnackBarAction(
+          label: AppLocalizations.of(context)!.retryButton,
+          onPressed: () {
+            if (message.contains('Google')) {
+              _nativeGoogleSignIn();
+            } else {
+              _login();
+            }
+          },
+          textColor:
+              isSuccess ? Colors.white : Theme.of(context).colorScheme.onError,
+        ),
+      ),
+    );
   }
 
   @override
@@ -215,117 +286,137 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     final screenHeight = MediaQuery.of(context).size.height;
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Animated background gradient
-          AnimatedBuilder(
-            animation: _backgroundAnimationController,
-            builder: (context, child) {
-              return Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      _gradientColorAnimation.value ??
-                          theme.colorScheme.primary.withOpacity(0.2),
-                      theme.colorScheme.secondary.withOpacity(0.2),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+    return SafeArea(
+      child: Scaffold(
+        body: Stack(
+          children: [
+            AnimatedBuilder(
+              animation: _backgroundAnimationController,
+              builder: (context, child) {
+                return Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        _gradientColorAnimation.value ??
+                            theme.colorScheme.primary.withOpacity(0.2),
+                        theme.colorScheme.secondary.withOpacity(0.2),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
                   ),
-                ),
-              );
-            },
-          ),
-          SingleChildScrollView(
-            controller: _scrollController,
-            physics: const BouncingScrollPhysics(),
-            child: Center(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  top: screenHeight * 0.08,
-                  bottom: screenHeight * 0.04,
-                ),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 400),
-                  child: Column(
-                    children: [
-                      _buildProfileImage(theme),
-                      SizedBox(height: screenHeight * 0.03),
-                      _buildWelcomeText(theme, l10n),
-                      SizedBox(height: screenHeight * 0.03),
-                      _buildInputField(
-                        userNameController,
-                        l10n.emailLabel,
-                        true,
-                        0,
-                      ),
-                      SizedBox(height: screenHeight * 0.02),
-                      _buildInputField(
-                        passwordController,
-                        l10n.passwordLabel,
-                        true,
-                        1,
-                      ),
-                      SizedBox(height: screenHeight * 0.015),
-                      _buildForgetPasswordLink(theme, l10n),
-                      SizedBox(height: screenHeight * 0.015),
-                      _buildLoginButton(theme, l10n),
-                      SizedBox(height: screenHeight * 0.02),
-                      _buildRegisterLink(theme, l10n),
-                      SizedBox(height: screenHeight * 0.06),
-                      _buildGoogleSignInButton(theme, l10n),
-                      SizedBox(height: screenHeight * 0.08),
-                    ],
+                );
+              },
+            ),
+            SingleChildScrollView(
+              controller: _scrollController,
+              physics: const BouncingScrollPhysics(),
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    top: screenHeight * 0.06,
+                    bottom: screenHeight * 0.04,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    child: Column(
+                      children: [
+                        _buildProfileImage(theme).animate().scale(
+                          duration: 600.ms,
+                          curve: Curves.easeOutBack,
+                        ),
+                        SizedBox(height: screenHeight * 0.03),
+                        _buildWelcomeText(
+                          theme,
+                          l10n,
+                        ).animate().fadeIn(duration: 500.ms),
+                        SizedBox(height: screenHeight * 0.03),
+                        _buildInputField(
+                          userNameController,
+                          l10n.emailLabel,
+                          false,
+                          0,
+                        ).animate().slideY(
+                          begin: 0.2,
+                          end: 0,
+                          duration: 500.ms,
+                          delay: 100.ms,
+                        ),
+                        SizedBox(height: screenHeight * 0.02),
+                        _buildInputField(
+                          passwordController,
+                          l10n.passwordLabel,
+                          true,
+                          1,
+                        ).animate().slideY(
+                          begin: 0.2,
+                          end: 0,
+                          duration: 500.ms,
+                          delay: 200.ms,
+                        ),
+                        SizedBox(height: screenHeight * 0.02),
+                        _buildForgetPasswordLink(
+                          theme,
+                          l10n,
+                        ).animate().fadeIn(duration: 500.ms, delay: 300.ms),
+                        SizedBox(height: screenHeight * 0.03),
+                        _buildLoginButton(
+                          theme,
+                          l10n,
+                        ).animate().scale(duration: 500.ms, delay: 400.ms),
+                        SizedBox(height: screenHeight * 0.02),
+                        _buildRegisterLink(
+                          theme,
+                          l10n,
+                        ).animate().fadeIn(duration: 500.ms, delay: 500.ms),
+                        SizedBox(height: screenHeight * 0.06),
+                        _buildGoogleSignInButton(
+                          theme,
+                          l10n,
+                        ).animate().scale(duration: 500.ms, delay: 600.ms),
+                        SizedBox(height: screenHeight * 0.04),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          if (_isLoading)
-            FadeTransition(
-              opacity: _fadeAnimation,
-              child: Container(
-                color: theme.colorScheme.shadow.withOpacity(0.3),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: theme.colorScheme.primary,
-                    strokeWidth: 5,
+            if (_isLoading)
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: Container(
+                  color: theme.colorScheme.shadow.withOpacity(0.3),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: theme.colorScheme.primary,
+                      strokeWidth: 5,
+                    ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildProfileImage(ThemeData theme) {
-    return AnimatedScale(
-      scale: 1.0,
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeOutBack,
-      child: AnimatedOpacity(
-        opacity: 1.0,
-        duration: const Duration(milliseconds: 600),
-        child: Container(
-          height: 120,
-          width: 120,
-          decoration: BoxDecoration(
-            image: const DecorationImage(
-              image: AssetImage("assets/profile.png"),
-              fit: BoxFit.cover,
-            ),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.shadow.withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
+    return Container(
+      height: 120,
+      width: 120,
+      decoration: BoxDecoration(
+        image: const DecorationImage(
+          image: AssetImage("assets/user.png"),
+          fit: BoxFit.cover,
         ),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
     );
   }
@@ -333,38 +424,20 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   Widget _buildWelcomeText(ThemeData theme, AppLocalizations l10n) {
     return Column(
       children: [
-        AnimatedOpacity(
-          opacity: 1.0,
-          duration: const Duration(milliseconds: 500),
-          child: AnimatedSlide(
-            offset: const Offset(0, 0),
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeOut,
-            child: Text(
-              l10n.welcomeBack,
-              style: theme.textTheme.displayMedium?.copyWith(
-                color: theme.colorScheme.onSurface,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+        Text(
+          l10n.welcomeBack,
+          style: theme.textTheme.displayMedium?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 10),
-        AnimatedOpacity(
-          opacity: 1.0,
-          duration: const Duration(milliseconds: 500),
-          child: AnimatedSlide(
-            offset: const Offset(0, 0),
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeOut,
-            child: Text(
-              l10n.appName,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
+        const SizedBox(height: 8),
+        Text(
+          l10n.assistMessage,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
           ),
+          textAlign: TextAlign.center,
         ),
       ],
     );
@@ -376,20 +449,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     bool obscure,
     int index,
   ) {
-    return AnimatedOpacity(
-      opacity: 1.0,
-      duration: Duration(milliseconds: 500 + index * 100),
-      child: AnimatedSlide(
-        offset: const Offset(0, 0),
-        duration: Duration(milliseconds: 500 + index * 100),
-        curve: Curves.easeOut,
-        child: InputFiled(
-          controller: controller,
-          hintText: hintText,
-          obscure: obscure,
-          email: hintText == AppLocalizations.of(context)!.emailLabel,
-        ),
-      ),
+    return InputFiled(
+      controller: controller,
+      hintText: hintText,
+      obscure: obscure,
+      email: hintText == AppLocalizations.of(context)!.emailLabel,
     );
   }
 
@@ -407,15 +471,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   settings: const RouteSettings(name: '/change_password'),
                 ),
               ),
-          child: AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 200),
-            style:
-                theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.primary,
-                ) ??
-                const TextStyle(),
-            child: Text(l10n.forgetPassword),
+          child: Text(
+            l10n.forgetPassword,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.primary,
+            ),
           ),
         ),
       ),
@@ -425,31 +486,30 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   Widget _buildLoginButton(ThemeData theme, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: AnimatedScale(
-        scale: _isLoading ? 0.95 : 1.0,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        child: ElevatedButton(
-          onPressed: _isLoading ? null : _login,
-          style: theme.elevatedButtonTheme.style?.copyWith(
-            minimumSize: const WidgetStatePropertyAll(
-              Size(double.infinity, 50),
-            ),
-            elevation: WidgetStateProperty.resolveWith<double>(
-              (states) => states.contains(WidgetState.pressed) ? 2 : 8,
-            ),
-            shadowColor: WidgetStatePropertyAll(
-              theme.colorScheme.shadow.withOpacity(0.3),
-            ),
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _login,
+        style: theme.elevatedButtonTheme.style?.copyWith(
+          minimumSize: const WidgetStatePropertyAll(Size(double.infinity, 50)),
+          elevation: WidgetStateProperty.resolveWith<double>(
+            (states) => states.contains(WidgetState.pressed) ? 2 : 8,
           ),
-          child: Text(
-            l10n.logIn,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onPrimary,
-            ),
+          shadowColor: WidgetStatePropertyAll(
+            theme.colorScheme.shadow.withOpacity(0.3),
           ),
         ),
+        child:
+            _isLoading
+                ? CircularProgressIndicator(
+                  color: theme.colorScheme.onPrimary,
+                  strokeWidth: 4,
+                )
+                : Text(
+                  l10n.logIn,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onPrimary,
+                  ),
+                ),
       ),
     );
   }
@@ -469,19 +529,16 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const WelcomePage(),
-                  settings: const RouteSettings(name: '/welcome'),
+                  builder: (context) => const RegisterPage(),
+                  settings: const RouteSettings(name: '/register'),
                 ),
               ),
-          child: AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 200),
-            style:
-                theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.primary,
-                ) ??
-                const TextStyle(),
-            child: Text(l10n.register),
+          child: Text(
+            l10n.register,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.primary,
+            ),
           ),
         ),
       ],
@@ -491,44 +548,35 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   Widget _buildGoogleSignInButton(ThemeData theme, AppLocalizations l10n) {
     return GestureDetector(
       onTap: _isLoading ? null : _nativeGoogleSignIn,
-      child: AnimatedScale(
-        scale: _isLoading ? 0.95 : 1.0,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        child: Container(
-          width: 225,
-          decoration: BoxDecoration(
-            border: Border.all(width: 1, color: theme.colorScheme.outline),
-            borderRadius: BorderRadius.circular(10),
-            color: theme.colorScheme.surfaceContainerHighest,
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.shadow.withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
+      child: Container(
+        width: 225,
+        decoration: BoxDecoration(
+          border: Border.all(width: 1, color: theme.colorScheme.outline),
+          borderRadius: BorderRadius.circular(10),
+          color: theme.colorScheme.surfaceContainerHighest,
+          boxShadow: [
+            BoxShadow(
+              color: theme.colorScheme.shadow.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset("assets/google.png", width: 24),
+              const SizedBox(width: 10),
+              Text(
+                l10n.signInWithGoogle,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
             ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedOpacity(
-                  opacity: 1.0,
-                  duration: const Duration(milliseconds: 500),
-                  child: Image.asset("assets/google.png", width: 24),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  l10n.signInWithGoogle,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ),
