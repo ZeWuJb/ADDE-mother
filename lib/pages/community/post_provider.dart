@@ -236,55 +236,41 @@ class PostProvider with ChangeNotifier {
     }
   }
 
-  Future<void> likePost(String postId, String motherId, bool like) async {
+  Future<void> likePost(String postId, String motherId, bool isLiked) async {
     try {
-      if (like) {
-        await Supabase.instance.client.from('likes').insert({
-          'post_id': postId,
-          'mother_id': motherId,
-        });
-      } else {
+      print(
+        'Toggling like for post ID: $postId, isLiked: $isLiked, motherId: $motherId',
+      );
+      if (isLiked) {
         await Supabase.instance.client
             .from('likes')
             .delete()
             .eq('post_id', postId)
             .eq('mother_id', motherId);
+        await Supabase.instance.client.rpc(
+          'decrement_likes',
+          params: {'row_id': postId},
+        );
+      } else {
+        await Supabase.instance.client.from('likes').insert({
+          'post_id': postId,
+          'mother_id': motherId,
+        });
+        await Supabase.instance.client.rpc(
+          'increment_likes',
+          params: {'row_id': postId},
+        );
       }
-
-      // Fetch updated post to get new likes_count and verify isLiked
-      final response =
-          await Supabase.instance.client
-              .from('posts')
-              .select(
-                '*, mothers!posts_mother_id_fkey(full_name, profile_url), likes!likes_post_id_fkey(mother_id)',
-              )
-              .eq('id', postId)
-              .single();
-
-      final isLiked =
-          (response['likes'] as List<dynamic>?)?.any(
-            (like) => like['mother_id'] == motherId,
-          ) ??
-          false;
 
       final index = _posts.indexWhere((post) => post.id == postId);
       if (index != -1) {
-        _posts[index] = Post.fromMap(response, _posts[index].fullName)
-          ..isLiked = isLiked;
-        // Re-sort posts based on engagement
-        _posts.sort((a, b) {
-          final aEngagement = a.likesCount + a.commentCount;
-          final bEngagement = b.likesCount + b.commentCount;
-          return bEngagement.compareTo(aEngagement);
-        });
+        _posts[index].isLiked = !isLiked;
+        _posts[index].likesCount += isLiked ? -1 : 1;
         notifyListeners();
       }
-      print(
-        'Liked/unliked post $postId by $motherId, new likes: ${response['likes_count']}, comments: ${response['comment_count']}, isLiked: $isLiked',
-      );
     } catch (e) {
-      print('Error liking/unliking post: $e');
-      throw Exception('Failed to like/unlike post: $e');
+      print('Error toggling like: $e');
+      rethrow;
     }
   }
 

@@ -22,7 +22,7 @@ class ChatProvider with ChangeNotifier {
             'and(sender_id.eq.$currentMotherId,receiver_id.eq.$otherMotherId),'
             'and(sender_id.eq.$otherMotherId,receiver_id.eq.$currentMotherId)',
           )
-          .order('created_at', ascending: true);
+          .order('created_at', ascending: false);
 
       _messages = response.map<Message>((map) => Message.fromMap(map)).toList();
       notifyListeners();
