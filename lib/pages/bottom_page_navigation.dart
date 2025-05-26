@@ -1,10 +1,12 @@
-import 'package:adde/l10n/arb/app_localizations.dart'; // Import AppLocalizations
+import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:adde/pages/appointmentPages/doctors_page.dart';
 import 'package:adde/pages/community/community_screen.dart';
-import 'package:flutter/material.dart';
-import 'package:adde/pages/home_screen.dart';
 import 'package:adde/pages/education/Education_page.dart';
+import 'package:adde/pages/home_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_nav_bar/google_nav_bar.dart';
 
 class BottomPageNavigation extends StatefulWidget {
   final String? email;
@@ -20,9 +22,9 @@ class BottomPageNavigation extends StatefulWidget {
   State<BottomPageNavigation> createState() => _BottomPageNavigationState();
 }
 
-class _BottomPageNavigationState extends State<BottomPageNavigation> {
+class _BottomPageNavigationState extends State<BottomPageNavigation>
+    with TickerProviderStateMixin {
   int _selectedIndex = 0;
-
   DateTime? pregnancyStartDate;
   String? fullName;
   String? gender;
@@ -32,7 +34,6 @@ class _BottomPageNavigationState extends State<BottomPageNavigation> {
   String? weightUnit;
   String? bloodPressure;
   List<String>? healthConditions;
-
   bool isLoading = true;
 
   @override
@@ -47,7 +48,7 @@ class _BottomPageNavigationState extends State<BottomPageNavigation> {
         throw Exception("Email is null, cannot fetch mother info.");
       }
 
-      print("Fetching data for email: ${widget.email}"); // Debug log
+      print("Fetching data for email: ${widget.email}");
       final response =
           await Supabase.instance.client
               .from('mothers')
@@ -56,7 +57,7 @@ class _BottomPageNavigationState extends State<BottomPageNavigation> {
               .limit(1)
               .single();
 
-      print("Supabase response: $response"); // Debug log
+      print("Supabase response: $response");
 
       setState(() {
         fullName = response['full_name'] as String? ?? 'Unknown';
@@ -85,25 +86,40 @@ class _BottomPageNavigationState extends State<BottomPageNavigation> {
         isLoading = false;
       });
     } catch (error) {
-      print("Error fetching mother info: $error"); // Debug log
+      print("Error fetching mother info: $error");
+      setState(() {
+        isLoading = false;
+      });
       showSnackBar(
         AppLocalizations.of(context)!.errorLoadingData(error.toString()),
+        retry: () => fetchMotherInfo(),
       );
     }
   }
 
-  void showSnackBar(String message) {
+  void showSnackBar(String message, {VoidCallback? retry}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: TextStyle(color: Theme.of(context).colorScheme.onError),
-        ),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Theme.of(context).colorScheme.error,
-        margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
+            content: Text(
+              message,
+              style: TextStyle(color: Theme.of(context).colorScheme.onError),
+            ),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Theme.of(context).colorScheme.error,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            action:
+                retry != null
+                    ? SnackBarAction(
+                      label: AppLocalizations.of(context)!.retryButton,
+                      onPressed: retry,
+                      textColor: Theme.of(context).colorScheme.onError,
+                    )
+                    : null,
+          ).animate().fadeIn(duration: 200.ms)
+          as SnackBar,
     );
   }
 
@@ -115,14 +131,17 @@ class _BottomPageNavigationState extends State<BottomPageNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!; // Access AppLocalizations
+    final l10n = AppLocalizations.of(context)!;
 
-    List<Widget> pages = [
+    final pages = [
       isLoading
           ? Center(
             child: CircularProgressIndicator(
-              color: Theme.of(context).colorScheme.primary,
-            ),
+                  color: Theme.of(context).colorScheme.primary,
+                )
+                .animate()
+                .fadeIn(duration: 250.ms)
+                .scale(curve: Curves.easeOutQuad),
           )
           : (fullName != null &&
               weight != null &&
@@ -138,80 +157,196 @@ class _BottomPageNavigationState extends State<BottomPageNavigation> {
             pregnancyStartDate: pregnancyStartDate!,
           )
           : Center(
-            child: Text(
-              l10n.failedToLoadUserData, // Localized error message
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 16,
-              ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  l10n.failedToLoadUserData,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 16,
+                  ),
+                ).animate().fadeIn(duration: 300.ms, curve: Curves.easeOut),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: fetchMotherInfo,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(l10n.retryButton),
+                ).animate().scale(duration: 300.ms, curve: Curves.easeOutQuad),
+              ],
             ),
           ),
       const CommunityScreen(),
       const EducationPage(),
-      const DoctorsPage(), // Localized placeholder
+      const DoctorsPage(),
     ];
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Stack(
         children: [
-          // Gradient Background
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                    Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.2),
                     Theme.of(context).colorScheme.surface,
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
               ),
+            ).animate().fadeIn(duration: 400.ms, curve: Curves.easeOut),
+          ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            transitionBuilder:
+                (child, animation) =>
+                    FadeTransition(opacity: animation, child: child),
+            child: IndexedStack(
+              key: ValueKey<int>(_selectedIndex),
+              index: _selectedIndex,
+              children: pages,
             ),
           ),
-          // Main Content
-          pages[_selectedIndex],
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
-        showUnselectedLabels: true,
-        type: BottomNavigationBarType.fixed,
-        elevation: Theme.of(context).bottomNavigationBarTheme.elevation ?? 8,
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        selectedLabelStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.primary,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 20,
+              color: Colors.black.withValues(alpha: 0.1),
+            ),
+          ],
         ),
-        unselectedLabelStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 8),
+            child: GNav(
+              rippleColor: Colors.grey[800]!,
+              hoverColor: Colors.grey[700]!,
+              haptic: true,
+              tabBorderRadius: 15,
+              tabActiveBorder: Border.all(
+                color: Theme.of(context).colorScheme.primary,
+                width: 1,
+              ),
+              tabBorder: Border.all(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                width: 1,
+              ),
+              tabShadow: [
+                BoxShadow(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.1),
+                  blurRadius: 8,
+                ),
+              ],
+              curve: Curves.easeOutExpo,
+              duration: const Duration(milliseconds: 900),
+              gap: 8,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              activeColor: Theme.of(context).colorScheme.primary,
+              iconSize: 24,
+              tabBackgroundColor: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.1),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              selectedIndex: _selectedIndex,
+              onTabChange: _onItemTapped,
+              tabs: [
+                GButton(
+                  icon: _selectedIndex == 0 ? Icons.home : Icons.home_outlined,
+                  iconActiveColor:
+                      _selectedIndex == 0
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.primary,
+                  textColor:
+                      _selectedIndex == 0
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.primary,
+                  backgroundColor:
+                      _selectedIndex == 0
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onPrimary,
+                  text: l10n.bottomNavHome,
+                ),
+                GButton(
+                  icon:
+                      _selectedIndex == 1 ? Icons.people : Icons.people_outline,
+                  iconActiveColor:
+                      _selectedIndex == 1
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.primary,
+                  textColor:
+                      _selectedIndex == 1
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.primary,
+                  backgroundColor:
+                      _selectedIndex == 1
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onPrimary,
+                  text: l10n.bottomNavCommunity,
+                ),
+                GButton(
+                  icon:
+                      _selectedIndex == 2
+                          ? Icons.menu_book
+                          : Icons.menu_book_outlined,
+                  iconActiveColor:
+                      _selectedIndex == 2
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.primary,
+                  textColor:
+                      _selectedIndex == 2
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.primary,
+                  backgroundColor:
+                      _selectedIndex == 2
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onPrimary,
+                  text: l10n.bottomNavEducation,
+                ),
+                GButton(
+                  icon:
+                      _selectedIndex == 3
+                          ? Icons.video_call
+                          : Icons.video_call_outlined,
+                  iconActiveColor:
+                      _selectedIndex == 3
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.primary,
+                  textColor:
+                      _selectedIndex == 3
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.primary,
+                  backgroundColor:
+                      _selectedIndex == 3
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onPrimary,
+                  text: l10n.bottomNavConsult,
+                ),
+              ],
+            ),
+          ),
         ),
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home_outlined),
-            activeIcon: const Icon(Icons.home),
-            label: l10n.bottomNavHome, // Localized label
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.people_outline),
-            activeIcon: const Icon(Icons.people),
-            label: l10n.bottomNavCommunity, // Localized label
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.menu_book_outlined),
-            activeIcon: const Icon(Icons.menu_book),
-            label: l10n.bottomNavEducation, // Localized label
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.video_call_outlined),
-            activeIcon: const Icon(Icons.video_call),
-            label: l10n.bottomNavConsult, // Localized label
-          ),
-        ],
+      ).animate().slideY(
+        begin: 0.1,
+        end: 0,
+        duration: 300.ms,
+        curve: Curves.easeOutQuad,
       ),
     );
   }

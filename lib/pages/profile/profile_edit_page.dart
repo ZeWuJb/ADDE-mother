@@ -1,10 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:adde/l10n/arb/app_localizations.dart';
-import 'package:adde/theme/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
@@ -17,7 +15,8 @@ class ProfileEditPage extends StatefulWidget {
   _ProfileEditPageState createState() => _ProfileEditPageState();
 }
 
-class _ProfileEditPageState extends State<ProfileEditPage> {
+class _ProfileEditPageState extends State<ProfileEditPage>
+    with SingleTickerProviderStateMixin {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController ageController = TextEditingController();
   final TextEditingController weightController = TextEditingController();
@@ -40,25 +39,40 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     "thyroidIssues",
     "other",
   ];
-  final List<String> genderOptions = [
-    "female",
-    "male",
-    "other",
-  ]; // For dropdown
-
+  final List<String> genderOptions = ["female", "male", "other"];
   final supabase = Supabase.instance.client;
   final _picker = ImagePicker();
   bool _isLoading = false;
-  bool _isImageLoading = false; // Separate loading state for image picking
-  final _formKey = GlobalKey<FormState>(); // For form validation
+  bool _isImageLoading = false;
+  final _formKey = GlobalKey<FormState>();
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _shakeAnimation;
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.2),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+    _shakeAnimation = Tween<double>(begin: 0, end: 10).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.elasticIn),
+    );
+    _animationController.forward();
     _loadProfileData();
   }
 
-  // Add this helper method inside _ProfileEditPageState
   String _getLocalizedGender(String gender, AppLocalizations l10n) {
     switch (gender) {
       case 'female':
@@ -68,7 +82,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       case 'other':
         return l10n.genderOther;
       default:
-        return l10n.genderFemale; // Fallback to "Female"
+        return l10n.genderFemale;
     }
   }
 
@@ -90,21 +104,20 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
           weightController.text = response['weight']?.toString() ?? '';
           heightController.text = response['height']?.toString() ?? '';
           bloodPressureController.text = response['blood_pressure'] ?? '';
-          healthInfoController.text =
-              response['health_info'] ?? ''; // Load additional health info
+          healthInfoController.text = response['health_info'] ?? '';
           profileImageBase64 = response['profile_url'];
           selectedGender =
               genderOptions.contains(response['gender'])
                   ? response['gender']
-                  : "female"; // Default to "female" if invalid
+                  : "female";
           selectedWeightUnit =
               ["kg", "lbs"].contains(response['weight_unit'])
                   ? response['weight_unit']
-                  : "kg"; // Default to "kg" if invalid
+                  : "kg";
           selectedHeightUnit =
               ["cm", "ft"].contains(response['height_unit'])
                   ? response['height_unit']
-                  : "cm"; // Default to "cm" if invalid
+                  : "cm";
           pregnancyStartDate = DateTime.tryParse(
             response['pregnancy_start_date'] ?? '',
           );
@@ -132,7 +145,14 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         SnackBar(
           content: Text(
             AppLocalizations.of(context)!.failedToLoadProfile(e.toString()),
+            style: TextStyle(color: Theme.of(context).colorScheme.onError),
           ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          margin: const EdgeInsets.all(16),
         ),
       );
     } finally {
@@ -142,7 +162,8 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
   Future<void> _updateProfile() async {
     if (!_formKey.currentState!.validate()) {
-      return; // Stop if form validation fails
+      _animationController.forward(from: 0); // Trigger shake animation
+      return;
     }
 
     setState(() => _isLoading = true);
@@ -169,7 +190,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                 ? DateFormat('yyyy-MM-dd').format(pregnancyStartDate!)
                 : null,
         'health_conditions': selectedHealthConditions,
-        'health_info': healthInfoController.text, // Save additional health info
+        'health_info': healthInfoController.text,
       };
 
       await supabase.from('mothers').upsert(updates);
@@ -177,14 +198,21 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         SnackBar(
           content: Text(
             AppLocalizations.of(context)!.profileUpdatedSuccessfully,
+            style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
           ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          margin: const EdgeInsets.all(16),
         ),
       );
       Navigator.pop(context);
     } catch (e) {
       String errorMessage;
       if (e is PostgrestException) {
-        errorMessage = e.message; // More specific error from Supabase
+        errorMessage = e.message;
       } else if (e.toString().contains('network')) {
         errorMessage = 'Network error: Please check your internet connection.';
       } else {
@@ -194,7 +222,14 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         SnackBar(
           content: Text(
             AppLocalizations.of(context)!.failedToUpdateProfile(errorMessage),
+            style: TextStyle(color: Theme.of(context).colorScheme.onError),
           ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          margin: const EdgeInsets.all(16),
         ),
       );
     } finally {
@@ -206,7 +241,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     PermissionStatus status;
     final l10n = AppLocalizations.of(context)!;
 
-    setState(() => _isImageLoading = true); // Show loading for image picking
+    setState(() => _isImageLoading = true);
 
     try {
       if (source == ImageSource.camera) {
@@ -228,7 +263,14 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
               source == ImageSource.camera
                   ? l10n.cameraPermissionDenied
                   : l10n.galleryPermissionDenied,
+              style: TextStyle(color: Theme.of(context).colorScheme.onError),
             ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            margin: const EdgeInsets.all(16),
           ),
         );
         if (status.isPermanentlyDenied) openAppSettings();
@@ -237,7 +279,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
       final pickedImage = await _picker.pickImage(
         source: source,
-        maxHeight: 300, // Consider moving to theme or constant
+        maxHeight: 300,
         maxWidth: 300,
       );
       if (pickedImage == null) return;
@@ -245,9 +287,20 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       final file = File(pickedImage.path);
       final bytes = await file.readAsBytes();
       if (bytes.length > 500 * 1024) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.imageTooLarge)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              l10n.imageTooLarge,
+              style: TextStyle(color: Theme.of(context).colorScheme.onError),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
         return;
       }
 
@@ -261,7 +314,18 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         errorMessage = 'Camera is not available on this device.';
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.errorPickingImage(errorMessage))),
+        SnackBar(
+          content: Text(
+            l10n.errorPickingImage(errorMessage),
+            style: TextStyle(color: Theme.of(context).colorScheme.onError),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          margin: const EdgeInsets.all(16),
+        ),
       );
     } finally {
       setState(() => _isImageLoading = false);
@@ -296,7 +360,10 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
               surface: Theme.of(context).colorScheme.surface,
               onSurface: Theme.of(context).colorScheme.onSurface,
             ),
-            dialogTheme: DialogThemeData(
+            dialogTheme: DialogTheme(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               backgroundColor: Theme.of(context).colorScheme.surface,
             ),
           ),
@@ -314,17 +381,18 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final email = supabase.auth.currentUser?.email ?? '';
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final email = supabase.auth.currentUser?.email ?? '';
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.editProfileTitle),
+        title: Text(
+          l10n.editProfileTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
-        elevation: Theme.of(context).appBarTheme.elevation,
-        titleTextStyle: Theme.of(context).appBarTheme.titleTextStyle,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -336,750 +404,958 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       body:
           _isLoading
               ? Center(
-                child: CircularProgressIndicator(
-                  color: Theme.of(context).colorScheme.primary,
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: CircularProgressIndicator(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               )
-              : Stack(
-                children: [
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors:
-                              isDarkMode
-                                  ? [
-                                    Theme.of(context).colorScheme.surface,
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.surfaceContainerHighest,
-                                  ]
-                                  : [
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.primary.withOpacity(0.2),
-                                    Theme.of(context).colorScheme.surface,
-                                  ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
+              : FadeTransition(
+                opacity: _fadeAnimation,
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors:
+                                isDarkMode
+                                    ? [
+                                      Theme.of(context).colorScheme.surface,
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
+                                    ]
+                                    : [
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.primary.withOpacity(0.2),
+                                      Theme.of(context).colorScheme.surface,
+                                    ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  SingleChildScrollView(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Center(
-                            child: Stack(
-                              alignment: Alignment.center,
+                    SingleChildScrollView(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Form(
+                        key: _formKey,
+                        child: Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    showModalBottomSheet(
-                                      context: context,
-                                      builder:
-                                          (context) => Wrap(
+                                Center(
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () {
+                                          showModalBottomSheet(
+                                            context: context,
+                                            shape: const RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.vertical(
+                                                    top: Radius.circular(12),
+                                                  ),
+                                            ),
+                                            builder:
+                                                (context) => SlideTransition(
+                                                  position: Tween<Offset>(
+                                                    begin: const Offset(0, 1),
+                                                    end: Offset.zero,
+                                                  ).animate(
+                                                    CurvedAnimation(
+                                                      parent:
+                                                          _animationController,
+                                                      curve: Curves.easeOut,
+                                                    ),
+                                                  ),
+                                                  child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      ListTile(
+                                                        leading: Icon(
+                                                          Icons.photo_library,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .primary,
+                                                        ),
+                                                        title: Text(
+                                                          l10n.chooseFromGallery,
+                                                          style: Theme.of(
+                                                                context,
+                                                              )
+                                                              .textTheme
+                                                              .bodyMedium
+                                                              ?.copyWith(
+                                                                color:
+                                                                    Theme.of(
+                                                                          context,
+                                                                        )
+                                                                        .colorScheme
+                                                                        .onSurface,
+                                                              ),
+                                                        ),
+                                                        onTap: () {
+                                                          Navigator.pop(
+                                                            context,
+                                                          );
+                                                          pickImage(
+                                                            ImageSource.gallery,
+                                                          );
+                                                        },
+                                                      ),
+                                                      ListTile(
+                                                        leading: Icon(
+                                                          Icons.camera_alt,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .primary,
+                                                        ),
+                                                        title: Text(
+                                                          l10n.takePhoto,
+                                                          style: Theme.of(
+                                                                context,
+                                                              )
+                                                              .textTheme
+                                                              .bodyMedium
+                                                              ?.copyWith(
+                                                                color:
+                                                                    Theme.of(
+                                                                          context,
+                                                                        )
+                                                                        .colorScheme
+                                                                        .onSurface,
+                                                              ),
+                                                        ),
+                                                        onTap: () {
+                                                          Navigator.pop(
+                                                            context,
+                                                          );
+                                                          pickImage(
+                                                            ImageSource.camera,
+                                                          );
+                                                        },
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                          );
+                                        },
+                                        child: Hero(
+                                          tag: 'profile-image',
+                                          child: Stack(
+                                            alignment: Alignment.bottomRight,
                                             children: [
-                                              ListTile(
-                                                leading: Icon(
-                                                  Icons.photo_library,
-                                                  color:
-                                                      Theme.of(
-                                                        context,
-                                                      ).colorScheme.primary,
-                                                ),
-                                                title: Text(
-                                                  l10n.chooseFromGallery,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyMedium
-                                                      ?.copyWith(
-                                                        color:
-                                                            Theme.of(context)
-                                                                .colorScheme
-                                                                .onSurface,
-                                                      ),
-                                                ),
-                                                onTap: () {
-                                                  Navigator.pop(context);
-                                                  pickImage(
-                                                    ImageSource.gallery,
-                                                  );
-                                                },
+                                              CircleAvatar(
+                                                radius: 70,
+                                                backgroundImage:
+                                                    profileImageBase64 != null
+                                                        ? MemoryImage(
+                                                          base64Decode(
+                                                            profileImageBase64!,
+                                                          ),
+                                                        )
+                                                        : const AssetImage(
+                                                              'assets/user.png',
+                                                            )
+                                                            as ImageProvider,
+                                                backgroundColor:
+                                                    Theme.of(
+                                                      context,
+                                                    ).colorScheme.surface,
+                                                child:
+                                                    profileImageBase64 == null
+                                                        ? Icon(
+                                                          Icons.person,
+                                                          size: 80,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .onSurfaceVariant,
+                                                        )
+                                                        : null,
                                               ),
-                                              ListTile(
-                                                leading: Icon(
-                                                  Icons.camera_alt,
+                                              Container(
+                                                padding: const EdgeInsets.all(
+                                                  6,
+                                                ),
+                                                decoration: BoxDecoration(
                                                   color:
                                                       Theme.of(
                                                         context,
                                                       ).colorScheme.primary,
+                                                  shape: BoxShape.circle,
                                                 ),
-                                                title: Text(
-                                                  l10n.takePhoto,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyMedium
-                                                      ?.copyWith(
-                                                        color:
-                                                            Theme.of(context)
-                                                                .colorScheme
-                                                                .onSurface,
-                                                      ),
+                                                child: Icon(
+                                                  Icons.edit,
+                                                  color:
+                                                      Theme.of(
+                                                        context,
+                                                      ).colorScheme.onPrimary,
+                                                  size: 20,
                                                 ),
-                                                onTap: () {
-                                                  Navigator.pop(context);
-                                                  pickImage(ImageSource.camera);
-                                                },
                                               ),
                                             ],
                                           ),
-                                    );
-                                  },
-                                  child: Stack(
-                                    alignment: Alignment.bottomRight,
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 70,
-                                        backgroundImage:
-                                            profileImageBase64 != null
-                                                ? MemoryImage(
-                                                  base64Decode(
-                                                    profileImageBase64!,
-                                                  ),
-                                                )
-                                                : const AssetImage(
-                                                      'assets/user.png',
-                                                    )
-                                                    as ImageProvider,
-                                        backgroundColor:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.surface,
-                                        child:
-                                            profileImageBase64 == null
-                                                ? Icon(
-                                                  Icons.person,
-                                                  size: 80,
-                                                  color:
-                                                      Theme.of(context)
-                                                          .colorScheme
-                                                          .onSurfaceVariant,
-                                                )
-                                                : null,
+                                        ),
                                       ),
-                                      Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
+                                      if (_isImageLoading)
+                                        CircularProgressIndicator(
                                           color:
                                               Theme.of(
                                                 context,
                                               ).colorScheme.primary,
-                                          shape: BoxShape.circle,
                                         ),
-                                        child: Icon(
-                                          Icons.edit,
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.onPrimary,
-                                          size: 20,
-                                        ),
-                                      ),
                                     ],
                                   ),
                                 ),
-                                if (_isImageLoading)
-                                  CircularProgressIndicator(
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Center(
-                            child: Text(
-                              email,
-                              style: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium?.copyWith(
-                                color:
-                                    Theme.of(
+                                const SizedBox(height: 12),
+                                Center(
+                                  child: Text(
+                                    email,
+                                    style: Theme.of(
                                       context,
-                                    ).colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            l10n.personalInformation,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.titleLarge?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          TextFormField(
-                            controller: nameController,
-                            decoration: InputDecoration(
-                              labelText: l10n.fullNameLabel,
-                              border:
-                                  Theme.of(context).inputDecorationTheme.border,
-                              focusedBorder:
-                                  Theme.of(
-                                    context,
-                                  ).inputDecorationTheme.focusedBorder,
-                              filled: true,
-                              fillColor:
-                                  Theme.of(
-                                    context,
-                                  ).inputDecorationTheme.fillColor,
-                              labelStyle: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium?.copyWith(
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
-                              ),
-                              prefixIcon: Icon(
-                                Icons.person,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter your full name';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 15),
-                          DropdownButtonFormField<String>(
-                            value: selectedGender,
-                            items:
-                                genderOptions.map((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(
-                                      _getLocalizedGender(
-                                        value,
-                                        l10n,
-                                      ), // Use the helper method
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium?.copyWith(
-                                        color:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.onSurface,
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                            onChanged:
-                                (newValue) =>
-                                    setState(() => selectedGender = newValue!),
-                            decoration: InputDecoration(
-                              labelText:
-                                  l10n.genderLabel, // Add a new localized label (to be added to lang_en.arb)
-                              border:
-                                  Theme.of(context).inputDecorationTheme.border,
-                              focusedBorder:
-                                  Theme.of(
-                                    context,
-                                  ).inputDecorationTheme.focusedBorder,
-                              filled: true,
-                              fillColor:
-                                  Theme.of(
-                                    context,
-                                  ).inputDecorationTheme.fillColor,
-                              labelStyle: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium?.copyWith(
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
-                              ),
-                              prefixIcon: Icon(
-                                Icons.person,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null) {
-                                return l10n
-                                    .genderSelectionError; // Add a new localized error message (to be added to lang_en.arb)
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 15),
-                          TextFormField(
-                            controller: ageController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: l10n.ageLabel,
-                              border:
-                                  Theme.of(context).inputDecorationTheme.border,
-                              focusedBorder:
-                                  Theme.of(
-                                    context,
-                                  ).inputDecorationTheme.focusedBorder,
-                              filled: true,
-                              fillColor:
-                                  Theme.of(
-                                    context,
-                                  ).inputDecorationTheme.fillColor,
-                              labelStyle: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium?.copyWith(
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
-                              ),
-                              prefixIcon: Icon(
-                                Icons.calendar_today,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter your age';
-                              }
-                              final age = int.tryParse(value);
-                              if (age == null || age < 0 || age > 120) {
-                                return 'Please enter a valid age (0-120)';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 15),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: weightController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: InputDecoration(
-                                    labelText: l10n.weightLabel,
-                                    border:
-                                        Theme.of(
-                                          context,
-                                        ).inputDecorationTheme.border,
-                                    focusedBorder:
-                                        Theme.of(
-                                          context,
-                                        ).inputDecorationTheme.focusedBorder,
-                                    filled: true,
-                                    fillColor:
-                                        Theme.of(
-                                          context,
-                                        ).inputDecorationTheme.fillColor,
-                                    labelStyle: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium?.copyWith(
+                                    ).textTheme.titleMedium?.copyWith(
                                       color:
                                           Theme.of(
                                             context,
                                           ).colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    prefixIcon: Icon(
-                                      Icons.scale,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                SlideTransition(
+                                  position: _slideAnimation,
+                                  child: Text(
+                                    l10n.personalInformation,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleLarge?.copyWith(
                                       color:
-                                          Theme.of(context).colorScheme.primary,
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.bodyMedium?.copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                _buildTextField(
+                                  controller: nameController,
+                                  label: l10n.fullNameLabel,
+                                  icon: Icons.person,
                                   validator: (value) {
                                     if (value == null || value.trim().isEmpty) {
-                                      return 'Please enter your weight';
+                                      return l10n.fullNameError;
+                                    }
+                                    return null;
+                                  },
+                                  delay: 0.1,
+                                ),
+                                const SizedBox(height: 16),
+                                _buildDropdownField(
+                                  value: selectedGender,
+                                  items: genderOptions,
+                                  label: l10n.genderLabel,
+                                  itemBuilder:
+                                      (value) =>
+                                          _getLocalizedGender(value, l10n),
+                                  onChanged:
+                                      (newValue) => setState(
+                                        () => selectedGender = newValue!,
+                                      ),
+                                  validator:
+                                      (value) =>
+                                          value == null
+                                              ? l10n.genderSelectionError
+                                              : null,
+                                  delay: 0.2,
+                                ),
+                                const SizedBox(height: 16),
+                                _buildTextField(
+                                  controller: ageController,
+                                  label: l10n.ageLabel,
+                                  icon: Icons.calendar_today,
+                                  keyboardType: TextInputType.number,
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return l10n.ageEmptyError;
+                                    }
+                                    final age = int.tryParse(value);
+                                    if (age == null || age < 0 || age > 120) {
+                                      return l10n.ageInvalidError;
+                                    }
+                                    return null;
+                                  },
+                                  delay: 0.3,
+                                ),
+                                const SizedBox(height: 16),
+                                _buildMeasurementField(
+                                  controller: weightController,
+                                  label: l10n.weightLabel,
+                                  icon: Icons.scale,
+                                  unitValue: selectedWeightUnit,
+                                  unitItems: ["kg", "lbs"],
+                                  unitLabelBuilder:
+                                      (value) => l10n.weightUnit(value),
+                                  onUnitChanged:
+                                      (newValue) => setState(
+                                        () => selectedWeightUnit = newValue!,
+                                      ),
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return l10n.weightEmptyError;
                                     }
                                     final weight = double.tryParse(value);
                                     if (weight == null || weight <= 0) {
-                                      return 'Please enter a valid weight';
+                                      return l10n.weightInvalidError;
                                     }
                                     return null;
                                   },
+                                  delay: 0.4,
                                 ),
-                              ),
-                              const SizedBox(width: 10),
-                              DropdownButton<String>(
-                                value: selectedWeightUnit,
-                                items:
-                                    ["kg", "lbs"].map((String value) {
-                                      return DropdownMenuItem<String>(
-                                        value: value,
-                                        child: Text(
-                                          l10n.weightUnit(value),
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodyMedium?.copyWith(
-                                            color:
-                                                Theme.of(
-                                                  context,
-                                                ).colorScheme.onSurface,
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                                onChanged:
-                                    (newValue) => setState(
-                                      () => selectedWeightUnit = newValue!,
-                                    ),
-                                underline: Container(
-                                  height: 2,
-                                  color: Theme.of(context).colorScheme.outline,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 15),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
+                                const SizedBox(height: 16),
+                                _buildMeasurementField(
                                   controller: heightController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: InputDecoration(
-                                    labelText: l10n.heightLabel,
-                                    border:
-                                        Theme.of(
-                                          context,
-                                        ).inputDecorationTheme.border,
-                                    focusedBorder:
-                                        Theme.of(
-                                          context,
-                                        ).inputDecorationTheme.focusedBorder,
-                                    filled: true,
-                                    fillColor:
-                                        Theme.of(
-                                          context,
-                                        ).inputDecorationTheme.fillColor,
-                                    labelStyle: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium?.copyWith(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.onSurfaceVariant,
-                                    ),
-                                    prefixIcon: Icon(
-                                      Icons.height,
-                                      color:
-                                          Theme.of(context).colorScheme.primary,
-                                    ),
-                                  ),
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.bodyMedium?.copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
+                                  label: l10n.heightLabel,
+                                  icon: Icons.height,
+                                  unitValue: selectedHeightUnit,
+                                  unitItems: ["cm", "ft"],
+                                  unitLabelBuilder:
+                                      (value) => l10n.heightUnit(value),
+                                  onUnitChanged:
+                                      (newValue) => setState(
+                                        () => selectedHeightUnit = newValue!,
+                                      ),
                                   validator: (value) {
                                     if (value == null || value.trim().isEmpty) {
-                                      return 'Please enter your height';
+                                      return l10n.heightEmptyError;
                                     }
                                     final height = double.tryParse(value);
                                     if (height == null || height <= 0) {
-                                      return 'Please enter a valid height';
+                                      return l10n.heightInvalidError;
                                     }
                                     return null;
                                   },
+                                  delay: 0.5,
                                 ),
-                              ),
-                              const SizedBox(width: 10),
-                              DropdownButton<String>(
-                                value: selectedHeightUnit,
-                                items:
-                                    ["cm", "ft"].map((String value) {
-                                      return DropdownMenuItem<String>(
-                                        value: value,
-                                        child: Text(
-                                          l10n.heightUnit(value),
-                                          style: Theme.of(
+                                const SizedBox(height: 16),
+                                _buildTextField(
+                                  controller: bloodPressureController,
+                                  label: l10n.bloodPressureLabel,
+                                  icon: Icons.monitor_heart,
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return l10n.bloodPressureEmptyError;
+                                    }
+                                    if (!RegExp(
+                                      r'^\d{2,3}/\d{2,3}$',
+                                    ).hasMatch(value)) {
+                                      return l10n.bloodPressureInvalidError;
+                                    }
+                                    return null;
+                                  },
+                                  delay: 0.6,
+                                ),
+                                const SizedBox(height: 16),
+                                _buildDateField(
+                                  label: l10n.pregnancyStartDateLabel,
+                                  date: pregnancyStartDate,
+                                  onTap:
+                                      () => _selectPregnancyStartDate(context),
+                                  validator:
+                                      (value) =>
+                                          pregnancyStartDate == null
+                                              ? l10n.pregnancyStartDateError
+                                              : null,
+                                  delay: 0.7,
+                                ),
+                                const SizedBox(height: 24),
+                                SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: const Offset(0, 0.2),
+                                    end: Offset.zero,
+                                  ).animate(
+                                    CurvedAnimation(
+                                      parent: _animationController,
+                                      curve: const Interval(
+                                        0.8,
+                                        1.0,
+                                        curve: Curves.easeOut,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    l10n.selectHealthConditions,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleLarge?.copyWith(
+                                      color:
+                                          Theme.of(
                                             context,
-                                          ).textTheme.bodyMedium?.copyWith(
-                                            color:
+                                          ).colorScheme.onSurface,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Wrap(
+                                  spacing: 10,
+                                  runSpacing: 10,
+                                  children:
+                                      healthConditionsKeys.map((conditionKey) {
+                                        return AnimatedContainer(
+                                          duration: const Duration(
+                                            milliseconds: 200,
+                                          ),
+                                          curve: Curves.easeInOut,
+                                          child: FilterChip(
+                                            label: Text(
+                                              l10n.healthCondition(
+                                                conditionKey,
+                                              ),
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.bodyMedium?.copyWith(
+                                                color:
+                                                    Theme.of(
+                                                      context,
+                                                    ).colorScheme.onSurface,
+                                              ),
+                                            ),
+                                            selected: selectedHealthConditions
+                                                .contains(conditionKey),
+                                            onSelected: (isSelected) {
+                                              setState(() {
+                                                if (isSelected) {
+                                                  selectedHealthConditions.add(
+                                                    conditionKey,
+                                                  );
+                                                } else {
+                                                  selectedHealthConditions
+                                                      .remove(conditionKey);
+                                                }
+                                              });
+                                            },
+                                            selectedColor: Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                                .withOpacity(0.3),
+                                            backgroundColor:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.surface,
+                                            checkmarkColor:
                                                 Theme.of(
                                                   context,
                                                 ).colorScheme.onSurface,
+                                            elevation:
+                                                selectedHealthConditions
+                                                        .contains(conditionKey)
+                                                    ? 2
+                                                    : 0,
                                           ),
-                                        ),
-                                      );
-                                    }).toList(),
-                                onChanged:
-                                    (newValue) => setState(
-                                      () => selectedHeightUnit = newValue!,
-                                    ),
-                                underline: Container(
-                                  height: 2,
-                                  color: Theme.of(context).colorScheme.outline,
+                                        );
+                                      }).toList(),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 15),
-                          TextFormField(
-                            controller: bloodPressureController,
-                            decoration: InputDecoration(
-                              labelText: l10n.bloodPressureLabel,
-                              border:
-                                  Theme.of(context).inputDecorationTheme.border,
-                              focusedBorder:
-                                  Theme.of(
-                                    context,
-                                  ).inputDecorationTheme.focusedBorder,
-                              filled: true,
-                              fillColor:
-                                  Theme.of(
-                                    context,
-                                  ).inputDecorationTheme.fillColor,
-                              labelStyle: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium?.copyWith(
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
-                              ),
-                              prefixIcon: Icon(
-                                Icons.monitor_heart,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter your blood pressure';
-                              }
-                              if (!RegExp(
-                                r'^\d{2,3}/\d{2,3}$',
-                              ).hasMatch(value)) {
-                                return 'Please enter a valid blood pressure (e.g., 120/80)';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 15),
-                          TextFormField(
-                            readOnly: true,
-                            decoration: InputDecoration(
-                              labelText: 'Pregnancy Start Date',
-                              border:
-                                  Theme.of(context).inputDecorationTheme.border,
-                              focusedBorder:
-                                  Theme.of(
-                                    context,
-                                  ).inputDecorationTheme.focusedBorder,
-                              filled: true,
-                              fillColor:
-                                  Theme.of(
-                                    context,
-                                  ).inputDecorationTheme.fillColor,
-                              labelStyle: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium?.copyWith(
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
-                              ),
-                              prefixIcon: Icon(
-                                Icons.calendar_today,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                            controller: TextEditingController(
-                              text:
-                                  pregnancyStartDate != null
-                                      ? DateFormat(
-                                        'yyyy-MM-dd',
-                                      ).format(pregnancyStartDate!)
-                                      : '',
-                            ),
-                            onTap: () => _selectPregnancyStartDate(context),
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                            validator: (value) {
-                              if (pregnancyStartDate == null) {
-                                return 'Please select your pregnancy start date';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 15),
-                          Text(
-                            l10n.selectHealthConditions,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.titleLarge?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            children:
-                                healthConditionsKeys.map((conditionKey) {
-                                  return FilterChip(
-                                    label: Text(
-                                      l10n.healthCondition(conditionKey),
+                                if (selectedHealthConditions.contains(
+                                  "other",
+                                )) ...[
+                                  const SizedBox(height: 16),
+                                  SlideTransition(
+                                    position: Tween<Offset>(
+                                      begin: const Offset(0, 0.2),
+                                      end: Offset.zero,
+                                    ).animate(
+                                      CurvedAnimation(
+                                        parent: _animationController,
+                                        curve: const Interval(
+                                          0.9,
+                                          1.0,
+                                          curve: Curves.easeOut,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      l10n.describeHealthIssue,
                                       style: Theme.of(
                                         context,
-                                      ).textTheme.bodyMedium?.copyWith(
+                                      ).textTheme.titleLarge?.copyWith(
                                         color:
                                             Theme.of(
                                               context,
                                             ).colorScheme.onSurface,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    selected: selectedHealthConditions.contains(
-                                      conditionKey,
-                                    ),
-                                    onSelected: (isSelected) {
-                                      setState(() {
-                                        if (isSelected) {
-                                          selectedHealthConditions.add(
-                                            conditionKey,
-                                          );
-                                        } else {
-                                          selectedHealthConditions.remove(
-                                            conditionKey,
-                                          );
-                                        }
-                                      });
-                                    },
-                                    selectedColor: Theme.of(
-                                      context,
-                                    ).colorScheme.primary.withOpacity(0.3),
-                                    backgroundColor:
-                                        Theme.of(context).colorScheme.surface,
-                                    checkmarkColor:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  );
-                                }).toList(),
-                          ),
-                          if (selectedHealthConditions.contains("other"))
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 10),
-                                Text(
-                                  l10n.describeHealthIssue,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.titleLarge?.copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
                                   ),
-                                ),
-                                const SizedBox(height: 10),
-                                TextFormField(
-                                  controller: healthInfoController,
-                                  maxLines: null,
-                                  decoration: InputDecoration(
-                                    border:
-                                        Theme.of(
-                                          context,
-                                        ).inputDecorationTheme.border,
-                                    focusedBorder:
-                                        Theme.of(
-                                          context,
-                                        ).inputDecorationTheme.focusedBorder,
-                                    hintText: l10n.healthIssueHint,
-                                    filled: true,
-                                    fillColor:
-                                        Theme.of(
-                                          context,
-                                        ).inputDecorationTheme.fillColor,
-                                    hintStyle: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium?.copyWith(
-                                      color:
+                                  const SizedBox(height: 12),
+                                  _buildTextField(
+                                    controller: healthInfoController,
+                                    label: l10n.healthIssueHint,
+                                    icon: Icons.health_and_safety,
+                                    maxLines: null,
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
+                                        return l10n.healthIssueEmptyError;
+                                      }
+                                      return null;
+                                    },
+                                    delay: 1.0,
+                                  ),
+                                ],
+                                const SizedBox(height: 24),
+                                SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: const Offset(0, 0.2),
+                                    end: Offset.zero,
+                                  ).animate(
+                                    CurvedAnimation(
+                                      parent: _animationController,
+                                      curve: const Interval(
+                                        1.0,
+                                        1.0,
+                                        curve: Curves.easeOut,
+                                      ),
+                                    ),
+                                  ),
+                                  child: ElevatedButton(
+                                    onPressed: _updateProfile,
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 32,
+                                        vertical: 16,
+                                      ),
+                                      backgroundColor:
+                                          Theme.of(context).colorScheme.primary,
+                                      foregroundColor:
                                           Theme.of(
                                             context,
-                                          ).colorScheme.onSurfaceVariant,
+                                          ).colorScheme.onPrimary,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      elevation: 2,
+                                      minimumSize: const Size(
+                                        double.infinity,
+                                        50,
+                                      ),
                                     ),
-                                    prefixIcon: Icon(
-                                      Icons.health_and_safety,
-                                      color:
-                                          Theme.of(context).colorScheme.primary,
+                                    child: AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
+                                      curve: Curves.easeInOut,
+                                      transform:
+                                          Matrix4.identity()
+                                            ..scale(_isLoading ? 0.95 : 1.0),
+                                      child: Text(
+                                        l10n.saveProfileButton,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 16,
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.bodyMedium?.copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Please describe your health issue';
-                                    }
-                                    return null;
-                                  },
                                 ),
-                                const SizedBox(height: 20),
                               ],
                             ),
-                          const SizedBox(height: 20),
-                          ElevatedButton(
-                            onPressed: _updateProfile,
-                            style: Theme.of(
-                              context,
-                            ).elevatedButtonTheme.style?.copyWith(
-                              minimumSize: WidgetStateProperty.all(
-                                const Size(double.infinity, 50),
-                              ),
-                            ),
-                            child: Text(
-                              l10n.saveProfileButton,
-                              style: Theme.of(
-                                context,
-                              ).textTheme.bodyLarge?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 18,
-                              ),
-                            ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    int? maxLines,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    required double delay,
+  }) {
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0, 0.2),
+        end: Offset.zero,
+      ).animate(
+        CurvedAnimation(
+          parent: _animationController,
+          curve: Interval(delay, 1.0, curve: Curves.easeOut),
+        ),
+      ),
+      child: Transform.translate(
+        offset: Offset(
+          validator!(controller.text) != null &&
+                  _formKey.currentState?.validate() == false
+              ? _shakeAnimation.value
+              : 0,
+          0,
+        ),
+        child: TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          maxLines: maxLines,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outline,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.error,
+                width: 2,
+              ),
+            ),
+            labelText: label,
+            labelStyle: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            prefixIcon: Icon(
+              icon,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            filled: true,
+            fillColor: Theme.of(context).colorScheme.surface,
+          ),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          validator: validator,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdownField({
+    required String? value,
+    required List<String> items,
+    required String label,
+    required String Function(String) itemBuilder,
+    required ValueChanged<String?> onChanged,
+    required String? Function(String?)? validator,
+    required double delay,
+  }) {
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0, 0.2),
+        end: Offset.zero,
+      ).animate(
+        CurvedAnimation(
+          parent: _animationController,
+          curve: Interval(delay, 1.0, curve: Curves.easeOut),
+        ),
+      ),
+      child: Transform.translate(
+        offset: Offset(
+          validator!(value) != null &&
+                  _formKey.currentState?.validate() == false
+              ? _shakeAnimation.value
+              : 0,
+          0,
+        ),
+        child: DropdownButtonFormField<String>(
+          value: value,
+          items:
+              items.map((String item) {
+                return DropdownMenuItem<String>(
+                  value: item,
+                  child: Text(
+                    itemBuilder(item),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                );
+              }).toList(),
+          onChanged: onChanged,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outline,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.error,
+                width: 2,
+              ),
+            ),
+            labelText: label,
+            labelStyle: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            prefixIcon: Icon(
+              Icons.person,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            filled: true,
+            fillColor: Theme.of(context).colorScheme.surface,
+          ),
+          validator: validator,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMeasurementField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required String? unitValue,
+    required List<String> unitItems,
+    required String Function(String) unitLabelBuilder,
+    required ValueChanged<String?> onUnitChanged,
+    required String? Function(String?)? validator,
+    required double delay,
+  }) {
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0, 0.2),
+        end: Offset.zero,
+      ).animate(
+        CurvedAnimation(
+          parent: _animationController,
+          curve: Interval(delay, 1.0, curve: Curves.easeOut),
+        ),
+      ),
+      child: Transform.translate(
+        offset: Offset(
+          validator!(controller.text) != null &&
+                  _formKey.currentState?.validate() == false
+              ? _shakeAnimation.value
+              : 0,
+          0,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.error,
+                      width: 2,
+                    ),
+                  ),
+                  labelText: label,
+                  labelStyle: TextStyle(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                  prefixIcon: Icon(
+                    icon,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  filled: true,
+                  fillColor: Theme.of(context).colorScheme.surface,
+                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                validator: validator,
+              ),
+            ),
+            const SizedBox(width: 12),
+            DropdownButton<String>(
+              value: unitValue,
+              items:
+                  unitItems.map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(
+                        unitLabelBuilder(value),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+              onChanged: onUnitChanged,
+              underline: Container(
+                height: 2,
+                color: Theme.of(context).colorScheme.outline,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateField({
+    required String label,
+    required DateTime? date,
+    required VoidCallback onTap,
+    required String? Function(String?)? validator,
+    required double delay,
+  }) {
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0, 0.2),
+        end: Offset.zero,
+      ).animate(
+        CurvedAnimation(
+          parent: _animationController,
+          curve: Interval(delay, 1.0, curve: Curves.easeOut),
+        ),
+      ),
+      child: Transform.translate(
+        offset: Offset(
+          validator!(null) != null && _formKey.currentState?.validate() == false
+              ? _shakeAnimation.value
+              : 0,
+          0,
+        ),
+        child: TextFormField(
+          readOnly: true,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outline,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.error,
+                width: 2,
+              ),
+            ),
+            labelText: label,
+            labelStyle: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            prefixIcon: Icon(
+              Icons.calendar_today,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            filled: true,
+            fillColor: Theme.of(context).colorScheme.surface,
+          ),
+          controller: TextEditingController(
+            text: date != null ? DateFormat('yyyy-MM-dd').format(date) : '',
+          ),
+          onTap: onTap,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          validator: validator,
+        ),
+      ),
     );
   }
 
@@ -1091,6 +1367,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     heightController.dispose();
     bloodPressureController.dispose();
     healthInfoController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 }

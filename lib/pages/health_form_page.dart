@@ -70,7 +70,6 @@ class _MotherFormPageState extends State<MotherFormPage> {
   }
 
   Future<void> _selectPregnancyStartDate(BuildContext context) async {
-    final l10n = AppLocalizations.of(context)!;
     final picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now().subtract(const Duration(days: 280)),
@@ -437,8 +436,9 @@ class _MotherFormPageState extends State<MotherFormPage> {
                   textInputAction: TextInputAction.next,
                   validator: (value) {
                     if (value!.trim().isEmpty) return l10n.heightRequiredError;
-                    if (double.tryParse(value.trim()) == null)
+                    if (double.tryParse(value.trim()) == null) {
                       return l10n.heightInvalidError;
+                    }
                     return null;
                   },
                   onFieldSubmitted:
@@ -548,8 +548,9 @@ class _MotherFormPageState extends State<MotherFormPage> {
                   textInputAction: TextInputAction.next,
                   validator: (value) {
                     if (value!.trim().isEmpty) return l10n.weightRequiredError;
-                    if (double.tryParse(value.trim()) == null)
+                    if (double.tryParse(value.trim()) == null) {
                       return l10n.weightInvalidError;
+                    }
                     return null;
                   },
                   onFieldSubmitted:

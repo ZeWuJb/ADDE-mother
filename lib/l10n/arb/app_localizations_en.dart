@@ -1344,4 +1344,274 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get popupNotifications => 'Pop-up Notifications';
+
+  @override
+  String get availableHealthProfessionals => 'Available Health Professionals';
+
+  @override
+  String get nursesLabel => 'Nurses';
+
+  @override
+  String get noNursesAvailable => 'No nurses available at the moment';
+
+  @override
+  String get navigateToNurses => 'Navigate to nurses list';
+
+  @override
+  String get healthProfessionalsLabel => 'Health Professionals';
+
+  @override
+  String get navigateToHealthProfessionals => 'Navigate to health professionals list';
+
+  @override
+  String get selectHealthProfessionals => 'Select Health Professionals to view';
+
+  @override
+  String get viewComments => 'View Comments';
+
+  @override
+  String errorLikingPost(Object error) {
+    return 'Error liking post: $error';
+  }
+
+  @override
+  String errorSearchingPosts(Object error) {
+    return 'Error searching posts: $error';
+  }
+
+  @override
+  String errorFetchingPosts(Object error) {
+    return 'Error fetching posts: $error';
+  }
+
+  @override
+  String get messageButton => 'Message';
+
+  @override
+  String get postsTitle => 'Posts';
+
+  @override
+  String userAvatar(Object name) {
+    return 'Avatar of $name';
+  }
+
+  @override
+  String get sentMessage => 'Sent message';
+
+  @override
+  String get receivedMessage => 'Received message';
+
+  @override
+  String get emptyTitleError => 'Post title cannot be empty';
+
+  @override
+  String get postTitleHint => 'Enter post title';
+
+  @override
+  String get addCommentHint => 'Add a comment...';
+
+  @override
+  String get viewMessages => 'View Messages';
+
+  @override
+  String get messagesTitle => 'Messages';
+
+  @override
+  String get noMessages => 'No messages yet';
+
+  @override
+  String errorFetchingMessages(Object error) {
+    return 'Error fetching messages: $error';
+  }
+
+  @override
+  String errorFetchingConversations(Object error) {
+    return 'Error fetching conversations: $error';
+  }
+
+  @override
+  String get noConversations => 'No conversations yet';
+
+  @override
+  String get reportPostTitle => 'Report Post';
+
+  @override
+  String get reportPost => 'Report';
+
+  @override
+  String get reportReasonHint => 'reason for reporting';
+
+  @override
+  String get reportReasonRequired => 'Please provide a reason for reporting';
+
+  @override
+  String get reportSubmitted => 'Report submitted successfully';
+
+  @override
+  String errorReportingPost(Object error) {
+    return 'Error reporting post: $error';
+  }
+
+  @override
+  String get postOptions => 'Post options';
+
+  @override
+  String get reasonInappropriate => 'Inappropriate content';
+
+  @override
+  String get reasonSpam => 'Spam';
+
+  @override
+  String get reasonOffensive => 'Offensive language';
+
+  @override
+  String get reasonMisleading => 'Misleading information';
+
+  @override
+  String get reasonHarassment => 'Harassment or bullying';
+
+  @override
+  String get reasonCopyright => 'Copyright violation';
+
+  @override
+  String get reasonOther => 'Other';
+
+  @override
+  String get deletePostTitle => 'Delete Post';
+
+  @override
+  String get deletePostConfirmation => 'Are you sure you want to delete this post? This action cannot be undone.';
+
+  @override
+  String get deletePostSuccess => 'Post deleted successfully';
+
+  @override
+  String errorDeletingPost(Object error) {
+    return 'Error deleting post: $error';
+  }
+
+  @override
+  String get deleteButton => 'Delete';
+
+  @override
+  String get errorDeletingPostWithComments => 'Cannot delete post because it has comments.';
+
+  @override
+  String get you => 'You';
+
+  @override
+  String get imageMessage => 'Image';
+
+  @override
+  String get videoMessage => 'Video';
+
+  @override
+  String get documentMessage => 'Document';
+
+  @override
+  String get errorFetchingPost => 'Error fetching post: @error';
+
+  @override
+  String verificationCodeSentSuccess(Object email) {
+    return 'Verification code sent to $email.';
+  }
+
+  @override
+  String verificationCodeError(Object error) {
+    return 'Failed to send or verify code: $error';
+  }
+
+  @override
+  String get invalidCodeError => 'Please enter a valid 6-digit verification code.';
+
+  @override
+  String get emptyPasswordError => 'Please enter a new password.';
+
+  @override
+  String get passwordUpdateSuccess => 'Password updated successfully.';
+
+  @override
+  String get verificationCodeDescription => 'Enter the 6-digit verification code sent to your email and your new password.';
+
+  @override
+  String get passwordUpdateSuccessDescription => 'Your password has been updated successfully. You can now use it to sign in.';
+
+  @override
+  String get verificationCodeLabel => 'Verification Code';
+
+  @override
+  String get newPasswordLabel => 'New Password';
+
+  @override
+  String get verifyCodeButton => 'Verify Code & Update Password';
+
+  @override
+  String get sendVerificationCodeButton => 'Send Verification Code';
+
+  @override
+  String get passwordUpdatedButton => 'Password Updated';
+
+  @override
+  String get changePassword => 'Change Password';
+
+  @override
+  String get newPassword => 'New Password';
+
+  @override
+  String get confirmNewPassword => 'Confirm New Password';
+
+  @override
+  String get passwordTooShortError => 'Password must be at least 8 characters';
+
+  @override
+  String get passwordsDoNotMatch => 'Passwords do not match';
+
+  @override
+  String passwordUpdateError(Object error) {
+    return 'Failed to update password: $error';
+  }
+
+  @override
+  String get submit => 'Submit';
+
+  @override
+  String errorLoggingOut(Object error) {
+    return 'Failed to log out: $error';
+  }
+
+  @override
+  String get enterOtpDescription => 'Enter the 6-digit code sent to your email and your new password.';
+
+  @override
+  String get otpLabel => '6-Digit Code';
+
+  @override
+  String get submitOtpButton => 'Submit';
+
+  @override
+  String get passwordUpdatedSuccess => 'Password updated successfully!';
+
+  @override
+  String get fullNameError => 'Please enter your full name';
+
+  @override
+  String get ageEmptyError => 'Please enter your age';
+
+  @override
+  String get ageInvalidError => 'Please enter a valid age (0-120)';
+
+  @override
+  String get weightEmptyError => 'Please enter your weight';
+
+  @override
+  String get heightEmptyError => 'Please enter your height';
+
+  @override
+  String get bloodPressureEmptyError => 'Please enter your blood pressure';
+
+  @override
+  String get pregnancyStartDateError => 'Please select your pregnancy start date';
+
+  @override
+  String get healthIssueEmptyError => 'Please describe your health issue';
 }

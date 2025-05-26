@@ -2404,6 +2404,498 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pop-up Notifications'**
   String get popupNotifications;
+
+  /// Title for the page showing available doctors and nurses
+  ///
+  /// In en, this message translates to:
+  /// **'Available Health Professionals'**
+  String get availableHealthProfessionals;
+
+  /// Label for the nurses button
+  ///
+  /// In en, this message translates to:
+  /// **'Nurses'**
+  String get nursesLabel;
+
+  /// Message shown when no nurses are available
+  ///
+  /// In en, this message translates to:
+  /// **'No nurses available at the moment'**
+  String get noNursesAvailable;
+
+  /// Accessibility label for navigating to nurses
+  ///
+  /// In en, this message translates to:
+  /// **'Navigate to nurses list'**
+  String get navigateToNurses;
+
+  /// Label for the health professionals button
+  ///
+  /// In en, this message translates to:
+  /// **'Health Professionals'**
+  String get healthProfessionalsLabel;
+
+  /// Accessibility label for navigating to health professionals
+  ///
+  /// In en, this message translates to:
+  /// **'Navigate to health professionals list'**
+  String get navigateToHealthProfessionals;
+
+  /// Message shown when no professionals are selected
+  ///
+  /// In en, this message translates to:
+  /// **'Select Health Professionals to view'**
+  String get selectHealthProfessionals;
+
+  /// Text displayed to prompt users to view comments on a post
+  ///
+  /// In en, this message translates to:
+  /// **'View Comments'**
+  String get viewComments;
+
+  /// Error message when liking/unliking a post fails
+  ///
+  /// In en, this message translates to:
+  /// **'Error liking post: {error}'**
+  String errorLikingPost(Object error);
+
+  /// Error message when searching posts fails
+  ///
+  /// In en, this message translates to:
+  /// **'Error searching posts: {error}'**
+  String errorSearchingPosts(Object error);
+
+  /// Error message when fetching user posts fails
+  ///
+  /// In en, this message translates to:
+  /// **'Error fetching posts: {error}'**
+  String errorFetchingPosts(Object error);
+
+  /// Label for the button to start a chat with a user
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get messageButton;
+
+  /// Title for the section displaying user posts
+  ///
+  /// In en, this message translates to:
+  /// **'Posts'**
+  String get postsTitle;
+
+  /// Accessibility label for user avatar
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar of {name}'**
+  String userAvatar(Object name);
+
+  /// Accessibility label prefix for sent messages
+  ///
+  /// In en, this message translates to:
+  /// **'Sent message'**
+  String get sentMessage;
+
+  /// Accessibility label prefix for received messages
+  ///
+  /// In en, this message translates to:
+  /// **'Received message'**
+  String get receivedMessage;
+
+  /// Message shown when post title is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Post title cannot be empty'**
+  String get emptyTitleError;
+
+  /// Hint text for post title input
+  ///
+  /// In en, this message translates to:
+  /// **'Enter post title'**
+  String get postTitleHint;
+
+  /// Hint text for the comment input field
+  ///
+  /// In en, this message translates to:
+  /// **'Add a comment...'**
+  String get addCommentHint;
+
+  /// Tooltip for the messages action button
+  ///
+  /// In en, this message translates to:
+  /// **'View Messages'**
+  String get viewMessages;
+
+  /// Title for the messages screen
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get messagesTitle;
+
+  /// Message shown when there are no conversations
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get noMessages;
+
+  /// Error message for messages fetch failure
+  ///
+  /// In en, this message translates to:
+  /// **'Error fetching messages: {error}'**
+  String errorFetchingMessages(Object error);
+
+  /// Error message for conversation fetch failure
+  ///
+  /// In en, this message translates to:
+  /// **'Error fetching conversations: {error}'**
+  String errorFetchingConversations(Object error);
+
+  /// Message when no conversations exist
+  ///
+  /// In en, this message translates to:
+  /// **'No conversations yet'**
+  String get noConversations;
+
+  /// Title for report post dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Report Post'**
+  String get reportPostTitle;
+
+  /// Menu option to report a post
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get reportPost;
+
+  /// Hint for report reason input
+  ///
+  /// In en, this message translates to:
+  /// **'reason for reporting'**
+  String get reportReasonHint;
+
+  /// Error when report reason is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Please provide a reason for reporting'**
+  String get reportReasonRequired;
+
+  /// Confirmation message for report submission
+  ///
+  /// In en, this message translates to:
+  /// **'Report submitted successfully'**
+  String get reportSubmitted;
+
+  /// Error message for report failure
+  ///
+  /// In en, this message translates to:
+  /// **'Error reporting post: {error}'**
+  String errorReportingPost(Object error);
+
+  /// Tooltip for post options menu
+  ///
+  /// In en, this message translates to:
+  /// **'Post options'**
+  String get postOptions;
+
+  /// Report reason for inappropriate content
+  ///
+  /// In en, this message translates to:
+  /// **'Inappropriate content'**
+  String get reasonInappropriate;
+
+  /// Report reason for spam
+  ///
+  /// In en, this message translates to:
+  /// **'Spam'**
+  String get reasonSpam;
+
+  /// Report reason for offensive language
+  ///
+  /// In en, this message translates to:
+  /// **'Offensive language'**
+  String get reasonOffensive;
+
+  /// Report reason for misleading or false information
+  ///
+  /// In en, this message translates to:
+  /// **'Misleading information'**
+  String get reasonMisleading;
+
+  /// Report reason for harassment or bullying
+  ///
+  /// In en, this message translates to:
+  /// **'Harassment or bullying'**
+  String get reasonHarassment;
+
+  /// Report reason for copyright or intellectual property violation
+  ///
+  /// In en, this message translates to:
+  /// **'Copyright violation'**
+  String get reasonCopyright;
+
+  /// Report reason for other issues
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get reasonOther;
+
+  /// Title for delete post dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Post'**
+  String get deletePostTitle;
+
+  /// Confirmation message for deleting a post
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this post? This action cannot be undone.'**
+  String get deletePostConfirmation;
+
+  /// Confirmation message for successful post deletion
+  ///
+  /// In en, this message translates to:
+  /// **'Post deleted successfully'**
+  String get deletePostSuccess;
+
+  /// Error message for post deletion failure
+  ///
+  /// In en, this message translates to:
+  /// **'Error deleting post: {error}'**
+  String errorDeletingPost(Object error);
+
+  /// Delete button label
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteButton;
+
+  /// Error message when post deletion fails due to comments
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot delete post because it has comments.'**
+  String get errorDeletingPostWithComments;
+
+  /// No description provided for @you.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get you;
+
+  /// No description provided for @imageMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get imageMessage;
+
+  /// No description provided for @videoMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get videoMessage;
+
+  /// No description provided for @documentMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Document'**
+  String get documentMessage;
+
+  /// No description provided for @errorFetchingPost.
+  ///
+  /// In en, this message translates to:
+  /// **'Error fetching post: @error'**
+  String get errorFetchingPost;
+
+  /// Success message after sending the verification code
+  ///
+  /// In en, this message translates to:
+  /// **'Verification code sent to {email}.'**
+  String verificationCodeSentSuccess(Object email);
+
+  /// Error message when sending or verifying the code fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send or verify code: {error}'**
+  String verificationCodeError(Object error);
+
+  /// Error message when the verification code is invalid
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid 6-digit verification code.'**
+  String get invalidCodeError;
+
+  /// Error message when the new password field is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a new password.'**
+  String get emptyPasswordError;
+
+  /// Success message after updating the password
+  ///
+  /// In en, this message translates to:
+  /// **'Password updated successfully.'**
+  String get passwordUpdateSuccess;
+
+  /// Description text after sending the verification code
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit verification code sent to your email and your new password.'**
+  String get verificationCodeDescription;
+
+  /// Description text after successfully updating the password
+  ///
+  /// In en, this message translates to:
+  /// **'Your password has been updated successfully. You can now use it to sign in.'**
+  String get passwordUpdateSuccessDescription;
+
+  /// Label for the verification code input field
+  ///
+  /// In en, this message translates to:
+  /// **'Verification Code'**
+  String get verificationCodeLabel;
+
+  /// Label for the new password input field
+  ///
+  /// In en, this message translates to:
+  /// **'New Password'**
+  String get newPasswordLabel;
+
+  /// Button text for verifying the code and updating the password
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Code & Update Password'**
+  String get verifyCodeButton;
+
+  /// Button text for sending the verification code
+  ///
+  /// In en, this message translates to:
+  /// **'Send Verification Code'**
+  String get sendVerificationCodeButton;
+
+  /// Button text shown after password is updated
+  ///
+  /// In en, this message translates to:
+  /// **'Password Updated'**
+  String get passwordUpdatedButton;
+
+  /// No description provided for @changePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Password'**
+  String get changePassword;
+
+  /// No description provided for @newPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'New Password'**
+  String get newPassword;
+
+  /// No description provided for @confirmNewPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm New Password'**
+  String get confirmNewPassword;
+
+  /// No description provided for @passwordTooShortError.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 8 characters'**
+  String get passwordTooShortError;
+
+  /// No description provided for @passwordsDoNotMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
+  String get passwordsDoNotMatch;
+
+  /// No description provided for @passwordUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update password: {error}'**
+  String passwordUpdateError(Object error);
+
+  /// No description provided for @submit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get submit;
+
+  /// Error message shown when logout fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to log out: {error}'**
+  String errorLoggingOut(Object error);
+
+  /// No description provided for @enterOtpDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit code sent to your email and your new password.'**
+  String get enterOtpDescription;
+
+  /// No description provided for @otpLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'6-Digit Code'**
+  String get otpLabel;
+
+  /// No description provided for @submitOtpButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get submitOtpButton;
+
+  /// No description provided for @passwordUpdatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Password updated successfully!'**
+  String get passwordUpdatedSuccess;
+
+  /// No description provided for @fullNameError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your full name'**
+  String get fullNameError;
+
+  /// No description provided for @ageEmptyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your age'**
+  String get ageEmptyError;
+
+  /// No description provided for @ageInvalidError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid age (0-120)'**
+  String get ageInvalidError;
+
+  /// No description provided for @weightEmptyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your weight'**
+  String get weightEmptyError;
+
+  /// No description provided for @heightEmptyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your height'**
+  String get heightEmptyError;
+
+  /// No description provided for @bloodPressureEmptyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your blood pressure'**
+  String get bloodPressureEmptyError;
+
+  /// No description provided for @pregnancyStartDateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select your pregnancy start date'**
+  String get pregnancyStartDateError;
+
+  /// No description provided for @healthIssueEmptyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please describe your health issue'**
+  String get healthIssueEmptyError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

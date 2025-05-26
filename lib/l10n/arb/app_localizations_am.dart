@@ -1344,4 +1344,274 @@ class AppLocalizationsAm extends AppLocalizations {
 
   @override
   String get popupNotifications => 'ብቅ-ወጪ ማሳወቂያዎች';
+
+  @override
+  String get availableHealthProfessionals => 'የሚገኙ የጤና ባለሙያዎች';
+
+  @override
+  String get nursesLabel => 'ነርሶች';
+
+  @override
+  String get noNursesAvailable => 'በአሁኑ ጊዜ ምንም ነርሶች የሉም';
+
+  @override
+  String get navigateToNurses => 'ወደ ነርሶች ዝርዝር ይሂዱ';
+
+  @override
+  String get healthProfessionalsLabel => 'የጤና ባለሙያዎች';
+
+  @override
+  String get navigateToHealthProfessionals => 'ወደ የጤና ባለሙያዎች ዝርዝር ይሂዱ';
+
+  @override
+  String get selectHealthProfessionals => 'ለመመልከት የጤና ባለሙያዎችን ይምረጡ';
+
+  @override
+  String get viewComments => 'አስተያየቶችን ተመልከት';
+
+  @override
+  String errorLikingPost(Object error) {
+    return 'ልጥፍ መውደድ ላይ ስህተት፡ $error';
+  }
+
+  @override
+  String errorSearchingPosts(Object error) {
+    return 'ልጥፎችን መፈለግ ላይ ስህተት፡ $error';
+  }
+
+  @override
+  String errorFetchingPosts(Object error) {
+    return 'ልጥፎችን ማግኘት ላይ ስህተት፡ $error';
+  }
+
+  @override
+  String get messageButton => 'መልእክት';
+
+  @override
+  String get postsTitle => 'ልጥፎች';
+
+  @override
+  String userAvatar(Object name) {
+    return 'የ$name አቫታር';
+  }
+
+  @override
+  String get sentMessage => 'የተላከ መልእክት';
+
+  @override
+  String get receivedMessage => 'የተቀበለ መልእክት';
+
+  @override
+  String get emptyTitleError => 'የልጥፍ ርዕስ ባዶ መሆን አይችልም';
+
+  @override
+  String get postTitleHint => 'የልጥፍ ርዕስ ያስገቡ';
+
+  @override
+  String get addCommentHint => 'አስተያየት ያክሉ...';
+
+  @override
+  String get viewMessages => 'መልዕክቶችን ይመልከቱ';
+
+  @override
+  String get messagesTitle => 'መልዕክቶች';
+
+  @override
+  String get noMessages => 'እስካሁን መልዕክቶች የሉም';
+
+  @override
+  String errorFetchingMessages(Object error) {
+    return 'መልዕክቶችን መግኘት ላይ ስህተት፡ $error';
+  }
+
+  @override
+  String errorFetchingConversations(Object error) {
+    return 'ውይይቶችን ማምጣት ላይ ስህተት፡ $error';
+  }
+
+  @override
+  String get noConversations => 'እስካሁን ውይይቶች የሉም';
+
+  @override
+  String get reportPostTitle => 'ጽሁፍ ሪፖርት አድርግ';
+
+  @override
+  String get reportPost => 'ሪፖርት';
+
+  @override
+  String get reportReasonHint => 'የሪፖርት ምክንያት';
+
+  @override
+  String get reportReasonRequired => 'እባክዎ የሪፖርት ምክንያት ያቅርቡ';
+
+  @override
+  String get reportSubmitted => 'ሪፖርት በተሳካ ሁኔታ ተመዝግቧል';
+
+  @override
+  String errorReportingPost(Object error) {
+    return 'ጽሁፍ ሪፖርት ማድረግ ላይ ስህተት፡ $error';
+  }
+
+  @override
+  String get postOptions => 'Post options';
+
+  @override
+  String get reasonInappropriate => 'አግባብ ያልሆነ ይዘት';
+
+  @override
+  String get reasonSpam => 'ስፓም';
+
+  @override
+  String get reasonOffensive => 'አንገብጋቢ ቋንቋ';
+
+  @override
+  String get reasonMisleading => 'ማታለል ወይም የተሳሳተ መረጃ';
+
+  @override
+  String get reasonHarassment => 'ማስፈራራት ወይም ጉልበተኝነት';
+
+  @override
+  String get reasonCopyright => 'የቅጂ መብት ጥሰት';
+
+  @override
+  String get reasonOther => 'ሌላ';
+
+  @override
+  String get deletePostTitle => 'ጽሁፍ ሰርዝ';
+
+  @override
+  String get deletePostConfirmation => 'ይህን ጽሁፍ መሰረዝ እንደሚፈልጉ እርግጠኛ ነዎት? ይህ ተግባር መቀልበስ አይቻልም።';
+
+  @override
+  String get deletePostSuccess => 'ጽሁፍ በተሳካ ሁኔታ ተሰርዟል';
+
+  @override
+  String errorDeletingPost(Object error) {
+    return 'ጽሁፍ መሰረዝ ላይ ስህተት፡ $error';
+  }
+
+  @override
+  String get deleteButton => 'ሰርዝ';
+
+  @override
+  String get errorDeletingPostWithComments => 'ጽሁፍ መሰረዝ አይቻልም ምክንያቱም አስተያየቶች አሉት።';
+
+  @override
+  String get you => 'እርስዎ';
+
+  @override
+  String get imageMessage => 'ምስል';
+
+  @override
+  String get videoMessage => 'ቪዲዮ';
+
+  @override
+  String get documentMessage => 'ሰነድ';
+
+  @override
+  String get errorFetchingPost => 'ጽሁፍ በማምጣት ላይ ስህተት: @error';
+
+  @override
+  String verificationCodeSentSuccess(Object email) {
+    return 'የማረጋገጫ ኮድ ወደ $email ተልኳል።';
+  }
+
+  @override
+  String verificationCodeError(Object error) {
+    return 'ኮድ መላክ ወይም ማረጋገጥ አልተሳካም፡ $error';
+  }
+
+  @override
+  String get invalidCodeError => 'እባክዎ ትክክለኛ ባለ 6-አሃዝ የማረጋገጫ ኮድ ያስገቡ።';
+
+  @override
+  String get emptyPasswordError => 'እባክዎ አዲስ የይለፍ ቃል ያስገቡ።';
+
+  @override
+  String get passwordUpdateSuccess => 'የይለፍ ቃል በተሳካ ሁኔታ ተዘምኗል።';
+
+  @override
+  String get verificationCodeDescription => 'ወደ ኢሜይልዎ የተላከውን ባለ 6-አሃዝ የማረጋገጫ ኮድ እና አዲሱን የይለፍ ቃል ያስገቡ።';
+
+  @override
+  String get passwordUpdateSuccessDescription => 'የይለፍ ቃልዎ በተሳካ ሁኔታ ተዘምኗል። አሁን ለመግባት መጠቀም ይችላሉ።';
+
+  @override
+  String get verificationCodeLabel => 'የማረጋገጫ ኮድ';
+
+  @override
+  String get newPasswordLabel => 'አዲስ የይለፍ ቃል';
+
+  @override
+  String get verifyCodeButton => 'ኮድ አረጋግጥ እና የይለፍ ቃል ዘምን';
+
+  @override
+  String get sendVerificationCodeButton => 'የማረጋገጫ ኮድ ላክ';
+
+  @override
+  String get passwordUpdatedButton => 'የይለፍ ቃል ተዘምኗል';
+
+  @override
+  String get changePassword => 'የይለፍ ቃል ቀይር';
+
+  @override
+  String get newPassword => 'አዲስ የይለፍ ቃል';
+
+  @override
+  String get confirmNewPassword => 'አዲስ የይለፍ ቃል ያረጋግጡ';
+
+  @override
+  String get passwordTooShortError => 'የይለፍ ቃል ቢያንስ 8 ቁምፊዎች መሆን አለበት';
+
+  @override
+  String get passwordsDoNotMatch => 'የይለፍ ቃሎች አይዛመዱም';
+
+  @override
+  String passwordUpdateError(Object error) {
+    return 'የይለፍ ቃል መዘመን አልተሳካም፡ $error';
+  }
+
+  @override
+  String get submit => 'አስገባ';
+
+  @override
+  String errorLoggingOut(Object error) {
+    return 'መውጣት አልተሳካም፡ $error';
+  }
+
+  @override
+  String get enterOtpDescription => 'በኢሜይልዎ የተላከውን 6-አሃዝ ኮድ እና አዲሱን የይለፍ ቃልዎን ያስገቡ።';
+
+  @override
+  String get otpLabel => '6-አሃዝ ኮድ';
+
+  @override
+  String get submitOtpButton => 'አስገባ';
+
+  @override
+  String get passwordUpdatedSuccess => 'የይለፍ ቃል በተሳካ ሁኔታ ተዘምኗል!';
+
+  @override
+  String get fullNameError => 'እባክዎ ሙሉ ስምዎን ያስገቡ';
+
+  @override
+  String get ageEmptyError => 'እባክዎ ዕድሜዎን ያስገቡ';
+
+  @override
+  String get ageInvalidError => 'እባክዎ ተገቢ ዕድሜ ያስገቡ (0-120)';
+
+  @override
+  String get weightEmptyError => 'እባክዎ ክብደትዎን ያስገቡ';
+
+  @override
+  String get heightEmptyError => 'እባክዎ ቁመትዎን ያስገቡ';
+
+  @override
+  String get bloodPressureEmptyError => 'እባክዎ የደም ግፊትዎን ያስገቡ';
+
+  @override
+  String get pregnancyStartDateError => 'እባክዎ የእርግዝና መጀመሪያ ቀንዎን ይምረጡ';
+
+  @override
+  String get healthIssueEmptyError => 'እባክዎ የጤና ችግርዎን ይግለጹ';
 }
