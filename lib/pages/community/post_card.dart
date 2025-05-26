@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:adde/pages/community/post_model.dart';
 import 'package:adde/pages/community/post_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PostCard extends StatelessWidget {
   final Post post;
@@ -37,6 +38,7 @@ class PostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+    final currentMotherId = Supabase.instance.client.auth.currentUser?.id;
     final postProvider = Provider.of<PostProvider>(context, listen: true);
 
     return Semantics(
@@ -182,21 +184,18 @@ class PostCard extends StatelessWidget {
                     IconButton(
                       icon: Icon(
                         post.isLiked ? Icons.favorite : Icons.favorite_border,
-                        color:
-                            post.isLiked
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.onSurfaceVariant,
+                        color: post.isLiked ? Colors.red : null,
                         size: 20,
                       ),
                       onPressed:
-                          motherId == null
+                          currentMotherId == null
                               ? null
                               : () async {
                                 try {
                                   await postProvider.likePost(
                                     post.id,
-                                    motherId!,
-                                    !post.isLiked,
+                                    currentMotherId,
+                                    post.isLiked,
                                   );
                                   print('Toggled like for post ID: ${post.id}');
                                 } catch (e) {
