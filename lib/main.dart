@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:adde/pages/community/chat_provider.dart';
 import 'package:adde/pages/community/post_provider.dart';
@@ -12,6 +14,7 @@ import 'package:adde/theme/theme_data.dart';
 import 'package:adde/theme/theme_provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,13 +24,39 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await dotenv.load(fileName: ".env");
+
   await Supabase.initialize(
-    url: 'https://kbqbwdmwzbkbpmayitib.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticWJ3ZG13emJrYnBtYXlpdGliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5NTA0MDQsImV4cCI6MjA1NTUyNjQwNH0.8b0DnlgE5UOlSa4OtMonctmFmDyLAr3zbj6ROrLRj0A',
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
-  final session = await getSavedSession();
+  String? userId;
+  String? email;
+  final sessionString = await getSavedSession();
+  if (sessionString != null) {
+    try {
+      // Validate session string
+      final sessionJson = jsonDecode(sessionString);
+      if (sessionJson is Map<String, dynamic>) {
+        final response = await Supabase.instance.client.auth.recoverSession(
+          sessionString,
+        );
+        userId = response.user?.id;
+        email = response.user?.email;
+        print('Session restored: userId=$userId, email=$email');
+      } else {
+        print('Invalid session format: $sessionString');
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('supabase_session'); // Clear invalid session
+      }
+    } catch (e) {
+      print('Failed to restore session: $e');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('supabase_session'); // Clear invalid session
+    }
+  }
+
   final localeProvider = LocaleProvider();
   await localeProvider.loadLocale();
   final themeProvider = ThemeProvider();
@@ -47,19 +76,22 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: notificationSettingsProvider),
         Provider(create: (context) => NotificationService()),
       ],
-      child: MyApp(session: session),
+      child: MyApp(userId: userId, email: email),
     ),
   );
 }
 
 Future<String?> getSavedSession() async {
   final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('supabase_session');
+  final sessionString = prefs.getString('supabase_session');
+  print('Retrieved session: $sessionString'); // Debug log
+  return sessionString;
 }
 
 class SplashScreen extends StatefulWidget {
-  final String? session;
-  const SplashScreen({super.key, required this.session});
+  final String? userId;
+  final String? email;
+  const SplashScreen({super.key, required this.userId, this.email});
 
   @override
   _SplashScreenState createState() => _SplashScreenState();
@@ -138,17 +170,10 @@ class _SplashScreenState extends State<SplashScreen> {
             MaterialPageRoute(
               builder:
                   (context) =>
-                      widget.session != null
+                      widget.userId != null
                           ? BottomPageNavigation(
-                            user_id:
-                                Supabase.instance.client.auth.currentUser!.id,
-                            email:
-                                Supabase
-                                    .instance
-                                    .client
-                                    .auth
-                                    .currentUser
-                                    ?.email,
+                            user_id: widget.userId!,
+                            email: widget.email,
                           )
                           : const AuthenticationGate(),
             ),
@@ -194,8 +219,9 @@ class _SplashScreenState extends State<SplashScreen> {
 }
 
 class MyApp extends StatelessWidget {
-  final String? session;
-  const MyApp({super.key, required this.session});
+  final String? userId;
+  final String? email;
+  const MyApp({super.key, required this.userId, this.email});
 
   @override
   Widget build(BuildContext context) {
@@ -219,7 +245,7 @@ class MyApp extends StatelessWidget {
           localeResolutionCallback: (deviceLocale, supportedLocales) {
             return localeProvider.locale;
           },
-          home: SplashScreen(session: session),
+          home: SplashScreen(userId: userId, email: email),
         );
       },
     );

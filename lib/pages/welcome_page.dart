@@ -9,9 +9,12 @@ class WelcomePage extends StatefulWidget {
   State<WelcomePage> createState() => _WelcomePageState();
 }
 
-class _WelcomePageState extends State<WelcomePage> {
+class _WelcomePageState extends State<WelcomePage>
+    with TickerProviderStateMixin {
   int _currentPage = 0;
   final PageController _pageController = PageController();
+  late AnimationController _backgroundAnimationController;
+  late Animation<Color?> _gradientColorAnimation;
 
   // Define image paths as a constant list since they don't need localization
   static const List<String> _imagePaths = [
@@ -23,15 +26,38 @@ class _WelcomePageState extends State<WelcomePage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Initialize background gradient animation
+    _backgroundAnimationController = AnimationController(
+      duration: const Duration(seconds: 5),
+      vsync: this,
+    )..repeat(reverse: true);
+    _gradientColorAnimation = ColorTween(
+      begin: Colors.blue.withOpacity(0.2),
+      end: Colors.purple.withOpacity(0.2),
+    ).animate(
+      CurvedAnimation(
+        parent: _backgroundAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
+    _backgroundAnimationController.dispose();
     super.dispose();
   }
 
   void _navigateToRegister() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const RegisterPage()),
+      MaterialPageRoute(
+        builder: (context) => const RegisterPage(),
+        settings: const RouteSettings(name: '/register'),
+      ),
     );
   }
 
@@ -45,19 +71,24 @@ class _WelcomePageState extends State<WelcomePage> {
       backgroundColor: theme.colorScheme.surface,
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    theme.colorScheme.primary.withOpacity(0.2),
-                    theme.colorScheme.surface,
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+          // Animated background gradient
+          AnimatedBuilder(
+            animation: _backgroundAnimationController,
+            builder: (context, child) {
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      _gradientColorAnimation.value ??
+                          theme.colorScheme.primary.withOpacity(0.2),
+                      theme.colorScheme.surface,
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
           Column(
             children: [
@@ -77,20 +108,11 @@ class _WelcomePageState extends State<WelcomePage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    TextButton(
+                    _buildAnimatedButton(
+                      text: l10n.skipButton,
+                      semanticsLabel: l10n.skipSemantics,
                       onPressed: _navigateToRegister,
-                      style: theme.textButtonTheme.style?.copyWith(
-                        foregroundColor: WidgetStatePropertyAll(
-                          theme.colorScheme.primary,
-                        ),
-                      ),
-                      child: Text(
-                        l10n.skipButton,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                        semanticsLabel: l10n.skipSemantics,
-                      ),
+                      theme: theme,
                     ),
                     Row(
                       children: List.generate(
@@ -99,6 +121,7 @@ class _WelcomePageState extends State<WelcomePage> {
                           padding: const EdgeInsets.symmetric(horizontal: 4.0),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
                             height: 8,
                             width: _currentPage == index ? 24 : 8,
                             decoration: BoxDecoration(
@@ -109,39 +132,42 @@ class _WelcomePageState extends State<WelcomePage> {
                                         0.5,
                                       ),
                               borderRadius: BorderRadius.circular(4),
+                              boxShadow:
+                                  _currentPage == index
+                                      ? [
+                                        BoxShadow(
+                                          color: theme.colorScheme.primary
+                                              .withOpacity(0.3),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ]
+                                      : [],
                             ),
                           ),
                         ),
                       ),
                     ),
-                    TextButton(
+                    _buildAnimatedButton(
+                      text:
+                          _currentPage == _imagePaths.length - 1
+                              ? l10n.getStartedButton
+                              : l10n.nextButton,
+                      semanticsLabel:
+                          _currentPage == _imagePaths.length - 1
+                              ? l10n.getStartedSemantics
+                              : l10n.nextSemantics,
                       onPressed: () {
                         if (_currentPage < _imagePaths.length - 1) {
                           _pageController.nextPage(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeInOutQuad,
                           );
                         } else {
                           _navigateToRegister();
                         }
                       },
-                      style: theme.textButtonTheme.style?.copyWith(
-                        foregroundColor: WidgetStatePropertyAll(
-                          theme.colorScheme.primary,
-                        ),
-                      ),
-                      child: Text(
-                        _currentPage == _imagePaths.length - 1
-                            ? l10n.getStartedButton
-                            : l10n.nextButton,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                        semanticsLabel:
-                            _currentPage == _imagePaths.length - 1
-                                ? l10n.getStartedSemantics
-                                : l10n.nextSemantics,
-                      ),
+                      theme: theme,
                     ),
                   ],
                 ),
@@ -153,13 +179,44 @@ class _WelcomePageState extends State<WelcomePage> {
     );
   }
 
+  Widget _buildAnimatedButton({
+    required String text,
+    required String semanticsLabel,
+    required VoidCallback onPressed,
+    required ThemeData theme,
+  }) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        transform: Matrix4.identity()..scale(1.0),
+        child: TextButton(
+          onPressed: onPressed,
+          style: theme.textButtonTheme.style?.copyWith(
+            foregroundColor: WidgetStatePropertyAll(theme.colorScheme.primary),
+            overlayColor: WidgetStatePropertyAll(
+              theme.colorScheme.primary.withOpacity(0.1),
+            ),
+          ),
+          child: Text(
+            text,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+            semanticsLabel: semanticsLabel,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildPageContent(
     ThemeData theme,
     AppLocalizations l10n,
     int index,
     double screenHeight,
   ) {
-    // Map index to localized content
     final String title = index == 0 ? l10n.welcomePageTitle1 : '';
     final String content = switch (index) {
       0 => l10n.welcomePageContent1,
@@ -178,41 +235,68 @@ class _WelcomePageState extends State<WelcomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (title.isNotEmpty) ...[
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.onSurface,
+              AnimatedOpacity(
+                opacity: 1.0,
+                duration: const Duration(milliseconds: 500),
+                child: AnimatedSlide(
+                  offset: const Offset(0, 0),
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeOut,
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
                 ),
               ),
               SizedBox(height: screenHeight * 0.03),
             ],
-            Container(
-              height: screenHeight * 0.35,
-              width: screenHeight * 0.4,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(_imagePaths[index]),
-                  fit: BoxFit.cover,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.colorScheme.shadow.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+            AnimatedScale(
+              scale: 1.0,
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeOutBack,
+              child: AnimatedOpacity(
+                opacity: 1.0,
+                duration: const Duration(milliseconds: 600),
+                child: Container(
+                  height: screenHeight * 0.35,
+                  width: screenHeight * 0.4,
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage(_imagePaths[index]),
+                      fit: BoxFit.cover,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.shadow.withOpacity(0.2),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
             SizedBox(height: screenHeight * 0.03),
-            Text(
-              content,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w400,
-                color: theme.colorScheme.onSurface.withOpacity(0.8),
+            AnimatedOpacity(
+              opacity: 1.0,
+              duration: const Duration(milliseconds: 500),
+              child: AnimatedSlide(
+                offset: const Offset(0, 0),
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeOut,
+                child: Text(
+                  content,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w400,
+                    color: theme.colorScheme.onSurface.withOpacity(0.8),
+                  ),
+                ),
               ),
             ),
           ],

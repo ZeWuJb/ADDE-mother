@@ -35,6 +35,9 @@ dependencies:
   jitsi_meet_flutter_sdk: ^11.1.1
   connectivity_plus: ^6.1.4
   hive_flutter: ^1.1.0
+  flutter_dotenv: ^5.2.1
+  curved_navigation_bar: ^1.0.6
+  line_icons: ^2.0.3
 
 dev_dependencies:
   flutter_test:
@@ -63,6 +66,7 @@ flutter:
     - assets/label.png
     - assets/calendar.png
     - assets/google.png
+    - .env
   fonts:
     - family: NotoSansEthiopic
       fonts:

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:adde/pages/chatbot/chat_screen.dart';
+import 'package:adde/pages/health_matrics_page.dart';
 import 'package:adde/pages/name_suggestion/name_suggestion_page.dart';
 import 'package:adde/pages/note/journal_screen.dart';
 import 'package:adde/pages/notification/NotificationSettingsProvider.dart';
@@ -11,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:adde/auth/login_page.dart';
-import 'package:adde/pages/health_matrics_page.dart';
 import 'package:adde/pages/profile/profile_page.dart';
 import 'package:adde/pages/profile/locale_provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -38,7 +38,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late final ScrollController _scrollController;
   bool _hasUnreadNotifications = false;
   int _pregnancyWeeks = 0;
@@ -59,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         _checkUnreadNotifications();
         _scheduleHealthTips();
-        Future.delayed(const Duration(minutes: 1), () {
+        Future.delayed(const Duration(seconds: 1), () {
           if (mounted && !_hasShownTodaysTip) {
             _checkAndShowTodaysTip();
             _hasShownTodaysTip = true;
@@ -71,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
 
+    // Schedule periodic pregnancy progress updates
     Future.delayed(const Duration(days: 1), () {
       if (mounted) _updatePregnancyProgress();
     });
@@ -79,10 +80,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Listen to locale changes via LocaleProvider
     final localeProvider = Provider.of<LocaleProvider>(context);
     if (localeProvider.locale != Localizations.localeOf(context)) {
-      // Locale has changed, reset and reload tips
       _hasLoadedWeeklyTips = false;
     }
     if (!_hasLoadedWeeklyTips) {
@@ -191,10 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadWeeklyTips() async {
-    print('Starting _loadWeeklyTips...');
     final l10n = AppLocalizations.of(context)!;
-    final currentLocale = Localizations.localeOf(context).languageCode;
-    print('Locale: $currentLocale');
 
     try {
       final response = await Supabase.instance.client
@@ -202,7 +198,6 @@ class _HomeScreenState extends State<HomeScreen> {
           .select('id, week, title_en, title_am, image')
           .order('week', ascending: true)
           .limit(3);
-      print('Supabase response: $response');
 
       setState(() {
         _weeklyTips =
@@ -215,7 +210,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 'image': tip['image'],
               };
             }).toList();
-        print('Loaded weekly tips: $_weeklyTips');
       });
     } catch (e) {
       print('Error loading weekly tips: $e');
@@ -235,8 +229,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context),
@@ -245,6 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: _buildBackgroundGradient(),
         child: CustomScrollView(
           controller: _scrollController,
+          physics: const BouncingScrollPhysics(), // Smoother scrolling
           slivers: [
             SliverToBoxAdapter(child: _buildPregnancyJourneySection()),
             SliverPadding(
@@ -255,7 +248,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              sliver: SliverToBoxAdapter(child: _buildFeaturesSection(context)),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate(
+                  _buildFeaturesSection(
+                    context,
+                  ).map((widget) => widget).toList(),
+                ),
+              ),
             ),
           ],
         ),
@@ -267,7 +266,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return AppBar(
-      backgroundColor: Theme.of(context).colorScheme.primary,
+      backgroundColor:
+          Theme.of(context).brightness == Brightness.light
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.onPrimary,
       elevation: 0,
       title: Row(
         children: [
@@ -286,7 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _profileImageBase64 != null
                       ? MemoryImage(base64Decode(_profileImageBase64!))
                       : const AssetImage('assets/user.png') as ImageProvider,
-            ),
+            ).animate().scale(duration: 500.ms, curve: Curves.easeOutQuad),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -307,7 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               overflow: TextOverflow.ellipsis,
-            ),
+            ).animate().fadeIn(duration: 600.ms, curve: Curves.easeOut),
           ),
         ],
       ),
@@ -333,7 +335,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
                 await _checkUnreadNotifications();
               },
-            ),
+            ).animate().scale(duration: 500.ms, curve: Curves.easeOutQuad),
             if (_hasUnreadNotifications)
               Positioned(
                 right: 8,
@@ -351,7 +353,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-                ),
+                ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
               ),
           ],
         ),
@@ -364,31 +366,68 @@ class _HomeScreenState extends State<HomeScreen> {
                     : Theme.of(context).colorScheme.primary,
             size: 28,
           ),
-          onPressed:
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginPage()),
-              ),
-        ),
+          onPressed: () async {
+            try {
+              await Supabase.instance.client.auth.signOut();
+              if (mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (Route<dynamic> route) => false,
+                );
+              }
+            } catch (e) {
+              print('Error during logout: $e');
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(l10n.errorLoggingOut(e.toString())),
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                    action: SnackBarAction(
+                      label: l10n.retryButton,
+                      onPressed: () async {
+                        await Supabase.instance.client.auth.signOut();
+                        if (mounted) {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginPage(),
+                            ),
+                            (Route<dynamic> route) => false,
+                          );
+                        }
+                      },
+                      textColor: Theme.of(context).colorScheme.onError,
+                    ),
+                  ),
+                );
+              }
+            }
+          },
+        ).animate().scale(duration: 500.ms, curve: Curves.easeOutQuad),
       ],
     );
   }
 
-  Animate _buildFloatingActionButton(BuildContext context) {
+  Widget _buildFloatingActionButton(BuildContext context) {
     return FloatingActionButton(
-      onPressed:
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ChatScreen()),
+          onPressed:
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ChatScreen()),
+              ),
+          backgroundColor:
+              Theme.of(context).colorScheme.surfaceContainerHighest,
+          elevation: 6,
+          child: Icon(
+            Icons.chat,
+            color: Theme.of(context).colorScheme.primary,
+            size: 28,
           ),
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-      elevation: 6,
-      child: Icon(
-        Icons.chat,
-        color: Theme.of(context).colorScheme.primary,
-        size: 28,
-      ),
-    ).animate().fadeIn(duration: 600.ms).scale(delay: 400.ms);
+        )
+        .animate()
+        .scale(duration: 600.ms, curve: Curves.elasticOut)
+        .fadeIn(duration: 600.ms);
   }
 
   BoxDecoration _buildBackgroundGradient() {
@@ -397,7 +436,7 @@ class _HomeScreenState extends State<HomeScreen> {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+          Theme.of(context).colorScheme.secondary.withOpacity(0.3),
           Theme.of(context).colorScheme.surface,
         ],
       ),
@@ -447,7 +486,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       : Theme.of(context).colorScheme.primary,
               letterSpacing: 1.2,
             ),
-          ).animate().fadeIn(duration: 800.ms),
+          ).animate().fadeIn(duration: 800.ms, curve: Curves.easeOutQuad),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -458,7 +497,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 radius: 70,
                 backgroundColor: Theme.of(
                   context,
-                ).colorScheme.onSurface.withValues(alpha: 0.9),
+                ).colorScheme.onSurface.withOpacity(0.9),
                 child: ClipOval(
                   child: Image.asset(
                     "assets/embryo.gif",
@@ -467,7 +506,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 120,
                   ),
                 ),
-              ).animate().scale(duration: 600.ms, curve: Curves.easeOut),
+              ).animate().scale(duration: 800.ms, curve: Curves.easeOutBack),
               const SizedBox(width: 20),
               _buildCounterBox(_pregnancyDays, l10n.daysLabel),
             ],
@@ -494,14 +533,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Theme.of(context).colorScheme.onPrimary,
                       borderRadius: BorderRadius.circular(5),
                     ),
-                  ).animate().fadeIn(duration: 1000.ms),
+                  ).animate().slideX(
+                    duration: 1000.ms,
+                    curve: Curves.easeInOut,
+                  ),
                 ),
               ],
             ),
           ),
         ],
       ),
-    );
+    ).animate().fadeIn(duration: 600.ms, delay: 200.ms);
   }
 
   Widget _buildWeeklyTipsSection(BuildContext context) {
@@ -518,7 +560,7 @@ class _HomeScreenState extends State<HomeScreen> {
             fontWeight: FontWeight.bold,
             color: Theme.of(context).colorScheme.primary,
           ),
-        ),
+        ).animate().fadeIn(duration: 600.ms, curve: Curves.easeOutQuad),
         const SizedBox(height: 12),
         SizedBox(
           height: 180,
@@ -531,10 +573,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 16,
                       ),
-                    ),
+                    ).animate().fadeIn(duration: 500.ms, delay: 300.ms),
                   )
                   : ListView.builder(
                     scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
                     itemCount: _weeklyTips.length,
                     itemBuilder: (context, index) {
                       final tip = _weeklyTips[index];
@@ -546,9 +589,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         padding: const EdgeInsets.only(right: 12),
                         child: GestureDetector(
                           onTap: () {
-                            print(
-                              'Navigating to WeeklyTipPage with initialTip: $tip',
-                            );
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -593,6 +633,37 @@ class _HomeScreenState extends State<HomeScreen> {
                                             height: 100,
                                             width: double.infinity,
                                             fit: BoxFit.cover,
+                                            frameBuilder: (
+                                              context,
+                                              child,
+                                              frame,
+                                              wasSynchronouslyLoaded,
+                                            ) {
+                                              return child.animate().fadeIn(
+                                                duration: 400.ms,
+                                                delay: (index * 200).ms,
+                                              );
+                                            },
+                                            errorBuilder:
+                                                (
+                                                  context,
+                                                  error,
+                                                  stackTrace,
+                                                ) => Container(
+                                                  height: 100,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface
+                                                      .withValues(alpha: 0.1),
+                                                  child: Icon(
+                                                    Icons.broken_image,
+                                                    size: 40,
+                                                    color:
+                                                        Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurfaceVariant,
+                                                  ),
+                                                ),
                                           )
                                           : Container(
                                             height: 100,
@@ -646,7 +717,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
                           ),
-                        ).animate().fadeIn(delay: (index * 200).ms),
+                        ).animate().slideX(
+                          begin: 0.2,
+                          end: 0,
+                          duration: 600.ms,
+                          delay: (index * 200).ms,
+                          curve: Curves.easeOutQuad,
+                        ),
                       );
                     },
                   ),
@@ -655,7 +732,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildFeaturesSection(BuildContext context) {
+  List<Widget> _buildFeaturesSection(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
     final features = [
@@ -693,73 +770,70 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     ];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          l10n.exploreFeatures,
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+    return features.asMap().entries.map((entry) {
+      final index = entry.key;
+      final feature = entry.value;
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: _buildFeatureCard(feature).animate().slideY(
+          begin: 0.2,
+          end: 0,
+          duration: 400.ms,
+          delay: (index * 150).ms,
+          curve: Curves.easeOutQuad,
         ),
-        const SizedBox(height: 12),
-        ...features.map(
-          (feature) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildFeatureCard(feature),
-          ),
-        ),
-      ],
-    );
+      );
+    }).toList();
   }
 
   Widget _buildCounterBox(int value, String label) {
     return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
                 color: Theme.of(
                   context,
-                ).colorScheme.shadow.withValues(alpha: 0.2),
-                blurRadius: 4,
+                ).colorScheme.onSurface.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.shadow.withValues(alpha: 0.2),
+                    blurRadius: 4,
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Text(
-            "$value",
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Theme.of(context).colorScheme.onPrimary
-                      : Theme.of(context).colorScheme.primary,
+              child: Text(
+                "$value",
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.primary,
+                ),
+              ),
             ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 16,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Theme.of(context).colorScheme.onPrimary
-                    : Theme.of(context).colorScheme.primary,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    ).animate().fadeIn(duration: 600.ms);
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 16,
+                color:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        )
+        .animate()
+        .fadeIn(duration: 600.ms, curve: Curves.easeOutQuad)
+        .scale(duration: 600.ms, curve: Curves.easeOutBack);
   }
 
   Widget _buildFeatureCard(Map<String, dynamic> feature) {
@@ -790,7 +864,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 40,
                   height: 40,
                   color: Theme.of(context).colorScheme.primary,
-                ),
+                ).animate().fadeIn(duration: 500.ms, curve: Curves.easeOut),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -820,12 +894,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 Icons.arrow_forward_ios,
                 size: 18,
                 color: Theme.of(context).colorScheme.primary,
-              ),
+              ).animate().fadeIn(duration: 500.ms, delay: 100.ms),
             ],
           ),
         ),
       ),
-    ).animate().slideY(begin: 0.2, end: 0, duration: 400.ms);
+    );
   }
 
   @override

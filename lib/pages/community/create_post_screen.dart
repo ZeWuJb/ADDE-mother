@@ -1,12 +1,12 @@
+import 'dart:convert';
 import 'dart:io';
-import 'package:adde/l10n/arb/app_localizations.dart';
-import 'package:adde/pages/community/post_model.dart';
-import 'package:adde/pages/community/post_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:adde/l10n/arb/app_localizations.dart';
+import 'package:adde/pages/community/post_model.dart';
+import 'package:adde/pages/community/post_provider.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key, this.post});
@@ -18,30 +18,74 @@ class CreatePostScreen extends StatefulWidget {
 }
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
+  final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   String? motherId;
   String? fullName;
+  String? profileUrl;
   bool _isLoading = true;
   File? _imageFile;
   final _picker = ImagePicker();
+  bool _hasFetchedUserData = false; // Track if user data has been fetched
 
   @override
   void initState() {
     super.initState();
     if (widget.post != null) {
+      _titleController.text = widget.post!.title;
       _contentController.text = widget.post!.content;
     }
-    _fetchUserData();
+    // Do not call _fetchUserData here; move to didChangeDependencies
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasFetchedUserData) {
+      _fetchUserData();
+      _hasFetchedUserData = true; // Prevent repeated calls
+    }
   }
 
   Future<void> _fetchUserData() async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       final user = Supabase.instance.client.auth.currentUser;
+      print('Current user: ${user?.id}');
       if (user == null) {
+        print('No authenticated user found');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(context)!.pleaseLogIn,
+              l10n.pleaseLogIn,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onError,
+              ),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+        setState(() => _isLoading = false);
+        return;
+      }
+      final response =
+          await Supabase.instance.client
+              .from('mothers')
+              .select('full_name, profile_url')
+              .eq('user_id', user.id)
+              .maybeSingle();
+      print('Mothers response: $response');
+      if (response == null) {
+        print('No mother record found for user_id: ${user.id}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              l10n.errorFetchingUserData('No user profile found'),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onError,
               ),
@@ -55,28 +99,25 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           ),
         );
         setState(() {
+          motherId = user.id;
+          fullName = 'Unknown';
           _isLoading = false;
         });
         return;
       }
-      final response =
-          await Supabase.instance.client
-              .from('mothers')
-              .select('full_name')
-              .eq('user_id', user.id)
-              .single();
       setState(() {
         motherId = user.id;
         fullName = response['full_name']?.toString() ?? 'Unknown';
+        profileUrl = response['profile_url'] as String?;
         _isLoading = false;
-        print('CreatePostScreen motherId: $motherId');
+        print('Fetched user data: motherId=$motherId, fullName=$fullName');
       });
     } catch (e) {
       print('Error fetching user data: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            AppLocalizations.of(context)!.errorFetchingUserData(e.toString()),
+            l10n.errorFetchingUserData(e.toString()),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onError,
             ),
@@ -87,22 +128,22 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
   Future<void> _pickImage() async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
       if (pickedFile != null) {
-        final size = await File(pickedFile.path).length();
+        final file = File(pickedFile.path);
+        final size = await file.length();
         if (size > 5 * 1024 * 1024) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                AppLocalizations.of(context)!.imageSizeError,
+                l10n.imageSizeError,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onError,
                 ),
@@ -117,17 +158,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           );
           return;
         }
-        setState(() {
-          _imageFile = File(pickedFile.path);
-          print('Picked image: ${pickedFile.path}');
-        });
+        setState(() => _imageFile = file);
       }
     } catch (e) {
-      print('Error picking image: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            AppLocalizations.of(context)!.errorPickingImage(e.toString()),
+            l10n.errorPickingImage(e.toString()),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onError,
             ),
@@ -142,13 +179,17 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context)!;
     final postProvider = Provider.of<PostProvider>(context, listen: false);
 
-    if (_contentController.text.isEmpty) {
+    if (_titleController.text.trim().isEmpty ||
+        _contentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            AppLocalizations.of(context)!.emptyContentError,
+            _titleController.text.trim().isEmpty
+                ? l10n.emptyTitleError
+                : l10n.emptyContentError,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onError,
             ),
@@ -166,7 +207,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            AppLocalizations.of(context)!.userDataNotLoaded,
+            l10n.userDataNotLoaded,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onError,
             ),
@@ -181,31 +222,29 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
 
     try {
+      setState(() => _isLoading = true);
       if (widget.post == null) {
         await postProvider.createPost(
           motherId!,
           fullName!,
-          '', // Title removed
-          _contentController.text,
+          _titleController.text.trim(),
+          _contentController.text.trim(),
           imageFile: _imageFile,
         );
-        print('Created post for motherId: $motherId');
       } else {
         await postProvider.updatePost(
           widget.post!.id,
-          '', // Title removed
-          _contentController.text,
+          _titleController.text.trim(),
+          _contentController.text.trim(),
           imageFile: _imageFile,
         );
-        print('Updated post ID: ${widget.post!.id}');
       }
       Navigator.pop(context);
     } catch (e) {
-      print('Error saving post: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            AppLocalizations.of(context)!.errorSavingPost(e.toString()),
+            l10n.errorSavingPost(e.toString()),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onError,
             ),
@@ -216,6 +255,18 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  ImageProvider? _getImageProvider(String? base64Image) {
+    if (base64Image == null || base64Image.isEmpty) return null;
+    try {
+      final bytes = base64Decode(base64Image);
+      return MemoryImage(bytes);
+    } catch (e) {
+      return null;
     }
   }
 
@@ -281,19 +332,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                     ? l10n.createPostTitle
                                     : l10n.editPostTitle,
                                 style: theme.textTheme.titleLarge?.copyWith(
-                                  fontFamily: GoogleFonts.poppins().fontFamily,
                                   color: theme.colorScheme.onSurface,
                                 ),
                               ),
                               TextButton(
-                                onPressed: _submit,
+                                onPressed: _isLoading ? null : _submit,
                                 child: Text(
                                   widget.post == null
                                       ? l10n.postButton
                                       : l10n.updateButton,
                                   style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontFamily:
-                                        GoogleFonts.poppins().fontFamily,
                                     color: theme.colorScheme.primary,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -310,25 +358,42 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                               Row(
                                 children: [
                                   Semantics(
-                                    label: 'User avatar',
+                                    label: l10n.userAvatar(
+                                      fullName ?? 'Unknown',
+                                    ),
                                     child: CircleAvatar(
+                                      radius: 24,
                                       backgroundColor:
                                           theme.colorScheme.secondary,
                                       foregroundColor:
                                           theme.colorScheme.onSecondary,
-                                      child: Text(
-                                        fullName?.isNotEmpty == true
-                                            ? fullName![0]
-                                            : '?',
+                                      backgroundImage: _getImageProvider(
+                                        profileUrl,
                                       ),
+                                      child:
+                                          profileUrl == null ||
+                                                  _getImageProvider(
+                                                        profileUrl,
+                                                      ) ==
+                                                      null
+                                              ? Text(
+                                                fullName?.isNotEmpty == true
+                                                    ? fullName![0].toUpperCase()
+                                                    : '?',
+                                                style: TextStyle(
+                                                  color:
+                                                      theme
+                                                          .colorScheme
+                                                          .onSecondary,
+                                                ),
+                                              )
+                                              : null,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
                                     fullName ?? 'Unknown',
                                     style: theme.textTheme.titleLarge?.copyWith(
-                                      fontFamily:
-                                          GoogleFonts.poppins().fontFamily,
                                       color: theme.colorScheme.onSurface,
                                     ),
                                   ),
@@ -336,13 +401,27 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                               ),
                               const SizedBox(height: 16),
                               TextField(
+                                controller: _titleController,
+                                decoration: InputDecoration(
+                                  hintText: l10n.postTitleHint,
+                                  hintStyle: theme.textTheme.bodyMedium
+                                      ?.copyWith(
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                  border: InputBorder.none,
+                                ),
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
                                 controller: _contentController,
                                 decoration: InputDecoration(
                                   hintText: l10n.whatsOnYourMind,
                                   hintStyle: theme.textTheme.bodyMedium
                                       ?.copyWith(
-                                        fontFamily:
-                                            GoogleFonts.roboto().fontFamily,
                                         color:
                                             theme.colorScheme.onSurfaceVariant,
                                       ),
@@ -452,5 +531,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     ),
           ),
     );
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+    super.dispose();
   }
 }

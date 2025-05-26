@@ -1,19 +1,22 @@
-import 'package:adde/l10n/arb/app_localizations.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timeago/timeago.dart' as timeago;
-import 'chat_provider.dart';
-import 'message_model.dart';
+import 'package:adde/l10n/arb/app_localizations.dart';
+import 'package:adde/pages/community/chat_provider.dart';
+import 'package:adde/pages/community/message_model.dart';
 
 class PeerChatScreen extends StatefulWidget {
-  final String receiverId;
-  final String receiverName;
+  final String currentMotherId;
+  final String otherMotherId;
+  final String otherMotherName;
 
   const PeerChatScreen({
     super.key,
-    required this.receiverId,
-    required this.receiverName,
+    required this.currentMotherId,
+    required this.otherMotherId,
+    required this.otherMotherName,
   });
 
   @override
@@ -26,52 +29,68 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
   String? _currentUserId;
   bool _isLoading = true;
   bool _hasError = false;
+  bool _isTyping = false;
+  String? _otherProfileImageBase64;
 
   @override
   void initState() {
     super.initState();
     _initializeChat();
+    _messageController.addListener(_onTyping);
   }
 
   Future<void> _initializeChat() async {
     setState(() => _isLoading = true);
     try {
-      print('Initializing chat with receiver: ${widget.receiverId}');
       final user = Supabase.instance.client.auth.currentUser;
-      if (user == null || user.id.isEmpty) {
-        print('Authentication error: No user logged in');
+      if (user == null) {
         throw Exception('User not authenticated');
       }
       _currentUserId = user.id;
-      print('Authenticated user ID: $_currentUserId');
+      if (_currentUserId != widget.currentMotherId) {
+        throw Exception('Current user ID does not match mother ID');
+      }
+
+      final motherData =
+          await Supabase.instance.client
+              .from('mothers')
+              .select('profile_url')
+              .eq('user_id', widget.otherMotherId)
+              .single();
 
       final chatProvider = context.read<ChatProvider>();
-      print(
-        'Fetching messages for user $_currentUserId and receiver ${widget.receiverId}',
+      await chatProvider.fetchMessages(
+        widget.currentMotherId,
+        widget.otherMotherId,
       );
-      await chatProvider.fetchMessages(_currentUserId!, widget.receiverId);
-      print('Fetched ${chatProvider.messages.length} messages');
-      chatProvider.subscribeToMessages(_currentUserId!, widget.receiverId);
-      print('Subscribed to real-time message updates');
+      chatProvider.subscribeToMessages(
+        widget.currentMotherId,
+        widget.otherMotherId,
+      );
 
       setState(() {
+        _otherProfileImageBase64 = motherData['profile_url'] as String?;
         _isLoading = false;
         _hasError = false;
       });
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scrollController.hasClients) {
-          _scrollController.jumpTo(0);
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
         }
       });
     } catch (e) {
-      print('Chat initialization error: $e, Type: ${e.runtimeType}');
+      print('Error initializing chat: $e');
       setState(() {
         _isLoading = false;
         _hasError = true;
       });
       _displayError(e);
     }
+  }
+
+  void _onTyping() {
+    setState(() => _isTyping = _messageController.text.isNotEmpty);
   }
 
   void _displayError(dynamic error) {
@@ -100,7 +119,7 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
         backgroundColor: Theme.of(context).colorScheme.error,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         action: SnackBarAction(
           label: l10n.retryButton,
           textColor: Theme.of(context).colorScheme.onErrorContainer,
@@ -116,26 +135,24 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
     }
 
     try {
-      print('Sending message: "${_messageController.text}"');
       final chatProvider = context.read<ChatProvider>();
       await chatProvider.sendMessage(
-        senderId: _currentUserId!,
-        receiverId: widget.receiverId,
+        senderId: widget.currentMotherId,
+        receiverId: widget.otherMotherId,
         content: _messageController.text.trim(),
       );
       _messageController.clear();
-      print('Message sent successfully');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scrollController.hasClients) {
           _scrollController.animateTo(
-            0,
+            _scrollController.position.maxScrollExtent,
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOut,
           );
         }
       });
     } catch (e) {
-      print('Message send error: $e, Type: ${e.runtimeType}');
+      print('Error sending message: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -147,7 +164,9 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
           backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     }
@@ -155,21 +174,34 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
 
   @override
   void dispose() {
-    print('Disposing chat screen');
     context.read<ChatProvider>().unsubscribe();
+    _messageController.removeListener(_onTyping);
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
+  ImageProvider? _getImageProvider(String? base64Image) {
+    if (base64Image == null || base64Image.isEmpty) return null;
+    try {
+      final bytes = base64Decode(base64Image);
+      return MemoryImage(bytes);
+    } catch (e) {
+      return null;
+    }
+  }
+
   Widget _buildChatBody(ChatProvider chatProvider) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+
     if (_hasError) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
+            const SizedBox(height: 16),
             Text(
               l10n.unableToLoadChat,
               style: theme.textTheme.bodyLarge?.copyWith(
@@ -177,20 +209,15 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
+            ElevatedButton.icon(
               onPressed: _initializeChat,
-              style: theme.elevatedButtonTheme.style?.copyWith(
-                backgroundColor: WidgetStatePropertyAll(
-                  theme.colorScheme.primary,
-                ),
-                foregroundColor: WidgetStatePropertyAll(
-                  theme.colorScheme.onPrimary,
-                ),
-              ),
-              child: Text(
-                l10n.retryButton,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onPrimary,
+              icon: const Icon(Icons.refresh),
+              label: Text(l10n.retryButton),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
@@ -199,36 +226,87 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
       );
     }
 
-    if (chatProvider.messages.isEmpty) {
-      return Center(
-        child: Text(
-          l10n.startChatting(widget.receiverName),
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      );
-    }
-
     return Column(
       children: [
         Expanded(
-          child: ListView.builder(
-            controller: _scrollController,
-            reverse: true,
-            padding: EdgeInsets.all(MediaQuery.of(context).size.height * 0.02),
-            itemCount: chatProvider.messages.length,
-            itemBuilder: (context, index) {
-              final message = chatProvider.messages[index];
-              final isSender = message.senderId == _currentUserId;
-              if (index == 0) {
-                print(
-                  'Displaying messages: ${chatProvider.messages.map((m) => "${m.content} @ ${m.createdAt}")}',
-                );
-              }
-              return _buildMessageBubble(message, isSender);
-            },
-          ),
+          child:
+              chatProvider.messages.isEmpty
+                  ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 48,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          l10n.startChatting(widget.otherMotherName),
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                  : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount:
+                        chatProvider.messages.length + (_isTyping ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (_isTyping && index == chatProvider.messages.length) {
+                        return Align(
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: theme.colorScheme.secondary,
+                                  foregroundColor:
+                                      theme.colorScheme.onSecondary,
+                                  backgroundImage: _getImageProvider(
+                                    _otherProfileImageBase64,
+                                  ),
+                                  child:
+                                      _otherProfileImageBase64 == null ||
+                                              _getImageProvider(
+                                                    _otherProfileImageBase64,
+                                                  ) ==
+                                                  null
+                                          ? Text(
+                                            widget.otherMotherName.isNotEmpty
+                                                ? widget.otherMotherName[0]
+                                                    .toUpperCase()
+                                                : '?',
+                                          )
+                                          : null,
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.surfaceContainer,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Text('...'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      final messageIndex = _isTyping ? index : index;
+                      final message = chatProvider.messages[messageIndex];
+                      final isSender =
+                          message.senderId == widget.currentMotherId;
+                      return _buildMessageBubble(message, isSender);
+                    },
+                  ),
         ),
         _buildMessageInput(),
       ],
@@ -237,74 +315,126 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
 
   Widget _buildMessageBubble(Message message, bool isSender) {
     final theme = Theme.of(context);
+    final isRecent = DateTime.now().difference(message.createdAt).inMinutes < 1;
+
     return Align(
       alignment: isSender ? Alignment.centerRight : Alignment.centerLeft,
-      child: Semantics(
-        label:
-            isSender
-                ? 'Sent message: ${message.content}'
-                : 'Received message: ${message.content}',
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.75,
-          ),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color:
-                isSender
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.surfaceContainer,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.onSurface.withOpacity(0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment:
-                isSender ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-            children: [
-              Text(
-                message.content,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color:
-                      isSender
-                          ? theme.colorScheme.onPrimary
-                          : theme.colorScheme.onSurface,
-                  fontSize: 16,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          mainAxisAlignment:
+              isSender ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (!isSender)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: CircleAvatar(
+                  radius: 16,
+                  backgroundColor: theme.colorScheme.secondary,
+                  foregroundColor: theme.colorScheme.onSecondary,
+                  backgroundImage: _getImageProvider(_otherProfileImageBase64),
+                  child:
+                      _otherProfileImageBase64 == null ||
+                              _getImageProvider(_otherProfileImageBase64) ==
+                                  null
+                          ? Text(
+                            message.senderName.isNotEmpty
+                                ? message.senderName[0].toUpperCase()
+                                : '?',
+                            style: TextStyle(
+                              color: theme.colorScheme.onSecondary,
+                            ),
+                          )
+                          : null,
                 ),
               ),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    timeago.format(message.createdAt),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color:
-                          isSender
-                              ? theme.colorScheme.onPrimary.withOpacity(0.7)
-                              : theme.colorScheme.onSurfaceVariant,
-                      fontSize: 12,
-                    ),
+            Flexible(
+              child: Semantics(
+                label:
+                    isSender
+                        ? '${AppLocalizations.of(context)!.sentMessage}: ${message.content}'
+                        : '${AppLocalizations.of(context)!.receivedMessage}: ${message.content}',
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.of(context).size.width * 0.75,
                   ),
-                  if (isSender && message.isSeen)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4),
-                      child: Icon(
-                        Icons.check_circle,
-                        size: 14,
-                        color: theme.colorScheme.onPrimary.withOpacity(0.7),
-                      ),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color:
+                        isSender
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(16).copyWith(
+                      topLeft:
+                          isSender
+                              ? const Radius.circular(16)
+                              : const Radius.circular(4),
+                      topRight:
+                          isSender
+                              ? const Radius.circular(4)
+                              : const Radius.circular(16),
                     ),
-                ],
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.onSurface.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment:
+                        isSender
+                            ? CrossAxisAlignment.end
+                            : CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        message.content,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color:
+                              isSender
+                                  ? theme.colorScheme.onPrimary
+                                  : theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            timeago.format(
+                              message.createdAt,
+                              locale: AppLocalizations.of(context)!.localeName,
+                            ),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color:
+                                  isSender
+                                      ? theme.colorScheme.onPrimary.withOpacity(
+                                        0.7,
+                                      )
+                                      : theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          if (isSender && isRecent)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 4),
+                              child: Icon(
+                                message.isSeen ? Icons.done_all : Icons.done,
+                                size: 16,
+                                color: theme.colorScheme.onPrimary.withOpacity(
+                                  0.7,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -313,8 +443,9 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
   Widget _buildMessageInput() {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainer,
         boxShadow: [
@@ -332,25 +463,19 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
               controller: _messageController,
               enabled: !_hasError,
               minLines: 1,
-              maxLines: 3,
+              maxLines: 4,
               decoration: InputDecoration(
                 hintText:
                     _hasError ? l10n.chatUnavailableHint : l10n.typeMessageHint,
                 hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                  color:
-                      _hasError
-                          ? theme.colorScheme.onSurfaceVariant
-                          : theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor:
-                    _hasError
-                        ? theme.colorScheme.surfaceContainerHighest
-                        : theme.colorScheme.surfaceContainerLow,
+                fillColor: theme.colorScheme.surfaceContainerLow,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
@@ -362,16 +487,24 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          IconButton(
-            icon: Icon(
-              Icons.send,
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
               color:
-                  _hasError
-                      ? theme.colorScheme.onSurfaceVariant
+                  _messageController.text.trim().isEmpty || _hasError
+                      ? theme.colorScheme.onSurfaceVariant.withOpacity(0.3)
                       : theme.colorScheme.primary,
             ),
-            onPressed: _hasError ? null : _sendMessage,
-            tooltip: l10n.sendMessageTooltip,
+            child: IconButton(
+              icon: const Icon(Icons.send),
+              color: theme.colorScheme.onPrimary,
+              onPressed:
+                  _messageController.text.trim().isEmpty || _hasError
+                      ? null
+                      : _sendMessage,
+              tooltip: l10n.sendMessageTooltip,
+            ),
           ),
         ],
       ),
@@ -381,16 +514,40 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenHeight = MediaQuery.of(context).size.height;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: Text(
-          widget.receiverName,
-          style: theme.appBarTheme.titleTextStyle?.copyWith(
-            color: theme.colorScheme.onPrimary,
-          ),
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: theme.colorScheme.secondary,
+              foregroundColor: theme.colorScheme.onSecondary,
+              backgroundImage: _getImageProvider(_otherProfileImageBase64),
+              child:
+                  _otherProfileImageBase64 == null ||
+                          _getImageProvider(_otherProfileImageBase64) == null
+                      ? Text(
+                        widget.otherMotherName.isNotEmpty
+                            ? widget.otherMotherName[0].toUpperCase()
+                            : '?',
+                        style: TextStyle(color: theme.colorScheme.onSecondary),
+                      )
+                      : null,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                widget.otherMotherName,
+                style: theme.appBarTheme.titleTextStyle?.copyWith(
+                  color: theme.colorScheme.onPrimary,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
         backgroundColor: theme.colorScheme.primary,
         elevation: theme.appBarTheme.elevation,

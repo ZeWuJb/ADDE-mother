@@ -1,67 +1,131 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'post_model.dart';
+import 'package:adde/pages/community/post_model.dart';
 
 class PostProvider with ChangeNotifier {
   List<Post> _posts = [];
   List<Post> get posts => _posts;
-  DateTime? _lastFetch;
+  RealtimeChannel? _postsChannel;
 
-  Future<void> fetchPosts(String currentMotherId) async {
-    final now = DateTime.now();
-    if (_lastFetch != null && now.difference(_lastFetch!).inSeconds < 1) {
-      print('fetchPosts skipped: too soon');
-      return;
-    }
-    _lastFetch = now;
+  PostProvider() {
+    _subscribeToPosts();
+  }
 
+  void _subscribeToPosts() {
+    _postsChannel = Supabase.instance.client
+        .channel('posts')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'posts',
+          callback: (payload) {
+            print('Post change detected: ${payload.eventType}');
+            final motherId =
+                Supabase.instance.client.auth.currentUser?.id ?? '';
+            if (payload.eventType == 'DELETE') {
+              final postId = payload.oldRecord['id'] as String;
+              _posts.removeWhere((post) => post.id == postId);
+              notifyListeners();
+            } else {
+              fetchPosts(motherId);
+            }
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'likes',
+          callback: (payload) {
+            print('Like change detected: ${payload.eventType}');
+            final motherId =
+                Supabase.instance.client.auth.currentUser?.id ?? '';
+            fetchPosts(motherId);
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'comments',
+          callback: (payload) {
+            print('Comment change detected: ${payload.eventType}');
+            final motherId =
+                Supabase.instance.client.auth.currentUser?.id ?? '';
+            fetchPosts(motherId);
+          },
+        )
+        .subscribe((status, [error]) {
+          print('Subscription status: $status');
+          if (status == 'CHANNEL_ERROR') {
+            print('Subscription error: $error');
+          } else if (status == 'SUBSCRIBED') {
+            print('Successfully subscribed to posts, likes, and comments');
+          }
+        });
+  }
+
+  Future<void> fetchPosts(String motherId) async {
     try {
-      print('Starting fetchPosts for motherId: $currentMotherId');
       final response = await Supabase.instance.client
           .from('posts')
-          .select('*, mothers(full_name)')
+          .select(
+            '*, mothers!posts_mother_id_fkey(full_name, profile_url), likes!likes_post_id_fkey(mother_id)',
+          )
           .order('created_at', ascending: false);
-
-      print('Fetched posts count: ${response.length}');
-      print('Posts data: $response');
-
-      final likeResponse = await Supabase.instance.client
-          .from('likes')
-          .select('post_id')
-          .eq('mother_id', currentMotherId);
-
-      final likedPostIds = likeResponse.map((e) => e['post_id']).toSet();
-      print('Liked post IDs: $likedPostIds');
 
       _posts =
           response.map<Post>((map) {
-            try {
-              final post = Post.fromMap(
-                map,
-                map['mothers']['full_name'] ?? 'Unknown',
-              )..isLiked = likedPostIds.contains(map['id']);
-              print('Mapped post: ${post.title}');
-              return post;
-            } catch (e) {
-              print('Error mapping post: $map, error: $e');
-              return Post(
-                id: map['id']?.toString() ?? '',
-                motherId: map['mother_id']?.toString() ?? '',
-                fullName: 'Unknown',
-                title: 'Invalid Post',
-                content: 'Error loading post',
-                likesCount: 0,
-                createdAt: DateTime.now(),
-              );
-            }
+            final isLiked =
+                (map['likes'] as List<dynamic>?)?.any(
+                  (like) => like['mother_id'] == motherId,
+                ) ??
+                false;
+            return Post.fromMap(map, map['mothers']['full_name'] ?? 'Unknown')
+              ..isLiked = isLiked;
           }).toList();
 
-      print('Total mapped posts: ${_posts.length}');
+      // Prioritize posts based on engagement
+      _posts.sort((a, b) {
+        final aEngagement = a.likesCount + a.commentCount;
+        final bEngagement = b.likesCount + b.commentCount;
+        return bEngagement.compareTo(aEngagement); // Descending
+      });
+
       notifyListeners();
-      print('fetchPosts completed');
+      print('Fetched ${_posts.length} posts for motherId: $motherId');
+      print('Post IDs: ${_posts.map((p) => p.id).toList()}');
     } catch (e) {
       print('Error fetching posts: $e');
+      rethrow;
+    }
+  }
+
+  Future<Post> fetchPost(String postId, String motherId) async {
+    try {
+      final response =
+          await Supabase.instance.client
+              .from('posts')
+              .select(
+                '*, mothers!posts_mother_id_fkey(full_name, profile_url), likes!likes_post_id_fkey(mother_id)',
+              )
+              .eq('id', postId)
+              .single();
+
+      final isLiked =
+          (response['likes'] as List<dynamic>?)?.any(
+            (like) => like['mother_id'] == motherId,
+          ) ??
+          false;
+      final post = Post.fromMap(
+        response,
+        response['mothers']['full_name'] ?? 'Unknown',
+      )..isLiked = isLiked;
+      print(
+        'Fetched post ID: $postId, likes: ${post.likesCount}, comments: ${post.commentCount}, isLiked: $isLiked',
+      );
+      return post;
+    } catch (e) {
+      print('Error fetching post $postId: $e');
       rethrow;
     }
   }
@@ -78,33 +142,31 @@ class PostProvider with ChangeNotifier {
       if (imageFile != null) {
         final fileName =
             '${DateTime.now().millisecondsSinceEpoch}_$motherId.jpg';
-        final response = await Supabase.instance.client.storage
-            .from('post.images')
+        await Supabase.instance.client.storage
+            .from('post-images')
             .upload(fileName, imageFile);
         imageUrl = Supabase.instance.client.storage
-            .from('post.images')
+            .from('post-images')
             .getPublicUrl(fileName);
-        print('Uploaded image: $imageUrl');
       }
-
-      final postData = {
-        'mother_id': motherId,
-        'title': title,
-        'content': content,
-        if (imageUrl != null) 'image_url': imageUrl,
-      };
 
       final response =
           await Supabase.instance.client
               .from('posts')
-              .insert(postData)
-              .select('*, mothers(full_name)')
+              .insert({
+                'mother_id': motherId,
+                'title': title.isNotEmpty ? title : 'Post by $fullName',
+                'content': content,
+                'image_url': imageUrl,
+                'likes_count': 0,
+                'comment_count': 0,
+              })
+              .select('*, mothers!posts_mother_id_fkey(full_name, profile_url)')
               .single();
 
-      print('Created post: $response');
-
-      _posts.insert(0, Post.fromMap(response, fullName)..isLiked = false);
+      _posts.insert(0, Post.fromMap(response, fullName));
       notifyListeners();
+      print('Created post by $motherId');
     } catch (e) {
       print('Error creating post: $e');
       rethrow;
@@ -119,46 +181,54 @@ class PostProvider with ChangeNotifier {
   }) async {
     try {
       String? imageUrl;
+      final existingPost = _posts.firstWhere((post) => post.id == postId);
+
       if (imageFile != null) {
-        final fileName = '${DateTime.now().millisecondsSinceEpoch}_$postId.jpg';
+        final fileName =
+            '${DateTime.now().millisecondsSinceEpoch}_${existingPost.motherId}.jpg';
         await Supabase.instance.client.storage
-            .from('post_images')
+            .from('post-images')
             .upload(
               fileName,
               imageFile,
               fileOptions: const FileOptions(upsert: true),
             );
         imageUrl = Supabase.instance.client.storage
-            .from('post_images')
+            .from('post-images')
             .getPublicUrl(fileName);
-        print('Updated image: $imageUrl');
+
+        if (existingPost.imageUrl != null) {
+          final oldFileName = existingPost.imageUrl!.split('/').last;
+          await Supabase.instance.client.storage.from('post-images').remove([
+            oldFileName,
+          ]);
+        }
+      } else if (imageFile == null && existingPost.imageUrl != null) {
+        imageUrl = null;
+        final oldFileName = existingPost.imageUrl!.split('/').last;
+        await Supabase.instance.client.storage.from('post-images').remove([
+          oldFileName,
+        ]);
       }
 
-      final postData = {
-        'title': title,
-        'content': content,
-        if (imageFile != null) 'image_url': imageUrl,
-      };
-
-      await Supabase.instance.client
-          .from('posts')
-          .update(postData)
-          .eq('id', postId);
+      final response =
+          await Supabase.instance.client
+              .from('posts')
+              .update({
+                'title': title.isNotEmpty ? title : existingPost.title,
+                'content': content,
+                'image_url': imageUrl,
+              })
+              .eq('id', postId)
+              .select('*, mothers!posts_mother_id_fkey(full_name, profile_url)')
+              .single();
 
       final index = _posts.indexWhere((post) => post.id == postId);
       if (index != -1) {
-        _posts[index] = Post(
-          id: postId,
-          motherId: _posts[index].motherId,
-          fullName: _posts[index].fullName,
-          title: title,
-          content: content,
-          imageUrl: imageUrl ?? _posts[index].imageUrl,
-          likesCount: _posts[index].likesCount,
-          createdAt: _posts[index].createdAt,
-          isLiked: _posts[index].isLiked,
-        );
+        _posts[index] = Post.fromMap(response, _posts[index].fullName)
+          ..isLiked = _posts[index].isLiked;
         notifyListeners();
+        print('Updated post $postId');
       }
     } catch (e) {
       print('Error updating post: $e');
@@ -166,69 +236,142 @@ class PostProvider with ChangeNotifier {
     }
   }
 
-  Future<void> deletePost(String postId) async {
+  Future<void> likePost(String postId, String motherId, bool like) async {
     try {
-      final post = _posts.firstWhere(
-        (post) => post.id == postId,
-        orElse:
-            () => Post(
-              id: '',
-              motherId: '',
-              fullName: '',
-              title: '',
-              content: '',
-              likesCount: 0,
-              createdAt: DateTime.now(),
-            ),
-      );
-      if (post.imageUrl != null) {
-        final fileName = post.imageUrl!.split('/').last;
-        await Supabase.instance.client.storage.from('post_images').remove([
-          fileName,
-        ]);
-        print('Deleted image: $fileName');
-      }
-      await Supabase.instance.client.from('posts').delete().eq('id', postId);
-      _posts.removeWhere((post) => post.id == postId);
-      notifyListeners();
-    } catch (e) {
-      print('Error deleting post: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> toggleLike(String postId, String motherId, bool isLiked) async {
-    try {
-      if (isLiked) {
+      if (like) {
+        await Supabase.instance.client.from('likes').insert({
+          'post_id': postId,
+          'mother_id': motherId,
+        });
+      } else {
         await Supabase.instance.client
             .from('likes')
             .delete()
             .eq('post_id', postId)
             .eq('mother_id', motherId);
-        await Supabase.instance.client.rpc(
-          'decrement_likes',
-          params: {'row_id': postId},
-        );
-      } else {
-        await Supabase.instance.client.from('likes').insert({
-          'post_id': postId,
-          'mother_id': motherId,
-        });
-        await Supabase.instance.client.rpc(
-          'increment_likes',
-          params: {'row_id': postId},
-        );
       }
+
+      // Fetch updated post to get new likes_count and verify isLiked
+      final response =
+          await Supabase.instance.client
+              .from('posts')
+              .select(
+                '*, mothers!posts_mother_id_fkey(full_name, profile_url), likes!likes_post_id_fkey(mother_id)',
+              )
+              .eq('id', postId)
+              .single();
+
+      final isLiked =
+          (response['likes'] as List<dynamic>?)?.any(
+            (like) => like['mother_id'] == motherId,
+          ) ??
+          false;
 
       final index = _posts.indexWhere((post) => post.id == postId);
       if (index != -1) {
-        _posts[index].isLiked = !isLiked;
-        _posts[index].likesCount += isLiked ? -1 : 1;
+        _posts[index] = Post.fromMap(response, _posts[index].fullName)
+          ..isLiked = isLiked;
+        // Re-sort posts based on engagement
+        _posts.sort((a, b) {
+          final aEngagement = a.likesCount + a.commentCount;
+          final bEngagement = b.likesCount + b.commentCount;
+          return bEngagement.compareTo(aEngagement);
+        });
         notifyListeners();
       }
+      print(
+        'Liked/unliked post $postId by $motherId, new likes: ${response['likes_count']}, comments: ${response['comment_count']}, isLiked: $isLiked',
+      );
     } catch (e) {
-      print('Error toggling like: $e');
+      print('Error liking/unliking post: $e');
+      throw Exception('Failed to like/unlike post: $e');
+    }
+  }
+
+  Future<void> reportPost({
+    required String postId,
+    required String reporterId,
+    required String reason,
+  }) async {
+    try {
+      await Supabase.instance.client.from('temporary_report').insert({
+        'post_id': postId,
+        'reporter_id': reporterId,
+        'reason': reason,
+      });
+      print('Reported post $postId by $reporterId with reason: $reason');
+      await fetchPosts(reporterId);
+    } catch (e) {
+      print('Error reporting post: $e');
       rethrow;
     }
+  }
+
+  Future<void> deletePost({
+    required String postId,
+    required String motherId,
+  }) async {
+    try {
+      final authUserId = Supabase.instance.client.auth.currentUser?.id;
+      print(
+        'Attempting to delete post $postId by motherId: $motherId, authUserId: $authUserId',
+      );
+
+      final post = _posts.firstWhere(
+        (p) => p.id == postId,
+        orElse: () => throw Exception('Post not found'),
+      );
+      if (post.imageUrl != null) {
+        final fileName = post.imageUrl!.split('/').last;
+        print('Removing image: $fileName');
+        await Supabase.instance.client.storage.from('post-images').remove([
+          fileName,
+        ]);
+      }
+
+      final response =
+          await Supabase.instance.client
+              .from('posts')
+              .delete()
+              .eq('id', postId)
+              .eq('mother_id', motherId)
+              .select()
+              .maybeSingle();
+
+      if (response == null) {
+        print('No post deleted for id: $postId, motherId: $motherId');
+        throw Exception('Failed to delete post: No matching post found');
+      }
+
+      _posts.removeWhere((post) => post.id == postId);
+      notifyListeners();
+      print('Deleted post $postId by $motherId');
+
+      final check =
+          await Supabase.instance.client
+              .from('posts')
+              .select()
+              .eq('id', postId)
+              .maybeSingle();
+      print(
+        'Post $postId in database after deletion: ${check != null ? "exists" : "deleted"}',
+      );
+    } catch (e) {
+      print('Error deleting post: $e');
+      if (e.toString().contains('violates foreign key constraint')) {
+        throw Exception(
+          'Cannot delete post because it has associated comments.',
+        );
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_postsChannel != null) {
+      Supabase.instance.client.removeChannel(_postsChannel!);
+    }
+    super.dispose();
   }
 }

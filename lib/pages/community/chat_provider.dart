@@ -1,28 +1,58 @@
-// lib/pages/community/chat_provider.dart
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'message_model.dart';
+import 'package:adde/pages/community/message_model.dart';
 
 class ChatProvider with ChangeNotifier {
   List<Message> _messages = [];
-  List<Message> get messages => _messages;
-  RealtimeChannel? _subscription;
+  RealtimeChannel? _channel;
 
-  Future<void> fetchMessages(String currentUserId, String otherUserId) async {
+  List<Message> get messages => _messages;
+
+  Future<void> fetchMessages(
+    String currentMotherId,
+    String otherMotherId,
+  ) async {
     try {
       final response = await Supabase.instance.client
           .from('communitymessages')
-          .select()
+          .select(
+            '*, sender:mothers!sender_id(full_name), receiver:mothers!receiver_id(full_name)',
+          )
           .or(
-            'sender_id.eq.$currentUserId,receiver_id.eq.$otherUserId,sender_id.eq.$otherUserId,receiver_id.eq.$currentUserId',
+            'and(sender_id.eq.$currentMotherId,receiver_id.eq.$otherMotherId),'
+            'and(sender_id.eq.$otherMotherId,receiver_id.eq.$currentMotherId)',
           )
           .order('created_at', ascending: false);
 
       _messages = response.map<Message>((map) => Message.fromMap(map)).toList();
       notifyListeners();
+      print(
+        'Fetched ${_messages.length} messages for $currentMotherId ↔ $otherMotherId',
+      );
+
+      // Mark messages as seen for the current user
+      await _markMessagesAsSeen(currentMotherId, otherMotherId);
     } catch (e) {
       print('Error fetching messages: $e');
       rethrow;
+    }
+  }
+
+  Future<void> _markMessagesAsSeen(
+    String currentMotherId,
+    String otherMotherId,
+  ) async {
+    try {
+      await Supabase.instance.client
+          .from('communitymessages')
+          .update({'is_seen': true})
+          .eq('receiver_id', currentMotherId)
+          .eq('sender_id', otherMotherId)
+          .eq('is_seen', false);
+      print('Marked messages as seen for $currentMotherId from $otherMotherId');
+    } catch (e) {
+      print('Error marking messages as seen: $e');
+      // Optionally notify user via UI, but don't rethrow to avoid breaking message display
     }
   }
 
@@ -39,64 +69,91 @@ class ChatProvider with ChangeNotifier {
                 'sender_id': senderId,
                 'receiver_id': receiverId,
                 'content': content,
+                'is_seen': false,
               })
-              .select()
+              .select(
+                '*, sender:mothers!sender_id(full_name), receiver:mothers!receiver_id(full_name)',
+              )
               .single();
 
       _messages.add(Message.fromMap(response));
       notifyListeners();
+      print('Sent message from $senderId to $receiverId');
     } catch (e) {
       print('Error sending message: $e');
       rethrow;
     }
   }
 
-  Future<void> markAsSeen(String messageId) async {
-    try {
-      await Supabase.instance.client
-          .from('communitymessages')
-          .update({'is_seen': true})
-          .eq('id', messageId);
+  void subscribeToMessages(String currentMotherId, String otherMotherId) {
+    // Use unique channel name to avoid conflicts
+    final channelName = 'messages:$currentMotherId:$otherMotherId';
+    _channel = Supabase.instance.client
+        .channel(channelName)
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'communitymessages',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'receiver_id',
+            value: currentMotherId,
+          ),
+          callback: (payload) async {
+            try {
+              final response =
+                  await Supabase.instance.client
+                      .from('communitymessages')
+                      .select(
+                        '*, sender:mothers!sender_id(full_name), receiver:mothers!receiver_id(full_name)',
+                      )
+                      .eq('id', payload.newRecord['id'])
+                      .single();
+              final message = Message.fromMap(response);
+              // Only add messages between currentMotherId and otherMotherId
+              if ((message.senderId == currentMotherId &&
+                      message.receiverId == otherMotherId) ||
+                  (message.senderId == otherMotherId &&
+                      message.receiverId == currentMotherId)) {
+                _messages.add(message);
+                notifyListeners();
+                print('New message added via subscription: ${message.id}');
 
-      final index = _messages.indexWhere((msg) => msg.id == messageId);
-      if (index != -1) {
-        _messages[index].isSeen = true;
-        notifyListeners();
-      }
-    } catch (e) {
-      print('Error marking message as seen: $e');
-    }
-  }
-
-  void subscribeToMessages(String currentUserId, String otherUserId) {
-    _subscription =
-        Supabase.instance.client
-            .channel('communitymessages')
-            .onPostgresChanges(
-              event: PostgresChangeEvent.insert,
-              schema: 'public',
-              table: 'communitymessages',
-              filter: PostgresChangeFilter(
-                type: PostgresChangeFilterType.eq,
-                column: 'sender_id',
-                value: otherUserId,
-              ),
-              callback: (payload) {
-                final message = Message.fromMap(payload.newRecord);
-                if (message.receiverId == currentUserId) {
-                  _messages.add(message);
-                  markAsSeen(message.id);
-                  notifyListeners();
+                // Mark message as seen if this user is the receiver
+                if (message.receiverId == currentMotherId) {
+                  await _markMessagesAsSeen(currentMotherId, otherMotherId);
                 }
-              },
-            )
-            .subscribe();
+              }
+            } catch (e) {
+              print('Error in message subscription: $e');
+            }
+          },
+        )
+        .subscribe((status, [error]) {
+          print('Subscription status: $status for $channelName');
+          if (status == 'CHANNEL_ERROR') {
+            print('Message subscription error: $error');
+          } else if (status == 'SUBSCRIBED') {
+            print(
+              'Subscribed to messages for $currentMotherId ↔ $otherMotherId',
+            );
+          }
+        });
   }
 
   void unsubscribe() {
-    if (_subscription != null) {
-      Supabase.instance.client.removeChannel(_subscription!);
-      _subscription = null;
+    if (_channel != null) {
+      Supabase.instance.client.removeChannel(_channel!);
+      _channel = null;
+      print('Unsubscribed from message channel');
     }
+    _messages.clear();
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    unsubscribe();
+    super.dispose();
   }
 }
