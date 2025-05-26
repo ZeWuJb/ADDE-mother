@@ -94,7 +94,10 @@ class PostCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '${post.createdAt.toLocal().toString().substring(0, 16)}',
+                            post.createdAt.toLocal().toString().substring(
+                              0,
+                              16,
+                            ),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
