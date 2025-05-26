@@ -5,8 +5,10 @@ class Post {
   final String title;
   final String content;
   final String? imageUrl;
-  int likesCount;
+  final String? profileImageUrl;
   final DateTime createdAt;
+  int likesCount;
+  int commentCount;
   bool isLiked;
 
   Post({
@@ -16,24 +18,26 @@ class Post {
     required this.title,
     required this.content,
     this.imageUrl,
-    required this.likesCount,
+    this.profileImageUrl,
     required this.createdAt,
-    this.isLiked = false,
+    required this.likesCount,
+    required this.commentCount,
+    required this.isLiked,
   });
 
   factory Post.fromMap(Map<String, dynamic> map, String fullName) {
-    print('Mapping post with id: ${map['id']}');
     return Post(
-      id: map['id']?.toString() ?? '',
-      motherId: map['mother_id']?.toString() ?? '',
+      id: map['id'] as String,
+      motherId: map['mother_id'] as String,
       fullName: fullName,
-      title: map['title']?.toString() ?? 'Untitled',
-      content: map['content']?.toString() ?? '',
-      imageUrl: map['image_url']?.toString(),
-      likesCount: map['likes_count'] is int ? map['likes_count'] : 0,
-      createdAt:
-          DateTime.tryParse(map['created_at']?.toString() ?? '') ??
-          DateTime.now(),
+      title: map['title'] as String,
+      content: map['content'] as String,
+      imageUrl: map['image_url'] as String?,
+      profileImageUrl: map['mothers']['profile_url'] as String?,
+      createdAt: DateTime.parse(map['created_at'] as String),
+      likesCount: map['likes_count'] as int? ?? 0,
+      commentCount: map['comment_count'] as int? ?? 0,
+      isLiked: false, // Set in PostProvider
     );
   }
 }

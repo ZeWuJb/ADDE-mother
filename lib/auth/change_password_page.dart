@@ -12,6 +12,8 @@ class ChangePasswordPage extends StatefulWidget {
 
 class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final TextEditingController emailController = TextEditingController();
+  final TextEditingController otpController = TextEditingController();
+  final TextEditingController newPasswordController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
   bool _isEmailSent = false;
@@ -36,9 +38,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
     setState(() => _isLoading = true);
     try {
-      await Supabase.instance.client.auth.resetPasswordForEmail(
-        email,
-        redirectTo: 'io.supabase.adde://reset-password/',
+      await Supabase.instance.client.auth.signInWithOtp(
+        email: email,
+        emailRedirectTo: 'io.supabase.adde://reset-password/',
       );
 
       setState(() {
@@ -47,6 +49,52 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       });
 
       _showSnackBar(l10n.resetEmailSentSuccess(email), isSuccess: true);
+    } catch (e) {
+      setState(() => _isLoading = false);
+      _showSnackBar(l10n.resetPasswordError(e.toString()));
+    }
+  }
+
+  Future<void> _verifyOtpAndUpdatePassword() async {
+    final email = emailController.text.trim();
+    final otp = otpController.text.trim();
+    final newPassword = newPasswordController.text.trim();
+    final l10n = AppLocalizations.of(context)!;
+
+    if (otp.isEmpty || newPassword.isEmpty) {
+      _showSnackBar(l10n.emptyFieldsError);
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      _showSnackBar(l10n.passwordTooShortError);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      // Verify OTP
+      final authResponse = await Supabase.instance.client.auth.verifyOTP(
+        email: email,
+        token: otp,
+        type: OtpType.email,
+      );
+
+      if (authResponse.session != null) {
+        // Update password
+        final updateResponse = await Supabase.instance.client.auth.updateUser(
+          UserAttributes(password: newPassword),
+        );
+
+        if (updateResponse.user != null) {
+          setState(() => _isLoading = false);
+          _showSnackBar(l10n.passwordUpdatedSuccess, isSuccess: true);
+          // Optionally navigate to login page
+          Navigator.of(context).pop();
+        } else {
+          throw Exception('Failed to update password');
+        }
+      }
     } catch (e) {
       setState(() => _isLoading = false);
       _showSnackBar(l10n.resetPasswordError(e.toString()));
@@ -81,6 +129,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   @override
   void dispose() {
     emailController.dispose();
+    otpController.dispose();
+    newPasswordController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -134,8 +184,14 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                       _buildDescription(theme, l10n),
                       SizedBox(height: screenHeight * 0.04),
                       _buildEmailInput(theme, l10n),
+                      if (_isEmailSent) ...[
+                        SizedBox(height: screenHeight * 0.03),
+                        _buildOtpInput(theme, l10n),
+                        SizedBox(height: screenHeight * 0.03),
+                        _buildNewPasswordInput(theme, l10n),
+                      ],
                       SizedBox(height: screenHeight * 0.03),
-                      _buildSendButton(theme, l10n),
+                      _buildActionButton(theme, l10n),
                       SizedBox(height: screenHeight * 0.02),
                     ],
                   ),
@@ -172,9 +228,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   Widget _buildDescription(ThemeData theme, AppLocalizations l10n) {
     return Text(
-      _isEmailSent
-          ? l10n.resetLinkSentDescription
-          : l10n.resetPasswordDescription,
+      _isEmailSent ? l10n.enterOtpDescription : l10n.resetPasswordDescription,
       style: theme.textTheme.bodyMedium?.copyWith(
         color: theme.colorScheme.onSurfaceVariant,
       ),
@@ -194,14 +248,40 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     );
   }
 
-  Widget _buildSendButton(ThemeData theme, AppLocalizations l10n) {
+  Widget _buildOtpInput(ThemeData theme, AppLocalizations l10n) {
+    return Semantics(
+      label: l10n.otpLabel,
+      child: InputFiled(
+        controller: otpController,
+        hintText: l10n.otpLabel,
+        keyboardType: TextInputType.number,
+      ),
+    );
+  }
+
+  Widget _buildNewPasswordInput(ThemeData theme, AppLocalizations l10n) {
+    return Semantics(
+      label: l10n.newPasswordLabel,
+      child: InputFiled(
+        controller: newPasswordController,
+        hintText: l10n.newPasswordLabel,
+        obscure: true,
+      ),
+    );
+  }
+
+  Widget _buildActionButton(ThemeData theme, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Semantics(
-        label: _isEmailSent ? l10n.emailSentButton : l10n.sendResetLinkButton,
+        label: _isEmailSent ? l10n.submitOtpButton : l10n.sendResetLinkButton,
         child: ElevatedButton(
           onPressed:
-              _isLoading || _isEmailSent ? null : _sendPasswordResetEmail,
+              _isLoading
+                  ? null
+                  : _isEmailSent
+                  ? _verifyOtpAndUpdatePassword
+                  : _sendPasswordResetEmail,
           style: theme.elevatedButtonTheme.style?.copyWith(
             minimumSize: const WidgetStatePropertyAll(
               Size(double.infinity, 50),
@@ -214,7 +294,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   )
                   : Text(
                     _isEmailSent
-                        ? l10n.emailSentButton
+                        ? l10n.submitOtpButton
                         : l10n.sendResetLinkButton,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.bold,

@@ -1355,5 +1355,254 @@
       }
     }
   },
-"popupNotifications": "Pop-up Notifications"
+"popupNotifications": "Pop-up Notifications",
+"availableHealthProfessionals": "Available Health Professionals",
+  "@availableHealthProfessionals": {
+    "description": "Title for the page showing available doctors and nurses"
+  },
+  "nursesLabel": "Nurses",
+  "@nursesLabel": {
+    "description": "Label for the nurses button"
+  },
+  "noNursesAvailable": "No nurses available at the moment",
+  "@noNursesAvailable": {
+    "description": "Message shown when no nurses are available"
+  },
+  "navigateToNurses": "Navigate to nurses list",
+  "@navigateToNurses": {
+    "description": "Accessibility label for navigating to nurses"
+  },
+  "healthProfessionalsLabel": "Health Professionals",
+  "@healthProfessionalsLabel": {
+    "description": "Label for the health professionals button"
+  },
+  "navigateToHealthProfessionals": "Navigate to health professionals list",
+  "@navigateToHealthProfessionals": {
+    "description": "Accessibility label for navigating to health professionals"
+  },
+  "selectHealthProfessionals": "Select Health Professionals to view",
+  "@selectHealthProfessionals": {
+    "description": "Message shown when no professionals are selected"
+  },
+  "viewComments": "View Comments",
+"@viewComments": {
+  "description": "Text displayed to prompt users to view comments on a post"
+},
+
+  "errorLikingPost": "Error liking post: {error}",
+  "@errorLikingPost": {
+    "description": "Error message when liking/unliking a post fails",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "errorSearchingPosts": "Error searching posts: {error}",
+  "@errorSearchingPosts": {
+    "description": "Error message when searching posts fails",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "errorFetchingPosts": "Error fetching posts: {error}",
+  "@errorFetchingPosts": {
+    "description": "Error message when fetching user posts fails",
+    "placeholders": {
+      "error": {
+         "type": "Object"
+      }
+    }
+  },
+  "messageButton": "Message",
+  "@messageButton": {
+    "description": "Label for the button to start a chat with a user"
+  },
+  "postsTitle": "Posts",
+  "@postsTitle": {
+    "description": "Title for the section displaying user posts"
+  },
+  "userAvatar": "Avatar of {name}",
+  "@userAvatar": {
+    "description": "Accessibility label for user avatar",
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "sentMessage": "Sent message",
+  "@sentMessage": {
+    "description": "Accessibility label prefix for sent messages"
+  },
+  "receivedMessage": "Received message",
+  "@receivedMessage": {
+    "description": "Accessibility label prefix for received messages"
+  },
+  "emptyTitleError": "Post title cannot be empty",
+  "postTitleHint": "Enter post title",
+  "@emptyTitleError": { "description": "Message shown when post title is empty" },
+  "@postTitleHint": { "description": "Hint text for post title input" },
+  "addCommentHint": "Add a comment...",
+  "@addCommentHint": { "description": "Hint text for the comment input field" },
+  "viewMessages": "View Messages",
+  "@viewMessages": { "description": "Tooltip for the messages action button" },
+  "messagesTitle": "Messages",
+  "@messagesTitle": { "description": "Title for the messages screen" },
+  "noMessages": "No messages yet",
+  "@noMessages": { "description": "Message shown when there are no conversations" },
+  "errorFetchingMessages": "Error fetching messages: {error}",
+  "@errorFetchingMessages": { "description": "Error message for messages fetch failure", "placeholders": { "error": {
+    "type": "Object"
+  } } },
+  "errorFetchingConversations": "Error fetching conversations: {error}",
+  "@errorFetchingConversations": {
+    "description": "Error message for conversation fetch failure",
+    "placeholders": { "error": {
+      "type": "Object"
+    } }
+  },
+  "noConversations": "No conversations yet",
+  "@noConversations": { "description": "Message when no conversations exist" },
+  "reportPostTitle": "Report Post",
+  "@reportPostTitle": { "description": "Title for report post dialog" },
+  "reportPost": "Report",
+  "@reportPost": { "description": "Menu option to report a post" },
+  "reportReasonHint": "reason for reporting",
+  "@reportReasonHint": { "description": "Hint for report reason input" },
+  "reportReasonRequired": "Please provide a reason for reporting",
+  "@reportReasonRequired": { "description": "Error when report reason is empty" },
+  "reportSubmitted": "Report submitted successfully",
+  "@reportSubmitted": { "description": "Confirmation message for report submission" },
+  "errorReportingPost": "Error reporting post: {error}",
+  "@errorReportingPost": { "description": "Error message for report failure", "placeholders": { "error": {
+    "type": "Object"
+  } } },
+  "postOptions": "Post options",
+  "@postOptions": { "description": "Tooltip for post options menu" },
+   "reasonInappropriate": "Inappropriate content", 
+   "@reasonInappropriate": { "description": "Report reason for inappropriate content" }, 
+   "reasonSpam": "Spam", 
+   "@reasonSpam": { "description": "Report reason for spam" }, 
+   "reasonOffensive": "Offensive language", 
+   "@reasonOffensive": { "description": "Report reason for offensive language" }, 
+   "reasonMisleading": "Misleading information", 
+   "@reasonMisleading": { "description": "Report reason for misleading or false information" }, 
+   "reasonHarassment": "Harassment or bullying", 
+   "@reasonHarassment": { "description": "Report reason for harassment or bullying" }, 
+   "reasonCopyright": "Copyright violation", 
+   "@reasonCopyright": { "description": "Report reason for copyright or intellectual property violation" }, 
+   "reasonOther": "Other", 
+   "@reasonOther": { "description": "Report reason for other issues" },
+   "deletePostTitle": "Delete Post",
+   "@deletePostTitle": { "description": "Title for delete post dialog" },
+   "deletePostConfirmation": "Are you sure you want to delete this post? This action cannot be undone.",
+   "@deletePostConfirmation": { "description": "Confirmation message for deleting a post" },
+   "deletePostSuccess": "Post deleted successfully",
+   "@deletePostSuccess": { "description": "Confirmation message for successful post deletion" },
+   "errorDeletingPost": "Error deleting post: {error}",
+   "@errorDeletingPost": { "description": "Error message for post deletion failure", "placeholders": { "error": {
+    "type": "Object"
+   } } },
+   "deleteButton": "Delete",
+   "@deleteButton": { "description": "Delete button label" },
+   "errorDeletingPostWithComments": "Cannot delete post because it has comments.",
+   "@errorDeletingPostWithComments": { "description": "Error message when post deletion fails due to comments" },
+
+    "you": "You",
+    "imageMessage": "Image",
+    "videoMessage": "Video",
+    "documentMessage": "Document",
+    "errorFetchingPost": "Error fetching post: @error",
+    "verificationCodeSentSuccess": "Verification code sent to {email}.",
+    "@verificationCodeSentSuccess": {
+      "description": "Success message after sending the verification code",
+      "placeholders": {
+        "email": {
+           "type": "Object"
+        }
+      }
+    },
+    "verificationCodeError": "Failed to send or verify code: {error}",
+    "@verificationCodeError": {
+      "description": "Error message when sending or verifying the code fails",
+      "placeholders": {
+        "error": {
+           "type": "Object"
+        }
+      }
+    },
+    "invalidCodeError": "Please enter a valid 6-digit verification code.",
+    "@invalidCodeError": {
+      "description": "Error message when the verification code is invalid"
+    },
+    "emptyPasswordError": "Please enter a new password.",
+    "@emptyPasswordError": {
+      "description": "Error message when the new password field is empty"
+    },
+    "passwordUpdateSuccess": "Password updated successfully.",
+    "@passwordUpdateSuccess": {
+      "description": "Success message after updating the password"
+    },
+    "verificationCodeDescription": "Enter the 6-digit verification code sent to your email and your new password.",
+    "@verificationCodeDescription": {
+      "description": "Description text after sending the verification code"
+    },
+    "passwordUpdateSuccessDescription": "Your password has been updated successfully. You can now use it to sign in.",
+    "@passwordUpdateSuccessDescription": {
+      "description": "Description text after successfully updating the password"
+    },
+    "verificationCodeLabel": "Verification Code",
+    "@verificationCodeLabel": {
+      "description": "Label for the verification code input field"
+    },
+    "newPasswordLabel": "New Password",
+    "@newPasswordLabel": {
+      "description": "Label for the new password input field"
+    },
+    "verifyCodeButton": "Verify Code & Update Password",
+    "@verifyCodeButton": {
+      "description": "Button text for verifying the code and updating the password"
+    },
+    "sendVerificationCodeButton": "Send Verification Code",
+    "@sendVerificationCodeButton": {
+      "description": "Button text for sending the verification code"
+    },
+    "passwordUpdatedButton": "Password Updated",
+    "@passwordUpdatedButton": {
+      "description": "Button text shown after password is updated"
+    },
+    "changePassword": "Change Password",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "passwordTooShortError": "Password must be at least 8 characters",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "passwordUpdateError": "Failed to update password: {error}",
+    "submit": "Submit",
+    "errorLoggingOut": "Failed to log out: {error}",
+"@errorLoggingOut": {
+  "description": "Error message shown when logout fails",
+  "placeholders": {
+    "error": {
+      "type": "Object"
+    }
+  }
+},
+  "enterOtpDescription": "Enter the 6-digit code sent to your email and your new password.",
+  "otpLabel": "6-Digit Code",
+  "submitOtpButton": "Submit",
+  "passwordUpdatedSuccess": "Password updated successfully!",
+  "fullNameError": "Please enter your full name",
+  "ageEmptyError": "Please enter your age",
+  "ageInvalidError": "Please enter a valid age (0-120)",
+  "weightEmptyError": "Please enter your weight",
+  "heightEmptyError": "Please enter your height",
+  "bloodPressureEmptyError": "Please enter your blood pressure",
+  "pregnancyStartDateError": "Please select your pregnancy start date",
+  "healthIssueEmptyError": "Please describe your health issue"
 }
+  
+  
+

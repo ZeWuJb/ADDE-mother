@@ -1395,5 +1395,229 @@
       }
     }
   },
-  "popupNotifications": "ብቅ-ወጪ ማሳወቂያዎች"
+  "popupNotifications": "ብቅ-ወጪ ማሳወቂያዎች",
+  "availableHealthProfessionals": "የሚገኙ የጤና ባለሙያዎች",
+  "nursesLabel": "ነርሶች",
+  "noNursesAvailable": "በአሁኑ ጊዜ ምንም ነርሶች የሉም",
+  "navigateToNurses": "ወደ ነርሶች ዝርዝር ይሂዱ",
+  "healthProfessionalsLabel": "የጤና ባለሙያዎች",
+  "navigateToHealthProfessionals": "ወደ የጤና ባለሙያዎች ዝርዝር ይሂዱ",
+  "selectHealthProfessionals": "ለመመልከት የጤና ባለሙያዎችን ይምረጡ",
+  "viewComments": "አስተያየቶችን ተመልከት",
+  "@viewComments": {
+    "description": "Text displayed to prompt users to view comments on a post"
+  },
+  "errorLikingPost": "ልጥፍ መውደድ ላይ ስህተት፡ {error}",
+  "@errorLikingPost": {
+    "description": "Error message when liking/unliking a post fails",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "errorSearchingPosts": "ልጥፎችን መፈለግ ላይ ስህተት፡ {error}",
+  "@errorSearchingPosts": {
+    "description": "Error message when searching posts fails",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "errorFetchingPosts": "ልጥፎችን ማግኘት ላይ ስህተት፡ {error}",
+  "@errorFetchingPosts": {
+    "description": "Error message when fetching user posts fails",
+    "placeholders": {
+      "error": {
+         "type": "Object"
+      }
+    }
+  },
+  "messageButton": "መልእክት",
+  "@messageButton": {
+    "description": "Label for the button to start a chat with a user"
+  },
+  "postsTitle": "ልጥፎች",
+  "@postsTitle": {
+    "description": "Title for the section displaying user posts"
+  },
+  "userAvatar": "የ{name} አቫታር",
+  "@userAvatar": {
+    "description": "Accessibility label for user avatar",
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "sentMessage": "የተላከ መልእክት",
+  "@sentMessage": {
+    "description": "Accessibility label prefix for sent messages"
+  },
+  "receivedMessage": "የተቀበለ መልእክት",
+  "@receivedMessage": {
+    "description": "Accessibility label prefix for received messages"
+  },
+  "emptyTitleError": "የልጥፍ ርዕስ ባዶ መሆን አይችልም",
+  "postTitleHint": "የልጥፍ ርዕስ ያስገቡ",
+  "@emptyTitleError": { "description": "Message shown when post title is empty" },
+  "@postTitleHint": { "description": "Hint text for post title input" },
+  "addCommentHint": "አስተያየት ያክሉ...",
+  "@addCommentHint": { "description": "Hint text for the comment input field" },
+  "viewMessages": "መልዕክቶችን ይመልከቱ",
+  "@viewMessages": { "description": "Tooltip for the messages action button" },
+  "messagesTitle": "መልዕክቶች",
+  "@messagesTitle": { "description": "Title for the messages screen" },
+  "noMessages": "እስካሁን መልዕክቶች የሉም",
+  "@noMessages": { "description": "Message shown when there are no conversations" },
+  "errorFetchingMessages": "መልዕክቶችን መግኘት ላይ ስህተት፡ {error}",
+  "@errorFetchingMessages": { "description": "Error message for messages fetch failure", "placeholders": { "error": {
+    "type": "Object"
+  } } },
+  "errorFetchingConversations": "ውይይቶችን ማምጣት ላይ ስህተት፡ {error}",
+  "@errorFetchingConversations": {
+    "description": "Error message for conversation fetch failure",
+    "placeholders": { "error": {
+      "type": "Object"
+    } }
+  },
+  "noConversations": "እስካሁን ውይይቶች የሉም",
+  "@noConversations": { "description": "Message when no conversations exist" },
+  "reportPostTitle": "ጽሁፍ ሪፖርት አድርግ",
+  "@reportPostTitle": { "description": "Title for report post dialog" },
+  "reportPost": "ሪፖርት",
+  "@reportPost": { "description": "Menu option to report a post" },
+  "reportReasonHint": "የሪፖርት ምክንያት",
+  "@reportReasonHint": { "description": "Hint for report reason input" },
+  "reportReasonRequired": "እባክዎ የሪፖርት ምክንያት ያቅርቡ",
+  "@reportReasonRequired": { "description": "Error when report reason is empty" },
+  "reportSubmitted": "ሪፖርት በተሳካ ሁኔታ ተመዝግቧል",
+  "@reportSubmitted": { "description": "Confirmation message for report submission" },
+  "errorReportingPost": "ጽሁፍ ሪፖርት ማድረግ ላይ ስህተት፡ {error}",
+  "@errorReportingPost": { "description": "Error message for report failure", "placeholders": { "error": {
+    "type": "Object"
+  } } },
+  "postOptions": "Post options",
+  "@postOptions": { "description": "Tooltip for post options menu" },
+  "reasonInappropriate": "አግባብ ያልሆነ ይዘት", 
+  "@reasonInappropriate": { "description": "Report reason for inappropriate content" }, 
+  "reasonSpam": "ስፓም", 
+  "@reasonSpam": { "description": "Report reason for spam" }, 
+  "reasonOffensive": "አንገብጋቢ ቋንቋ", 
+  "@reasonOffensive": { "description": "Report reason for offensive language" }, 
+  "reasonMisleading": "ማታለል ወይም የተሳሳተ መረጃ", 
+  "@reasonMisleading": { "description": "Report reason for misleading or false information" }, 
+  "reasonHarassment": "ማስፈራራት ወይም ጉልበተኝነት", 
+  "@reasonHarassment": { "description": "Report reason for harassment or bullying" }, 
+  "reasonCopyright": "የቅጂ መብት ጥሰት", 
+  "@reasonCopyright": { "description": "Report reason for copyright or intellectual property violation" }, 
+  "reasonOther": "ሌላ", 
+  "@reasonOther": { "description": "Report reason for other issues" },
+  "deletePostTitle": "ጽሁፍ ሰርዝ",
+  "@deletePostTitle": { "description": "Title for delete post dialog" },
+  "deletePostConfirmation": "ይህን ጽሁፍ መሰረዝ እንደሚፈልጉ እርግጠኛ ነዎት? ይህ ተግባር መቀልበስ አይቻልም።",
+  "@deletePostConfirmation": { "description": "Confirmation message for deleting a post" },
+  "deletePostSuccess": "ጽሁፍ በተሳካ ሁኔታ ተሰርዟል",
+  "@deletePostSuccess": { "description": "Confirmation message for successful post deletion" },
+  "errorDeletingPost": "ጽሁፍ መሰረዝ ላይ ስህተት፡ {error}",
+  "@errorDeletingPost": { "description": "Error message for post deletion failure", "placeholders": { "error": {
+    "type": "Object"
+  } } },
+  "deleteButton": "ሰርዝ",
+  "@deleteButton": { "description": "Delete button label" },
+  "errorDeletingPostWithComments": "ጽሁፍ መሰረዝ አይቻልም ምክንያቱም አስተያየቶች አሉት።",
+  "@errorDeletingPostWithComments": { "description": "Error message when post deletion fails due to comments" },
+    "you": "እርስዎ",
+    "imageMessage": "ምስል",
+    "videoMessage": "ቪዲዮ",
+    "documentMessage": "ሰነድ",
+    "errorFetchingPost": "ጽሁፍ በማምጣት ላይ ስህተት: @error",
+  "verificationCodeSentSuccess": "የማረጋገጫ ኮድ ወደ {email} ተልኳል።",
+  "@verificationCodeSentSuccess": {
+    "description": "Success message after sending the verification code in Amharic",
+    "placeholders": {
+      "email": {
+        "type": "Object"
+      }
+    }
+  },
+  "verificationCodeError": "ኮድ መላክ ወይም ማረጋገጥ አልተሳካም፡ {error}",
+  "@verificationCodeError": {
+    "description": "Error message when sending or verifying the code fails in Amharic",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "invalidCodeError": "እባክዎ ትክክለኛ ባለ 6-አሃዝ የማረጋገጫ ኮድ ያስገቡ።",
+  "@invalidCodeError": {
+    "description": "Error message when the verification code is invalid in Amharic"
+  },
+  "emptyPasswordError": "እባክዎ አዲስ የይለፍ ቃል ያስገቡ።",
+  "@emptyPasswordError": {
+    "description": "Error message when the new password field is empty in Amharic"
+  },
+  "passwordUpdateSuccess": "የይለፍ ቃል በተሳካ ሁኔታ ተዘምኗል።",
+  "@passwordUpdateSuccess": {
+    "description": "Success message after updating the password in Amharic"
+  },
+  "verificationCodeDescription": "ወደ ኢሜይልዎ የተላከውን ባለ 6-አሃዝ የማረጋገጫ ኮድ እና አዲሱን የይለፍ ቃል ያስገቡ።",
+  "@verificationCodeDescription": {
+    "description": "Description text after sending the verification code in Amharic"
+  },
+  "passwordUpdateSuccessDescription": "የይለፍ ቃልዎ በተሳካ ሁኔታ ተዘምኗል። አሁን ለመግባት መጠቀም ይችላሉ።",
+  "@passwordUpdateSuccessDescription": {
+    "description": "Description text after successfully updating the password in Amharic"
+  },
+  "verificationCodeLabel": "የማረጋገጫ ኮድ",
+  "@verificationCodeLabel": {
+    "description": "Label for the verification code input field in Amharic"
+  },
+  "newPasswordLabel": "አዲስ የይለፍ ቃል",
+  "@newPasswordLabel": {
+    "description": "Label for the new password input field in Amharic"
+  },
+  "verifyCodeButton": "ኮድ አረጋግጥ እና የይለፍ ቃል ዘምን",
+  "@verifyCodeButton": {
+    "description": "Button text for verifying the code and updating the password in Amharic"
+  },
+  "sendVerificationCodeButton": "የማረጋገጫ ኮድ ላክ",
+  "@sendVerificationCodeButton": {
+    "description": "Button text for sending the verification code in Amharic"
+  },
+  "passwordUpdatedButton": "የይለፍ ቃል ተዘምኗል",
+  "@passwordUpdatedButton": {
+    "description": "Button text shown after password is updated in Amharic"
+  },
+  "changePassword": "የይለፍ ቃል ቀይር", 
+  "newPassword": "አዲስ የይለፍ ቃል", 
+  "confirmNewPassword": "አዲስ የይለፍ ቃል ያረጋግጡ", 
+  "passwordTooShortError": "የይለፍ ቃል ቢያንስ 8 ቁምፊዎች መሆን አለበት", 
+  "passwordsDoNotMatch": "የይለፍ ቃሎች አይዛመዱም", 
+  "passwordUpdateError": "የይለፍ ቃል መዘመን አልተሳካም፡ {error}", 
+  "submit": "አስገባ",
+  "errorLoggingOut": "መውጣት አልተሳካም፡ {error}",
+  "@errorLoggingOut": {
+    "description": "Error message shown when logout fails",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "enterOtpDescription": "በኢሜይልዎ የተላከውን 6-አሃዝ ኮድ እና አዲሱን የይለፍ ቃልዎን ያስገቡ።",
+  "otpLabel": "6-አሃዝ ኮድ",
+  "submitOtpButton": "አስገባ",
+  "passwordUpdatedSuccess": "የይለፍ ቃል በተሳካ ሁኔታ ተዘምኗል!",
+  "fullNameError": "እባክዎ ሙሉ ስምዎን ያስገቡ",
+  "ageEmptyError": "እባክዎ ዕድሜዎን ያስገቡ",
+  "ageInvalidError": "እባክዎ ተገቢ ዕድሜ ያስገቡ (0-120)",
+  "weightEmptyError": "እባክዎ ክብደትዎን ያስገቡ",
+  "heightEmptyError": "እባክዎ ቁመትዎን ያስገቡ",
+  "bloodPressureEmptyError": "እባክዎ የደም ግፊትዎን ያስገቡ",
+  "pregnancyStartDateError": "እባክዎ የእርግዝና መጀመሪያ ቀንዎን ይምረጡ",
+  "healthIssueEmptyError": "እባክዎ የጤና ችግርዎን ይግለጹ"
 }
+

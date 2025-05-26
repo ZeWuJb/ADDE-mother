@@ -4,6 +4,7 @@ import 'package:adde/pages/health_form_page.dart';
 import 'package:flutter/material.dart';
 import 'package:adde/component/input_fild.dart';
 import 'package:adde/auth/login_page.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -14,18 +15,47 @@ class RegisterPage extends StatefulWidget {
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterPageState extends State<RegisterPage>
+    with TickerProviderStateMixin {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
   final AuthenticationService _authService = AuthenticationService();
   final ScrollController _scrollController = ScrollController();
+  late AnimationController _backgroundAnimationController;
+  late Animation<Color?> _gradientColorAnimation;
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    // Background gradient animation
+    _backgroundAnimationController = AnimationController(
+      duration: const Duration(seconds: 5),
+      vsync: this,
+    )..repeat(reverse: true);
+    _gradientColorAnimation = ColorTween(
+      begin: Colors.blue.withOpacity(0.2),
+      end: Colors.purple.withOpacity(0.2),
+    ).animate(
+      CurvedAnimation(
+        parent: _backgroundAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    // Fade animation for loading overlay
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.jumpTo(0);
@@ -33,10 +63,19 @@ class _RegisterPageState extends State<RegisterPage> {
     });
   }
 
+  @override
+  void didUpdateWidget(RegisterPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_isLoading) {
+      _fadeController.forward();
+    } else {
+      _fadeController.reverse();
+    }
+  }
+
   Future<void> _nativeGoogleSignIn() async {
     setState(() => _isLoading = true);
-    const webClientId =
-        '455569810410-jjrlbek9hmpi5i9ia9c40ijusmnbrhhj.apps.googleusercontent.com';
+    var webClientId = dotenv.env['WEB_CLIENT_ID']!;
     final l10n = AppLocalizations.of(context)!;
 
     try {
@@ -64,19 +103,18 @@ class _RegisterPageState extends State<RegisterPage> {
         accessToken: accessToken,
       );
 
-      if (response.session != null) {
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => MotherFormPage(
-                    email: googleUser.email,
-                    user_id: response.user!.id,
-                  ),
-            ),
-          );
-        }
+      if (response.session != null && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => MotherFormPage(
+                  email: googleUser.email,
+                  user_id: response.user!.id,
+                ),
+            settings: const RouteSettings(name: '/mother_form'),
+          ),
+        );
       } else {
         _showSnackBar(l10n.googleSignUpFailedError);
       }
@@ -97,34 +135,34 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _isLoading = true);
     try {
       final response = await _authService.signUpWithEmail(email, password);
-      if (response.user != null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                l10n.signUpSuccess,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              backgroundColor: Colors.green.shade400,
-              behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.all(16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+      if (response.user != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              l10n.signUpSuccess,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          );
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) =>
-                      MotherFormPage(email: email, user_id: response.user!.id),
+            backgroundColor: Colors.green.shade400,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
             ),
-          );
-        }
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) =>
+                    MotherFormPage(email: email, user_id: response.user!.id),
+            settings: const RouteSettings(name: '/mother_form'),
+          ),
+        );
       } else {
         _showSnackBar(l10n.signUpFailedError);
       }
@@ -149,6 +187,7 @@ class _RegisterPageState extends State<RegisterPage> {
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: const Duration(seconds: 3),
         ),
       );
     }
@@ -160,6 +199,8 @@ class _RegisterPageState extends State<RegisterPage> {
     passwordController.dispose();
     confirmPasswordController.dispose();
     _scrollController.dispose();
+    _backgroundAnimationController.dispose();
+    _fadeController.dispose();
     super.dispose();
   }
 
@@ -172,25 +213,34 @@ class _RegisterPageState extends State<RegisterPage> {
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    theme.colorScheme.primary.withOpacity(0.2),
-                    theme.colorScheme.secondary.withOpacity(0.2),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+          // Animated background gradient
+          AnimatedBuilder(
+            animation: _backgroundAnimationController,
+            builder: (context, child) {
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      _gradientColorAnimation.value ??
+                          theme.colorScheme.primary.withOpacity(0.2),
+                      theme.colorScheme.secondary.withOpacity(0.2),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
           SingleChildScrollView(
             controller: _scrollController,
+            physics: const BouncingScrollPhysics(),
             child: Center(
               child: Padding(
-                padding: EdgeInsets.only(top: screenHeight * 0.06, bottom: 20),
+                padding: EdgeInsets.only(
+                  top: screenHeight * 0.06,
+                  bottom: screenHeight * 0.04,
+                ),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 400),
                   child: Column(
@@ -199,22 +249,25 @@ class _RegisterPageState extends State<RegisterPage> {
                       SizedBox(height: screenHeight * 0.03),
                       _buildWelcomeText(theme, l10n),
                       SizedBox(height: screenHeight * 0.03),
-                      InputFiled(
-                        controller: emailController,
-                        hintText: l10n.emailLabel,
-                        email: true,
+                      _buildInputField(
+                        emailController,
+                        l10n.emailLabel,
+                        true,
+                        0,
                       ),
                       SizedBox(height: screenHeight * 0.02),
-                      InputFiled(
-                        controller: passwordController,
-                        hintText: l10n.passwordLabel,
-                        obscure: true,
+                      _buildInputField(
+                        passwordController,
+                        l10n.passwordLabel,
+                        true,
+                        1,
                       ),
                       SizedBox(height: screenHeight * 0.02),
-                      InputFiled(
-                        controller: confirmPasswordController,
-                        hintText: l10n.confirmPasswordLabel,
-                        obscure: true,
+                      _buildInputField(
+                        confirmPasswordController,
+                        l10n.confirmPasswordLabel,
+                        true,
+                        2,
                       ),
                       SizedBox(height: screenHeight * 0.03),
                       _buildSignUpButton(theme, l10n),
@@ -230,12 +283,14 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
           ),
           if (_isLoading)
-            Positioned.fill(
+            FadeTransition(
+              opacity: _fadeAnimation,
               child: Container(
                 color: theme.colorScheme.shadow.withOpacity(0.3),
                 child: Center(
                   child: CircularProgressIndicator(
                     color: theme.colorScheme.primary,
+                    strokeWidth: 5,
                   ),
                 ),
               ),
@@ -246,22 +301,31 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Widget _buildProfileImage(ThemeData theme) {
-    return Container(
-      height: 120,
-      width: 120,
-      decoration: BoxDecoration(
-        image: const DecorationImage(
-          image: AssetImage("assets/user.png"),
-          fit: BoxFit.cover,
-        ),
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return AnimatedScale(
+      scale: 1.0,
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOutBack,
+      child: AnimatedOpacity(
+        opacity: 1.0,
+        duration: const Duration(milliseconds: 600),
+        child: Container(
+          height: 120,
+          width: 120,
+          decoration: BoxDecoration(
+            image: const DecorationImage(
+              image: AssetImage("assets/user.png"),
+              fit: BoxFit.cover,
+            ),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.shadow.withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -269,39 +333,96 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildWelcomeText(ThemeData theme, AppLocalizations l10n) {
     return Column(
       children: [
-        Text(
-          l10n.welcomeRegister,
-          style: theme.textTheme.displayMedium?.copyWith(
-            color: theme.colorScheme.onSurface,
+        AnimatedOpacity(
+          opacity: 1.0,
+          duration: const Duration(milliseconds: 500),
+          child: AnimatedSlide(
+            offset: const Offset(0, 0),
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOut,
+            child: Text(
+              l10n.welcomeRegister,
+              style: theme.textTheme.displayMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          l10n.assistMessage,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+        AnimatedOpacity(
+          opacity: 1.0,
+          duration: const Duration(milliseconds: 500),
+          child: AnimatedSlide(
+            offset: const Offset(0, 0),
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOut,
+            child: Text(
+              l10n.assistMessage,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
       ],
     );
   }
 
+  Widget _buildInputField(
+    TextEditingController controller,
+    String hintText,
+    bool obscure,
+    int index,
+  ) {
+    return AnimatedOpacity(
+      opacity: 1.0,
+      duration: Duration(milliseconds: 500 + index * 100),
+      child: AnimatedSlide(
+        offset: const Offset(0, 0),
+        duration: Duration(milliseconds: 500 + index * 100),
+        curve: Curves.easeOut,
+        child: InputFiled(
+          controller: controller,
+          hintText: hintText,
+          obscure: obscure,
+          email: hintText == AppLocalizations.of(context)!.emailLabel,
+        ),
+      ),
+    );
+  }
+
   Widget _buildSignUpButton(ThemeData theme, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: ElevatedButton(
-        onPressed:
-            _isLoading
-                ? null
-                : () => _signUp(emailController.text, passwordController.text),
-        style: theme.elevatedButtonTheme.style?.copyWith(
-          minimumSize: const WidgetStatePropertyAll(Size(double.infinity, 50)),
-        ),
-        child: Text(
-          l10n.signUpButton,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onPrimary,
+      child: AnimatedScale(
+        scale: _isLoading ? 0.95 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        child: ElevatedButton(
+          onPressed:
+              _isLoading
+                  ? null
+                  : () =>
+                      _signUp(emailController.text, passwordController.text),
+          style: theme.elevatedButtonTheme.style?.copyWith(
+            minimumSize: const WidgetStatePropertyAll(
+              Size(double.infinity, 50),
+            ),
+            elevation: WidgetStateProperty.resolveWith<double>(
+              (states) => states.contains(WidgetState.pressed) ? 2 : 8,
+            ),
+            shadowColor: WidgetStatePropertyAll(
+              theme.colorScheme.shadow.withOpacity(0.3),
+            ),
+          ),
+          child: Text(
+            l10n.signUpButton,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onPrimary,
+            ),
           ),
         ),
       ),
@@ -322,14 +443,20 @@ class _RegisterPageState extends State<RegisterPage> {
           onTap:
               () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
+                MaterialPageRoute(
+                  builder: (context) => const LoginPage(),
+                  settings: const RouteSettings(name: '/login'),
+                ),
               ),
-          child: Text(
-            l10n.loginLink,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.primary,
-            ),
+          child: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 200),
+            style:
+                theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary,
+                ) ??
+                const TextStyle(),
+            child: Text(l10n.loginLink),
           ),
         ),
       ],
@@ -339,35 +466,44 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildGoogleSignInButton(ThemeData theme, AppLocalizations l10n) {
     return GestureDetector(
       onTap: _isLoading ? null : _nativeGoogleSignIn,
-      child: Container(
-        width: 225,
-        decoration: BoxDecoration(
-          border: Border.all(width: 1, color: theme.colorScheme.outline),
-          borderRadius: BorderRadius.circular(10),
-          color: theme.colorScheme.surfaceContainerHighest,
-          boxShadow: [
-            BoxShadow(
-              color: theme.colorScheme.shadow,
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset("assets/google.png", width: 24),
-              const SizedBox(width: 10),
-              Text(
-                l10n.signUpWithGoogle,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSurface,
-                ),
+      child: AnimatedScale(
+        scale: _isLoading ? 0.95 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        child: Container(
+          width: 225,
+          decoration: BoxDecoration(
+            border: Border.all(width: 1, color: theme.colorScheme.outline),
+            borderRadius: BorderRadius.circular(10),
+            color: theme.colorScheme.surfaceContainerHighest,
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.shadow.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
               ),
             ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedOpacity(
+                  opacity: 1.0,
+                  duration: const Duration(milliseconds: 500),
+                  child: Image.asset("assets/google.png", width: 24),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  l10n.signUpWithGoogle,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
