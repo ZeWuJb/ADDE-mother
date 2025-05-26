@@ -59,7 +59,7 @@ class _DoctorsPageState extends State<DoctorsPage> {
           .from('doctors')
           .select('*')
           .order('full_name', ascending: true)
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 120));
 
       print('Supabase response: $response');
 

@@ -194,7 +194,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                 backgroundColor: Colors.green,
                                 child: CircleAvatar(
                                   radius: 4,
-                                  backgroundColor: theme.colorScheme.background,
+                                  backgroundColor: theme.colorScheme.surface,
                                 ),
                               ),
                             ),
