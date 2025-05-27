@@ -1653,6 +1653,134 @@
 "unknownDoctor": "ያልታወቀ ዶክተር",
 "couldNotLaunchVideoCall": "የቪዲዮ ጥሪ መጀመር አልተቻለም",
 "videoLinkNotAvailable": "የቪዲዮ ሊንክ አይገኝም",
-"cancelLabel": "ይሰርዙ"
+"cancelLabel": "ይሰርዙ",
+  "typing": "እየፃፈ ነው...",
+  "online": "በመስመር ላይ",
+  "lastSeen": "መጨረሻ የታየው {time}",
+  "sendImageTooltip": "ምስል ላክ",
+  "sendVoiceMessageTooltip": "የድምጽ መልዕክት ላክ",
+  "voiceMessagesNotSupported": "የድምጽ መልዕክቶች እስካሁን አይደገፉም",
+  "messagePinned": "መልዕክት ተሰካ",
+  "messageUnpinned": "መልዕክት ተለቀቀ",
+  "errorPinningMessage": "መልዕክት መሰካት አልተሳካም፡ {error}",
+  "errorUnpinningMessage": "መልዕክት መለቀቅ አልተሳካም፡ {error}",
+  "pinMessage": "መልዕክት ሰካ",
+  "unpinMessage": "መልዕክት ንቀል",
+  "replyMessage": "መልስ",
+  "copyMessage": "ቅዳ",
+  "messageCopied": "መልዕክት ተቀድቷል",
+  "deleteMessage": "ሰርዝ",
+  "messageDeleted": "መልዕክት ተሰርዟል",
+  "errorDeletingMessage": "መልዕክት መሰረዝ አልተሳካም፡ {error}",
+  "errorSendingImage": "ምስል መላክ አልተሳካም፡ {error}",
+  "viewChatActivity": "የውይይት እንቅስቃሴ ተመልከት",
+  "chatActivity": "የውይይት እንቅስቃሴ",
+  "@typing": {
+    "description": "Text shown when other user is typing"
+  },
+  "@online": {
+    "description": "Text shown when user is online"
+  },
+  "@lastSeen": {
+    "description": "Text shown for last seen status",
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      }
+    }
+  },
+  "@imageMessage": {
+    "description": "Label for image message"
+  },
+  "@videoMessage": {
+    "description": "Label for video message"
+  },
+  "@documentMessage": {
+    "description": "Label for document message"
+  },
+  "@sendImageTooltip": {
+    "description": "Tooltip for send image button"
+  },
+  "@sendVoiceMessageTooltip": {
+    "description": "Tooltip for send voice message button"
+  },
+  "@voiceMessagesNotSupported": {
+    "description": "Message when voice messages are not supported"
+  },
+  "@messagePinned": {
+    "description": "Success message when message is pinned"
+  },
+  "@messageUnpinned": {
+    "description": "Success message when message is unpinned"
+  },
+  "@errorPinningMessage": {
+    "description": "Error message when pinning message fails",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@errorUnpinningMessage": {
+    "description": "Error message when unpinning message fails",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@pinMessage": {
+    "description": "Label for pin message action"
+  },
+  "@unpinMessage": {
+    "description": "Label for unpin message action"
+  },
+  "@replyMessage": {
+    "description": "Label for reply message action"
+  },
+  "@copyMessage": {
+    "description": "Label for copy message action"
+  },
+  "@messageCopied": {
+    "description": "Success message when message is copied"
+  },
+  "@deleteMessage": {
+    "description": "Label for delete message action"
+  },
+  "@messageDeleted": {
+    "description": "Success message when message is deleted"
+  },
+  "@errorDeletingMessage": {
+    "description": "Error message when deleting message fails",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@errorSendingImage": {
+    "description": "Error message when sending image fails",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@viewChatActivity": {
+    "description": "Tooltip for viewing chat activity"
+  },
+  "@chatActivity": {
+    "description": "Title for chat activity chart"
+  },
+  "editMessage": "መልእክት አርትዕ",
+  "failedToDeleteMessage": "መልእክት መሰረዝ አልተሳካም፡ @error",
+  "editMessageHint": "መልእክትህን አርትዕ...",
+  "cancelEdit": "አርትዕ ሰርዝ",
+  "saveEdit": "አርትዕ አስቀምጥ",
+  "edited": "ተስተካክሏል",
+  "refresh": "አድስ",
+  "favorites": "ተወዳጆች",
+  "removeFavorite": "ከተወዳጆች አስወግድ",
+  "addFavorite": "ወደ ተወዳጆች ጨምር"
   }
 

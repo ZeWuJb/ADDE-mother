@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:timeago/timeago.dart' as timeago;
 import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:adde/pages/community/peer_chat_screen.dart';
-import 'package:timeago/timeago.dart' as timeago;
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_iconly/flutter_iconly.dart';
 
 class MessagesScreen extends StatefulWidget {
   final String motherId;
@@ -17,11 +19,14 @@ class MessagesScreen extends StatefulWidget {
 class _MessagesScreenState extends State<MessagesScreen> {
   List<Map<String, dynamic>> _conversations = [];
   bool _isLoading = true;
+  String? _errorMessage;
+  RealtimeChannel? _messageChannel;
 
   @override
   void initState() {
     super.initState();
     _fetchConversations();
+    _subscribeToMessages();
   }
 
   Future<void> _fetchConversations() async {
@@ -34,7 +39,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
           .or(
             'sender_id.eq.${widget.motherId},receiver_id.eq.${widget.motherId}',
           )
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .timeout(const Duration(seconds: 10));
 
       final Map<String, Map<String, dynamic>> conversationMap = {};
       for (var message in response) {
@@ -72,7 +78,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
           };
         }
 
-        // Increment unread count for unseen incoming messages
         if (!message['is_seen'] && !isSender) {
           conversationMap[otherId]!['unreadCount'] =
               (conversationMap[otherId]!['unreadCount'] as int) + 1;
@@ -82,35 +87,73 @@ class _MessagesScreenState extends State<MessagesScreen> {
       setState(() {
         _conversations =
             conversationMap.values.toList()..sort((a, b) {
-              // Pinned conversations first, then by timestamp
               if (a['isPinned'] && !b['isPinned']) return -1;
               if (!a['isPinned'] && b['isPinned']) return 1;
               return b['timestamp'].compareTo(a['timestamp']);
             });
         _isLoading = false;
-        print(
-          'Fetched ${_conversations.length} conversations for motherId: ${widget.motherId}',
-        );
       });
     } catch (e) {
       print('Error fetching conversations: $e');
       setState(() {
         _isLoading = false;
+        _errorMessage = AppLocalizations.of(
+          context,
+        )!.errorFetchingConversations(e.toString());
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(
-              context,
-            )!.errorFetchingConversations(e.toString()),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onError,
-            ),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      _showSnackBar(
+        AppLocalizations.of(context)!.errorFetchingConversations(e.toString()),
       );
     }
+  }
+
+  void _subscribeToMessages() {
+    _messageChannel =
+        Supabase.instance.client
+            .channel('messages:${widget.motherId}')
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'communitymessages',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'sender_id',
+                value: widget.motherId,
+              ),
+              callback: (payload) {
+                _fetchConversations();
+              },
+            )
+            .subscribe();
+  }
+
+  void _showSnackBar(String message, {bool isSuccess = false}) {
+    final theme = Theme.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+            content: Text(
+              message,
+              style: TextStyle(
+                color:
+                    isSuccess
+                        ? theme.colorScheme.onPrimary
+                        : theme.colorScheme.onErrorContainer,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor:
+                isSuccess
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.errorContainer,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 4,
+          ).animate().fadeIn(duration: 300.ms)
+          as SnackBar,
+    );
   }
 
   ImageProvider? _getImageProvider(String? base64Image) {
@@ -119,8 +162,17 @@ class _MessagesScreenState extends State<MessagesScreen> {
       final bytes = base64Decode(base64Image);
       return MemoryImage(bytes);
     } catch (e) {
+      print('Error decoding base64 image: $e');
       return null;
     }
+  }
+
+  @override
+  void dispose() {
+    if (_messageChannel != null) {
+      Supabase.instance.client.removeChannel(_messageChannel!);
+    }
+    super.dispose();
   }
 
   @override
@@ -129,180 +181,293 @@ class _MessagesScreenState extends State<MessagesScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: Text(l10n.messagesTitle),
-        backgroundColor: theme.colorScheme.primary,
+        backgroundColor: theme.colorScheme.primaryContainer,
+        elevation: 0,
+        title: Text(
+          l10n.messagesTitle,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onPrimaryContainer,
+          ),
+        ),
       ),
       body:
           _isLoading
               ? Center(
                 child: CircularProgressIndicator(
                   color: theme.colorScheme.primary,
+                  strokeWidth: 3,
+                ).animate().fadeIn(duration: 300.ms, curve: Curves.easeOut),
+              )
+              : _errorMessage != null
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      IconlyLight.dangerCircle,
+                      size: 48,
+                      color: theme.colorScheme.error,
+                    ).animate().fadeIn(duration: 300.ms),
+                    const SizedBox(height: 16),
+                    Text(
+                      _errorMessage!,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.error,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ).animate().fadeIn(duration: 300.ms, delay: 100.ms),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _isLoading = true;
+                          _errorMessage = null;
+                        });
+                        _fetchConversations();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: theme.colorScheme.onPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(l10n.retryButton),
+                    ).animate().scale(
+                      duration: 300.ms,
+                      delay: 200.ms,
+                      curve: Curves.easeOutCubic,
+                    ),
+                  ],
                 ),
               )
               : _conversations.isEmpty
               ? Center(
-                child: Text(
-                  l10n.noConversations,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      IconlyLight.chat,
+                      size: 48,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ).animate().fadeIn(duration: 300.ms),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.noConversations,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ).animate().fadeIn(duration: 300.ms, delay: 100.ms),
+                  ],
                 ),
               )
-              : ListView.builder(
-                itemCount: _conversations.length,
-                itemBuilder: (context, index) {
-                  final conversation = _conversations[index];
-                  final isUnread = conversation['unreadCount'] > 0;
+              : RefreshIndicator(
+                onRefresh: _fetchConversations,
+                color: theme.colorScheme.primary,
+                backgroundColor: theme.colorScheme.surface,
+                child: ListView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: _conversations.length,
+                  itemBuilder: (context, index) {
+                    final conversation = _conversations[index];
+                    final isUnread = conversation['unreadCount'] > 0;
 
-                  return AnimatedListItem(
-                    index: index,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      leading: Stack(
-                        children: [
-                          CircleAvatar(
-                            radius: 28,
-                            backgroundColor: theme.colorScheme.secondary,
-                            foregroundColor: theme.colorScheme.onSecondary,
-                            backgroundImage: _getImageProvider(
-                              conversation['profileUrl'],
-                            ),
-                            child:
-                                conversation['profileUrl'] == null ||
-                                        _getImageProvider(
-                                              conversation['profileUrl'],
-                                            ) ==
-                                            null
-                                    ? Text(
-                                      conversation['otherName'].isNotEmpty
-                                          ? conversation['otherName'][0]
-                                              .toUpperCase()
-                                          : '?',
-                                    )
-                                    : null,
+                    return Card(
+                          color: theme.colorScheme.surfaceContainer,
+                          elevation: 2,
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
                           ),
-                          if (conversation['isOnline'])
-                            Positioned(
-                              right: 0,
-                              bottom: 0,
-                              child: CircleAvatar(
-                                radius: 6,
-                                backgroundColor: Colors.green,
-                                child: CircleAvatar(
-                                  radius: 4,
-                                  backgroundColor: theme.colorScheme.surface,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            leading: Semantics(
+                              label: l10n.profileOf(conversation['otherName']),
+                              child: Stack(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 28,
+                                    backgroundColor: theme.colorScheme.primary
+                                        .withOpacity(0.1),
+                                    backgroundImage: _getImageProvider(
+                                      conversation['profileUrl'],
+                                    ),
+                                    child:
+                                        conversation['profileUrl'] == null ||
+                                                _getImageProvider(
+                                                      conversation['profileUrl'],
+                                                    ) ==
+                                                    null
+                                            ? Text(
+                                              conversation['otherName']
+                                                      .isNotEmpty
+                                                  ? conversation['otherName'][0]
+                                                      .toUpperCase()
+                                                  : '?',
+                                              style: TextStyle(
+                                                color:
+                                                    theme.colorScheme.primary,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            )
+                                            : null,
+                                  ).animate().scale(
+                                    duration: 300.ms,
+                                    curve: Curves.easeOutCubic,
+                                    delay: (index * 100).ms,
+                                  ),
+                                  if (conversation['isOnline'])
+                                    Positioned(
+                                      right: 0,
+                                      bottom: 0,
+                                      child: CircleAvatar(
+                                        radius: 6,
+                                        backgroundColor: Colors.green,
+                                        child: CircleAvatar(
+                                          radius: 4,
+                                          backgroundColor:
+                                              theme.colorScheme.surface,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            title: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    conversation['otherName'],
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(
+                                          fontWeight:
+                                              isUnread
+                                                  ? FontWeight.w600
+                                                  : FontWeight.normal,
+                                          color: theme.colorScheme.onSurface,
+                                        ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
+                                if (conversation['isPinned'])
+                                  Icon(
+                                    IconlyLight.bookmark,
+                                    size: 16,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                              ],
                             ),
-                        ],
-                      ),
-                      title: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              conversation['otherName'],
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                fontWeight:
-                                    isUnread
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                          ),
-                          if (conversation['isPinned'])
-                            Icon(
-                              Icons.push_pin,
-                              size: 16,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                        ],
-                      ),
-                      subtitle: Row(
-                        children: [
-                          if (conversation['messageType'] != 'text') ...[
-                            Icon(
-                              _getMessageTypeIcon(conversation['messageType']),
-                              size: 16,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 4),
-                          ],
-                          Expanded(
-                            child: Text(
-                              _getMessagePreview(
-                                conversation,
-                                l10n,
-                                conversation['isSender'],
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                fontWeight:
-                                    isUnread
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            timeago.format(
-                              conversation['timestamp'],
-                              locale: l10n.localeName,
-                            ),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color:
-                                  isUnread
-                                      ? theme.colorScheme.primary
-                                      : theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          if (conversation['unreadCount'] > 0)
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Text(
-                                '${conversation['unreadCount']}',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onPrimary,
-                                  fontWeight: FontWeight.bold,
+                            subtitle: Row(
+                              children: [
+                                if (conversation['messageType'] != 'text') ...[
+                                  Icon(
+                                    _getMessageTypeIcon(
+                                      conversation['messageType'],
+                                    ),
+                                    size: 16,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                  const SizedBox(width: 4),
+                                ],
+                                Expanded(
+                                  child: Text(
+                                    _getMessagePreview(
+                                      conversation,
+                                      l10n,
+                                      conversation['isSender'],
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                      fontWeight:
+                                          isUnread
+                                              ? FontWeight.w500
+                                              : FontWeight.normal,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                        ],
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (_) => PeerChatScreen(
-                                  currentMotherId: widget.motherId,
-                                  otherMotherId: conversation['otherId'],
-                                  otherMotherName: conversation['otherName'],
+                            trailing: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  timeago.format(
+                                    conversation['timestamp'],
+                                    locale: l10n.localeName,
+                                  ),
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color:
+                                        isUnread
+                                            ? theme.colorScheme.primary
+                                            : theme
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                  ),
                                 ),
+                                if (conversation['unreadCount'] > 0)
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    margin: const EdgeInsets.only(top: 4),
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.primary,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Text(
+                                      '${conversation['unreadCount']}',
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: theme.colorScheme.onPrimary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => PeerChatScreen(
+                                        currentMotherId: widget.motherId,
+                                        otherMotherId: conversation['otherId'],
+                                        otherMotherName:
+                                            conversation['otherName'],
+                                      ),
+                                ),
+                              ).then((_) => _fetchConversations());
+                            },
                           ),
-                        ).then(
-                          (_) => _fetchConversations(),
-                        ); // Refresh on return
-                      },
-                    ),
-                  );
-                },
+                        )
+                        .animate()
+                        .fadeIn(
+                          duration: 400.ms,
+                          delay: (index * 100).ms,
+                          curve: Curves.easeOutCubic,
+                        )
+                        .slideY(
+                          begin: 0.2,
+                          end: 0,
+                          duration: 400.ms,
+                          delay: (index * 100).ms,
+                          curve: Curves.easeOutCubic,
+                        );
+                  },
+                ),
               ),
     );
   }
@@ -310,13 +475,13 @@ class _MessagesScreenState extends State<MessagesScreen> {
   IconData _getMessageTypeIcon(String type) {
     switch (type) {
       case 'image':
-        return Icons.photo;
+        return IconlyLight.image;
       case 'video':
-        return Icons.videocam;
+        return IconlyLight.video;
       case 'document':
-        return Icons.description;
+        return IconlyLight.document;
       default:
-        return Icons.message;
+        return IconlyLight.chat;
     }
   }
 
@@ -348,37 +513,5 @@ class _MessagesScreenState extends State<MessagesScreen> {
       default:
         return content;
     }
-  }
-}
-
-// Animation wrapper for list items
-class AnimatedListItem extends StatelessWidget {
-  final int index;
-  final Widget child;
-
-  const AnimatedListItem({super.key, required this.index, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(0.2, 0),
-        end: Offset.zero,
-      ).animate(
-        CurvedAnimation(
-          parent: ModalRoute.of(context)!.animation!,
-          curve: Curves.easeOut,
-        ),
-      ),
-      child: FadeTransition(
-        opacity: Tween<double>(begin: 0, end: 1).animate(
-          CurvedAnimation(
-            parent: ModalRoute.of(context)!.animation!,
-            curve: Curves.easeOut,
-          ),
-        ),
-        child: child,
-      ),
-    );
   }
 }

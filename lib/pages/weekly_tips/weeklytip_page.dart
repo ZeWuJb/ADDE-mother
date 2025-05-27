@@ -101,7 +101,6 @@ class _WeeklyTipPageState extends State<WeeklyTipPage> {
 
       setState(() {
         if (initialTipId != null) {
-          // Find the tip matching the initialTip's id
           final matchedTip = allTips.firstWhere(
             (tip) => tip['id'] == initialTipId,
             orElse:
@@ -112,13 +111,11 @@ class _WeeklyTipPageState extends State<WeeklyTipPage> {
                       ..['description'] ??= l10n.noContent
                       ..['locale'] = currentLocale,
           );
-          // Create the tips list with the matched tip first, followed by others
           _tips = [
             matchedTip,
             ...allTips.where((tip) => tip['id'] != initialTipId),
           ];
         } else {
-          // If no initialTip id, just use all tips
           _tips = allTips;
         }
         print('Set _tips: $_tips');
@@ -141,7 +138,7 @@ class _WeeklyTipPageState extends State<WeeklyTipPage> {
           ),
         ),
       );
-      // Fallback to initialTip if provided
+
       setState(() {
         final initialTip = Map<String, dynamic>.from(widget.initialTip);
         initialTip['title'] ??= l10n.noTitle;
@@ -334,16 +331,6 @@ class _WeeklyTipPageState extends State<WeeklyTipPage> {
                                   ),
                                 if (tip['image'] != null)
                                   const SizedBox(height: 16),
-                                Text(
-                                  l10n.weekLabel(tip['week'] ?? 0),
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
                                 Text(
                                   tip['title'] ?? l10n.noTitle,
                                   style: TextStyle(

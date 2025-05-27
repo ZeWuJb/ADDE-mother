@@ -1721,4 +1721,107 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cancelLabel => 'Cancel';
+
+  @override
+  String get typing => 'Typing...';
+
+  @override
+  String get online => 'Online';
+
+  @override
+  String lastSeen(Object time) {
+    return 'Last seen $time';
+  }
+
+  @override
+  String get sendImageTooltip => 'Send image';
+
+  @override
+  String get sendVoiceMessageTooltip => 'Send voice message';
+
+  @override
+  String get voiceMessagesNotSupported => 'Voice messages are not supported yet';
+
+  @override
+  String get messagePinned => 'Message pinned';
+
+  @override
+  String get messageUnpinned => 'Message unpinned';
+
+  @override
+  String errorPinningMessage(Object error) {
+    return 'Failed to pin message: $error';
+  }
+
+  @override
+  String errorUnpinningMessage(Object error) {
+    return 'Failed to unpin message: $error';
+  }
+
+  @override
+  String get pinMessage => 'Pin message';
+
+  @override
+  String get unpinMessage => 'Unpin message';
+
+  @override
+  String get replyMessage => 'Reply';
+
+  @override
+  String get copyMessage => 'Copy';
+
+  @override
+  String get messageCopied => 'Message copied';
+
+  @override
+  String get deleteMessage => 'Delete';
+
+  @override
+  String get messageDeleted => 'Message deleted';
+
+  @override
+  String errorDeletingMessage(Object error) {
+    return 'Failed to delete message: $error';
+  }
+
+  @override
+  String errorSendingImage(Object error) {
+    return 'Failed to send image: $error';
+  }
+
+  @override
+  String get viewChatActivity => 'View chat activity';
+
+  @override
+  String get chatActivity => 'Chat Activity';
+
+  @override
+  String get editMessage => 'Edit Message';
+
+  @override
+  String get failedToDeleteMessage => 'Failed to delete message: @error';
+
+  @override
+  String get editMessageHint => 'Edit your message...';
+
+  @override
+  String get cancelEdit => 'Cancel Edit';
+
+  @override
+  String get saveEdit => 'Save Edit';
+
+  @override
+  String get edited => 'Edited';
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String get favorites => 'Favorites';
+
+  @override
+  String get removeFavorite => 'Remove from Favorites';
+
+  @override
+  String get addFavorite => 'Add to Favorites';
 }
