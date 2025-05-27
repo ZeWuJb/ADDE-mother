@@ -7,21 +7,21 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class TeleConseltationPage extends StatefulWidget {
+class TeleConsultationPage extends StatefulWidget {
   final Map<String, dynamic> appointment;
   final String doctorName;
 
-  const TeleConseltationPage({
+  const TeleConsultationPage({
     super.key,
     required this.appointment,
     required this.doctorName,
   });
 
   @override
-  _TeleConseltationPageState createState() => _TeleConseltationPageState();
+  TeleConsultationPageState createState() => TeleConsultationPageState();
 }
 
-class _TeleConseltationPageState extends State<TeleConseltationPage> {
+class TeleConsultationPageState extends State<TeleConsultationPage> {
   final JitsiMeet jitsiMeet = JitsiMeet();
   final supabase = Supabase.instance.client;
   bool isCallActive = false;
@@ -31,11 +31,12 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
   bool isJoining = false;
   String? errorMessage;
   Timer? _refreshTimer;
+  bool _paymentVerified = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeJitsiMeet();
+    _verifyPaymentAndInitialize();
 
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted) {
@@ -44,57 +45,161 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
     });
   }
 
-  Future<void> _refreshAppointmentData() async {
+  Future<void> _verifyPaymentAndInitialize() async {
     try {
-      final appointmentId = widget.appointment['id']?.toString();
+      // Check if appointment is paid
+      final appointmentId =
+          widget.appointment['id']?.toString() ??
+          widget.appointment['appointmentId']?.toString();
+
+      if (appointmentId == null) {
+        setState(() {
+          errorMessage = 'Invalid appointment data';
+        });
+        return;
+      }
+
+      // Fetch latest appointment data
+      final response =
+          await supabase
+              .from('appointments')
+              .select('payment_status, video_conference_link, status')
+              .eq('id', appointmentId)
+              .single();
+
+      final paymentStatus = response['payment_status'];
+      final status = response['status'];
+
+      if (status != 'accepted') {
+        setState(() {
+          errorMessage = 'Appointment not accepted yet';
+        });
+        return;
+      }
+
+      if (paymentStatus != 'paid') {
+        setState(() {
+          errorMessage = 'Payment required for video call';
+        });
+        return;
+      }
+
+      _paymentVerified = true;
+      await _initializeJitsiMeet();
+    } catch (e) {
+      debugPrint("Error verifying payment: $e");
+      setState(() {
+        errorMessage = 'Error verifying payment status';
+      });
+    }
+  }
+
+  Future<void> _refreshAppointmentData() async {
+    if (!_paymentVerified) return;
+
+    try {
+      final appointmentId =
+          widget.appointment['id']?.toString() ??
+          widget.appointment['appointmentId']?.toString();
       if (appointmentId == null) return;
 
       final response =
           await supabase
               .from('appointments')
-              .select('video_conference_link, status')
+              .select('video_conference_link, status, payment_status')
               .eq('id', appointmentId)
               .single();
 
       if (mounted) {
         final newVideoLink = response['video_conference_link'];
+        final status = response['status'];
+        final paymentStatus = response['payment_status'];
+
+        // Check if payment status changed
+        if (paymentStatus != 'paid') {
+          _showPaymentIssueDialog();
+          return;
+        }
+
+        // Check if appointment was cancelled
+        if (status == 'cancelled') {
+          _showAppointmentCancelledDialog();
+          return;
+        }
+
+        // Update video link if changed
         if (newVideoLink != null &&
             newVideoLink.isNotEmpty &&
             newVideoLink != meetingUrl) {
           setState(() {
             meetingUrl = newVideoLink;
-            roomName = meetingUrl.split('/').last;
+            roomName = _extractRoomNameFromUrl(meetingUrl);
           });
 
           if (!isCallActive) {
             _showNewLinkDialog();
           }
         }
-
-        final status = response['status'];
-        if (status == 'cancelled' && isCallActive) {
-          _showAppointmentCancelledDialog();
-        }
       }
     } catch (e) {
-      print("Error refreshing appointment data: $e");
+      debugPrint("Error refreshing appointment data: $e");
     }
   }
 
+  String _extractRoomNameFromUrl(String url) {
+    try {
+      final uri = Uri.parse(url);
+      return uri.pathSegments.isNotEmpty
+          ? uri.pathSegments.last
+          : 'default_room';
+    } catch (e) {
+      return 'default_room';
+    }
+  }
+
+  void _showPaymentIssueDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Payment Issue'),
+            content: const Text(
+              'There seems to be an issue with your payment. Please contact support.',
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop();
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+    );
+  }
+
   void _showNewLinkDialog() {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text(l10n.newMeetingLinkAvailable),
-            content: Text(l10n.newMeetingLinkMessage),
+            title: Text(
+              l10n?.newMeetingLinkAvailable ?? 'New Meeting Link Available',
+            ),
+            content: Text(
+              l10n?.newMeetingLinkMessage ??
+                  'A new meeting link is available. Would you like to join now?',
+            ),
             actions: [
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
-                child: Text(l10n.later),
+                child: Text(l10n?.later ?? 'Later'),
               ),
               ElevatedButton(
                 onPressed: () {
@@ -102,7 +207,7 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
                   _joinMeeting();
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-                child: Text(l10n.joinNow),
+                child: Text(l10n?.joinNow ?? 'Join Now'),
               ),
             ],
           ),
@@ -110,14 +215,17 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
   }
 
   void _showAppointmentCancelledDialog() {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       barrierDismissible: false,
       builder:
           (context) => AlertDialog(
-            title: Text(l10n.appointmentCancelled),
-            content: Text(l10n.appointmentCancelledMessage),
+            title: Text(l10n?.appointmentCancelled ?? 'Appointment Cancelled'),
+            content: Text(
+              l10n?.appointmentCancelledMessage ??
+                  'This appointment has been cancelled.',
+            ),
             actions: [
               ElevatedButton(
                 onPressed: () {
@@ -135,36 +243,43 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
 
   Future<void> _initializeJitsiMeet() async {
     try {
-      print("Appointment data: ${widget.appointment}");
+      debugPrint("Appointment data: ${widget.appointment}");
       meetingUrl =
           widget.appointment['video_conference_link']?.toString() ?? '';
-      print("Meeting URL from appointment: $meetingUrl");
+      debugPrint("Meeting URL from appointment: $meetingUrl");
 
       if (meetingUrl.isNotEmpty) {
-        roomName = meetingUrl.split('/').last;
-        print("Room name extracted from URL: $roomName");
+        roomName = _extractRoomNameFromUrl(meetingUrl);
+        debugPrint("Room name extracted from URL: $roomName");
       } else {
+        // Generate fallback room name
         final appointmentId =
             widget.appointment['id']?.toString() ??
             widget.appointment['appointmentId']?.toString() ??
             'default_room';
         roomName = 'caresync_appointment_$appointmentId';
         meetingUrl = 'https://meet.jit.si/$roomName';
-        print("Generated room name: $roomName");
-        print("Generated meeting URL: $meetingUrl");
+        debugPrint("Generated room name: $roomName");
+        debugPrint("Generated meeting URL: $meetingUrl");
 
-        _updateVideoLinkInDatabase(appointmentId, meetingUrl);
+        // Update video link in database if we generated one
+        await _updateVideoLinkInDatabase(appointmentId, meetingUrl);
       }
 
+      setState(() {
+        callStatus = 'Ready to join';
+      });
+
+      // Auto-join after 2 seconds
       Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) {
+        if (mounted && _paymentVerified) {
           _joinMeeting();
         }
       });
     } catch (e) {
-      print("Error in initializeJitsiMeet: $e");
+      debugPrint("Error in initializeJitsiMeet: $e");
       setState(() {
-        errorMessage = AppLocalizations.of(context)!.errorLabel(e.toString());
+        errorMessage = 'Error initializing video call';
       });
     }
   }
@@ -174,15 +289,17 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
     String videoLink,
   ) async {
     try {
-      if (appointmentId.contains('-')) {
+      if (appointmentId.isNotEmpty && appointmentId != 'default_room') {
         await supabase
             .from('appointments')
             .update({'video_conference_link': videoLink})
             .eq('id', appointmentId);
-        print("Updated video link in database for appointment $appointmentId");
+        debugPrint(
+          "Updated video link in database for appointment $appointmentId",
+        );
       }
     } catch (e) {
-      print("Error updating video link in database: $e");
+      debugPrint("Error updating video link in database: $e");
     }
   }
 
@@ -190,29 +307,40 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final userName = prefs.getString('user_name') ?? 'Patient';
-      print("User name for meeting: $userName");
+      debugPrint("User name for meeting: $userName");
       return {'name': userName};
     } catch (e) {
-      print("Error getting user details: $e");
+      debugPrint("Error getting user details: $e");
       return {'name': 'Patient'};
     }
   }
 
   Future<void> _joinMeeting() async {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
+
+    if (!_paymentVerified) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Payment required for video call'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     if (isJoining) {
-      print("Already attempting to join a meeting");
+      debugPrint("Already attempting to join a meeting");
       return;
     }
 
     setState(() {
       isJoining = true;
-      callStatus = l10n.joiningCall;
+      callStatus = l10n?.joiningCall ?? 'Joining call...';
       errorMessage = null;
     });
 
     try {
-      print("Starting to join meeting with room: $roomName");
+      debugPrint("Starting to join meeting with room: $roomName");
       final userDetails = await _getUserDetails();
 
       var options = JitsiMeetConferenceOptions(
@@ -221,7 +349,7 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
         configOverrides: {
           "startWithAudioMuted": false,
           "startWithVideoMuted": false,
-          "subject": l10n.appointmentWithDoctor(widget.doctorName),
+          "subject": "Appointment with Dr. ${widget.doctorName}",
         },
         featureFlags: {
           "ios.recording.enabled": false,
@@ -235,63 +363,61 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
         userInfo: JitsiMeetUserInfo(displayName: userDetails['name']),
       );
 
-      print("Jitsi options configured: ${options.room}");
+      debugPrint("Jitsi options configured: ${options.room}");
 
       var listener = JitsiMeetEventListener(
         conferenceJoined: (url) {
-          print("Conference joined: $url");
+          debugPrint("Conference joined: $url");
           if (mounted) {
             setState(() {
               isCallActive = true;
-              callStatus = l10n.connectedToCall;
+              callStatus = l10n?.connectedToCall ?? 'Connected to call';
               isJoining = false;
             });
           }
           _logCallEvent('joined');
         },
         conferenceTerminated: (url, error) {
-          print("Conference terminated: $url, error: $error");
+          debugPrint("Conference terminated: $url, error: $error");
           if (mounted) {
             setState(() {
               isCallActive = false;
-              callStatus = l10n.callEnded(
-                error?.toString() ?? l10n.notAvailable,
-              );
+              callStatus = 'Call ended';
               isJoining = false;
             });
           }
           _logCallEvent('terminated');
         },
         conferenceWillJoin: (url) {
-          print("Conference will join: $url");
+          debugPrint("Conference will join: $url");
           if (mounted) {
             setState(() {
-              callStatus = l10n.connectingToCall;
+              callStatus = l10n?.connectingToCall ?? 'Connecting to call...';
             });
           }
         },
         participantJoined: (email, name, role, participantId) {
-          print("Participant joined: $name ($participantId)");
+          debugPrint("Participant joined: $name ($participantId)");
         },
         participantLeft: (participantId) {
-          print("Participant left: $participantId");
+          debugPrint("Participant left: $participantId");
         },
         audioMutedChanged: (muted) {
-          print("Audio muted changed: $muted");
+          debugPrint("Audio muted changed: $muted");
         },
         videoMutedChanged: (muted) {
-          print("Video muted changed: $muted");
+          debugPrint("Video muted changed: $muted");
         },
       );
 
-      print("Attempting to join meeting now...");
+      debugPrint("Attempting to join meeting now...");
       await jitsiMeet.join(options, listener);
-      print("Join method completed");
+      debugPrint("Join method completed");
     } catch (error) {
-      print("Error joining meeting: $error");
+      debugPrint("Error joining meeting: $error");
       if (mounted) {
         setState(() {
-          callStatus = l10n.errorJoiningCall;
+          callStatus = l10n?.errorJoiningCall ?? 'Error joining call';
           errorMessage = error.toString();
           isJoining = false;
         });
@@ -312,35 +438,39 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
       callLogs.add('$appointmentId|$event|$timestamp');
       await prefs.setStringList('call_logs', callLogs);
 
-      print('Call event: $event for appointment $appointmentId at $timestamp');
+      debugPrint(
+        'Call event: $event for appointment $appointmentId at $timestamp',
+      );
     } catch (e) {
-      print('Error logging call event: $e');
+      debugPrint('Error logging call event: $e');
     }
   }
 
   String _formatAppointmentDate() {
+    final l10n = AppLocalizations.of(context);
     try {
       final dateString =
           widget.appointment['appointmentDate'] ??
-          widget.appointment['requested_time'];
+          widget.appointment['requested_time'] ??
+          widget.appointment['requestedTime'];
       if (dateString == null) {
-        return AppLocalizations.of(context)!.noDateAvailable;
+        return l10n?.noDateAvailable ?? 'No date available';
       }
 
       final date = DateTime.parse(dateString);
       return DateFormat('EEEE, MMMM d, yyyy - h:mm a').format(date);
     } catch (e) {
-      print("Error formatting date: $e");
-      return AppLocalizations.of(context)!.invalidDateFormat;
+      debugPrint("Error formatting date: $e");
+      return l10n?.invalidDateFormat ?? 'Invalid date format';
     }
   }
 
   void _copyToClipboard(String text) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(l10n.copiedToClipboard),
+        content: Text(l10n?.copiedToClipboard ?? 'Copied to clipboard'),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -348,14 +478,14 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final existingLink = widget.appointment['video_conference_link'];
     final hasExistingLink = existingLink != null && existingLink.isNotEmpty;
     final displayUrl = hasExistingLink ? existingLink : meetingUrl;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.videoConsultationTitle),
+        title: Text(l10n?.videoConsultationTitle ?? 'Video Consultation'),
         backgroundColor: Colors.teal,
       ),
       body: Container(
@@ -363,6 +493,30 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Payment verification status
+            if (!_paymentVerified)
+              Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.shade300),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.payment, color: Colors.orange.shade700),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Verifying payment status...',
+                        style: TextStyle(color: Colors.orange.shade700),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             Card(
               elevation: 4,
               child: Padding(
@@ -371,7 +525,7 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.appointmentWithDoctor(widget.doctorName),
+                      'Appointment with Dr. ${widget.doctorName}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -379,73 +533,95 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      l10n.scheduledFor(_formatAppointmentDate()),
+                      'Scheduled for ${_formatAppointmentDate()}',
                       style: const TextStyle(fontSize: 16),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      l10n.statusLabel(
-                        widget.appointment['status']?.toString() ?? 'Confirmed',
-                      ),
-                      style: const TextStyle(fontSize: 16, color: Colors.green),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Card(
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.meetingInformation,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
                     Row(
                       children: [
-                        Expanded(
-                          child: Text(
-                            displayUrl,
-                            style: const TextStyle(
-                              color: Colors.blue,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
+                        Icon(
+                          _paymentVerified
+                              ? Icons.check_circle
+                              : Icons.hourglass_empty,
+                          color:
+                              _paymentVerified ? Colors.green : Colors.orange,
+                          size: 16,
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.copy),
-                          onPressed: () => _copyToClipboard(displayUrl),
-                          tooltip: l10n.copyLinkTooltip,
+                        const SizedBox(width: 4),
+                        Text(
+                          _paymentVerified
+                              ? 'Payment verified'
+                              : 'Verifying payment...',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color:
+                                _paymentVerified ? Colors.green : Colors.orange,
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      l10n.roomName(roomName),
-                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      l10n.yourDoctorWillJoin,
-                      style: TextStyle(
-                        fontStyle: FontStyle.italic,
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                      ),
-                    ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 20),
+
+            if (_paymentVerified) ...[
+              Card(
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n?.meetingInformation ?? 'Meeting Information',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              displayUrl,
+                              style: const TextStyle(
+                                color: Colors.blue,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.copy),
+                            onPressed: () => _copyToClipboard(displayUrl),
+                            tooltip: l10n?.copyLinkTooltip ?? 'Copy link',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Room: $roomName',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n?.yourDoctorWillJoin ??
+                            'Your doctor will join this meeting',
+                        style: TextStyle(
+                          fontStyle: FontStyle.italic,
+                          fontSize: 14,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+
             if (errorMessage != null)
               Container(
                 padding: const EdgeInsets.all(12),
@@ -459,7 +635,7 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.errorPrefix,
+                      'Error:',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.red.shade800,
@@ -473,6 +649,7 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
                   ],
                 ),
               ),
+
             Center(
               child: Container(
                 padding: const EdgeInsets.all(12),
@@ -480,6 +657,8 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
                   color:
                       isCallActive
                           ? Colors.green.shade100
+                          : _paymentVerified
+                          ? Colors.blue.shade100
                           : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -488,42 +667,50 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
                   style: TextStyle(
                     fontSize: 16,
                     color:
-                        isCallActive ? Colors.green.shade800 : Colors.black87,
+                        isCallActive
+                            ? Colors.green.shade800
+                            : _paymentVerified
+                            ? Colors.blue.shade800
+                            : Colors.grey.shade800,
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 30),
-            Center(
-              child: ElevatedButton.icon(
-                onPressed: isCallActive || isJoining ? null : _joinMeeting,
-                icon: const Icon(Icons.video_call),
-                label: Text(
-                  isJoining
-                      ? l10n.joining
-                      : isCallActive
-                      ? l10n.inCall
-                      : l10n.joinVideoCall,
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
+
+            if (_paymentVerified) ...[
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: isCallActive || isJoining ? null : _joinMeeting,
+                  icon: const Icon(Icons.video_call),
+                  label: Text(
+                    isJoining
+                        ? l10n?.joining ?? 'Joining...'
+                        : isCallActive
+                        ? l10n?.inCall ?? 'In Call'
+                        : l10n?.joinVideoCall ?? 'Join Video Call',
                   ),
-                  textStyle: const TextStyle(fontSize: 18),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    textStyle: const TextStyle(fontSize: 18),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
+            ],
+
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.beforeJoining,
+                      l10n?.beforeJoining ?? 'Before joining:',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -535,29 +722,42 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
                         Icons.check_circle,
                         color: Colors.green,
                       ),
-                      title: Text(l10n.ensureStableConnection),
+                      title: Text(
+                        l10n?.ensureStableConnection ??
+                            'Ensure stable internet connection',
+                      ),
                     ),
                     ListTile(
                       leading: const Icon(
                         Icons.check_circle,
                         color: Colors.green,
                       ),
-                      title: Text(l10n.findQuietSpace),
+                      title: Text(l10n?.findQuietSpace ?? 'Find a quiet space'),
                     ),
                     ListTile(
                       leading: const Icon(
                         Icons.check_circle,
                         color: Colors.green,
                       ),
-                      title: Text(l10n.testCameraMic),
+                      title: Text(
+                        l10n?.testCameraMic ??
+                            'Test your camera and microphone',
+                      ),
                     ),
                     ListTile(
                       leading: const Icon(
                         Icons.check_circle,
                         color: Colors.green,
                       ),
-                      title: Text(l10n.haveQuestionsReady),
+                      title: Text(
+                        l10n?.haveQuestionsReady ?? 'Have your questions ready',
+                      ),
                     ),
+                    if (!_paymentVerified)
+                      const ListTile(
+                        leading: Icon(Icons.payment, color: Colors.orange),
+                        title: Text('Payment must be completed before joining'),
+                      ),
                   ],
                 ),
               ),
@@ -575,7 +775,7 @@ class _TeleConseltationPageState extends State<TeleConseltationPage> {
       try {
         jitsiMeet.hangUp();
       } catch (e) {
-        print("Error hanging up: $e");
+        debugPrint("Error hanging up: $e");
       }
     }
     super.dispose();

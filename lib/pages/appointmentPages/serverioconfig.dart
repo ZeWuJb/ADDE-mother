@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SocketService {
@@ -21,6 +20,7 @@ class SocketService {
   // Realtime channels
   RealtimeChannel? _appointmentsChannel;
   RealtimeChannel? _tempAppointmentsChannel;
+  RealtimeChannel? _notificationsChannel;
 
   // Connection status
   bool _isConnected = false;
@@ -32,6 +32,8 @@ class SocketService {
   Function(List<Map<String, dynamic>>)? onAppointmentHistoryReceived;
   Function(Map<String, dynamic>)? onAppointmentAccepted;
   Function(Map<String, dynamic>)? onAppointmentDeclined;
+  Function(Map<String, dynamic>)? onPaymentConfirmed;
+  Function(Map<String, dynamic>)? onNotificationReceived;
 
   // Connect to Supabase realtime
   void connect(String userId) async {
@@ -41,7 +43,7 @@ class SocketService {
         return;
       }
 
-      // Set up realtime subscription for appointments
+      // Set up realtime subscription for appointments table (accepted appointments)
       _appointmentsChannel =
           supabase
               .channel('appointments-$userId')
@@ -49,19 +51,23 @@ class SocketService {
                 event: PostgresChangeEvent.insert,
                 schema: 'public',
                 table: 'appointments',
+                filter: PostgresChangeFilter(
+                  type: PostgresChangeFilterType.eq,
+                  column: 'mother_id',
+                  value: userId,
+                ),
                 callback: (payload) {
-                  // Handle new appointment
+                  // Handle new appointment (when moved from temporary to permanent)
                   final appointment = payload.newRecord;
-                  // Check if this is an accepted appointment
-                  if (appointment['status'] == 'accepted') {
-                    if (onAppointmentAccepted != null) {
-                      onAppointmentAccepted!({
-                        'appointmentId': appointment['id'],
-                        'doctorId': appointment['doctor_id'],
-                        'requestedTime': appointment['requested_time'],
-                        'videoLink': appointment['video_conference_link'],
-                      });
-                    }
+                  if (onAppointmentAccepted != null) {
+                    onAppointmentAccepted!({
+                      'appointmentId': appointment['id'],
+                      'doctorId': appointment['doctor_id'],
+                      'requestedTime': appointment['requested_time'],
+                      'status': appointment['status'],
+                      'paymentStatus': appointment['payment_status'],
+                      'videoLink': appointment['video_conference_link'],
+                    });
                   }
                 },
               )
@@ -69,16 +75,25 @@ class SocketService {
                 event: PostgresChangeEvent.update,
                 schema: 'public',
                 table: 'appointments',
+                filter: PostgresChangeFilter(
+                  type: PostgresChangeFilterType.eq,
+                  column: 'mother_id',
+                  value: userId,
+                ),
                 callback: (payload) {
-                  // Handle updated appointment
+                  // Handle updated appointment (payment status, video link, etc.)
                   final appointment = payload.newRecord;
-                  // Check if this is a declined appointment
-                  if (appointment['status'] == 'declined') {
-                    if (onAppointmentDeclined != null) {
-                      onAppointmentDeclined!({
+
+                  // Check if payment was confirmed
+                  if (appointment['payment_status'] == 'paid' &&
+                      appointment['video_conference_link'] != null) {
+                    if (onPaymentConfirmed != null) {
+                      onPaymentConfirmed!({
                         'appointmentId': appointment['id'],
                         'doctorId': appointment['doctor_id'],
                         'requestedTime': appointment['requested_time'],
+                        'videoLink': appointment['video_conference_link'],
+                        'paymentStatus': appointment['payment_status'],
                       });
                     }
                   }
@@ -95,10 +110,31 @@ class SocketService {
                 schema: 'public',
                 table: 'temporary_appointments',
                 callback: (payload) {
-                  // A temporary appointment was deleted
-                  // This could mean it was accepted, rejected, or timed out
-                  // We'll refresh the appointment list
+                  // A temporary appointment was deleted (accepted, rejected, or expired)
                   requestAppointmentHistory(userId, 'mother');
+                },
+              )
+              .subscribe();
+
+      // Set up realtime subscription for notifications
+      _notificationsChannel =
+          supabase
+              .channel('notifications-$userId')
+              .onPostgresChanges(
+                event: PostgresChangeEvent.insert,
+                schema: 'public',
+                table: 'notifications',
+                filter: PostgresChangeFilter(
+                  type: PostgresChangeFilterType.eq,
+                  column: 'recipient_id',
+                  value: userId,
+                ),
+                callback: (payload) {
+                  // Handle new notification
+                  final notification = payload.newRecord;
+                  if (onNotificationReceived != null) {
+                    onNotificationReceived!(notification);
+                  }
                 },
               )
               .subscribe();
@@ -126,6 +162,7 @@ class SocketService {
   void disconnect() {
     _appointmentsChannel?.unsubscribe();
     _tempAppointmentsChannel?.unsubscribe();
+    _notificationsChannel?.unsubscribe();
     _isConnected = false;
     if (onConnectionChange != null) {
       onConnectionChange!(false);
@@ -138,7 +175,7 @@ class SocketService {
       List<Map<String, dynamic>> appointments = [];
 
       if (userType == 'mother') {
-        // Fetch temporary appointments
+        // Fetch temporary appointments (pending requests)
         final tempAppointments = await supabase
             .from('temporary_appointments')
             .select('''
@@ -149,14 +186,16 @@ class SocketService {
               created_at,
               expires_at,
               status,
-              doctors:doctor_id (
+              doctors!temporary_appointments_doctor_id_fkey (
                 id,
                 full_name,
                 speciality,
-                profile_url
+                profile_url,
+                payment_required_amount
               )
             ''')
-            .eq('mother_id', userId);
+            .eq('mother_id', userId)
+            .order('created_at', ascending: false);
 
         // Add temporary appointments as pending
         for (var appointment in tempAppointments) {
@@ -167,16 +206,25 @@ class SocketService {
             'requestedTime': appointment['requested_time'],
             'createdAt': appointment['created_at'],
             'expiresAt': appointment['expires_at'],
-            'status': appointment['status'],
+            'status': 'pending', // Always pending for temp appointments
+            'type': 'temporary',
             'doctor_name':
                 appointment['doctors'] != null
                     ? appointment['doctors']['full_name']
                     : 'Unknown Doctor',
+            'doctor_speciality':
+                appointment['doctors'] != null
+                    ? appointment['doctors']['speciality']
+                    : null,
+            'payment_amount':
+                appointment['doctors'] != null
+                    ? appointment['doctors']['payment_required_amount']
+                    : null,
           };
           appointments.add(appointmentData);
         }
 
-        // Fetch regular appointments
+        // Fetch regular appointments (accepted and paid)
         final regularAppointments = await supabase
             .from('appointments')
             .select('''
@@ -189,14 +237,16 @@ class SocketService {
               video_conference_link,
               created_at,
               updated_at,
-              doctors:doctor_id (
+              doctors!appointments_doctor_id_fkey (
                 id,
                 full_name,
                 speciality,
-                profile_url
+                profile_url,
+                payment_required_amount
               )
             ''')
-            .eq('mother_id', userId);
+            .eq('mother_id', userId)
+            .order('created_at', ascending: false);
 
         // Add regular appointments
         for (var appointment in regularAppointments) {
@@ -210,14 +260,24 @@ class SocketService {
             'status': appointment['status'],
             'paymentStatus': appointment['payment_status'],
             'videoLink': appointment['video_conference_link'],
+            'type': 'permanent',
             'doctor_name':
                 appointment['doctors'] != null
                     ? appointment['doctors']['full_name']
                     : 'Unknown Doctor',
+            'doctor_speciality':
+                appointment['doctors'] != null
+                    ? appointment['doctors']['speciality']
+                    : null,
+            'payment_amount':
+                appointment['doctors'] != null
+                    ? appointment['doctors']['payment_required_amount']
+                    : null,
           };
           appointments.add(appointmentData);
         }
       } else if (userType == 'doctor') {
+        // Similar logic for doctors but with different filters
         // Fetch temporary appointments for doctor
         final tempAppointments = await supabase
             .from('temporary_appointments')
@@ -229,13 +289,14 @@ class SocketService {
               created_at,
               expires_at,
               status,
-              mothers:mother_id (
+              mothers!temporary_appointments_mother_id_fkey (
                 user_id,
                 full_name,
                 profile_url
               )
             ''')
-            .eq('doctor_id', userId);
+            .eq('doctor_id', userId)
+            .order('created_at', ascending: false);
 
         // Add temporary appointments as pending
         for (var appointment in tempAppointments) {
@@ -246,7 +307,8 @@ class SocketService {
             'requestedTime': appointment['requested_time'],
             'createdAt': appointment['created_at'],
             'expiresAt': appointment['expires_at'],
-            'status': appointment['status'],
+            'status': 'pending',
+            'type': 'temporary',
             'mother_name':
                 appointment['mothers'] != null
                     ? appointment['mothers']['full_name']
@@ -268,13 +330,14 @@ class SocketService {
               video_conference_link,
               created_at,
               updated_at,
-              mothers:mother_id (
+              mothers!appointments_mother_id_fkey (
                 user_id,
                 full_name,
                 profile_url
               )
             ''')
-            .eq('doctor_id', userId);
+            .eq('doctor_id', userId)
+            .order('created_at', ascending: false);
 
         // Add regular appointments
         for (var appointment in regularAppointments) {
@@ -288,6 +351,7 @@ class SocketService {
             'status': appointment['status'],
             'paymentStatus': appointment['payment_status'],
             'videoLink': appointment['video_conference_link'],
+            'type': 'permanent',
             'mother_name':
                 appointment['mothers'] != null
                     ? appointment['mothers']['full_name']
@@ -311,7 +375,7 @@ class SocketService {
     }
   }
 
-  // Request an appointment
+  // Request an appointment (creates temporary appointment)
   Future<Map<String, dynamic>> requestAppointment(
     String motherId,
     String doctorId,
@@ -350,7 +414,7 @@ class SocketService {
     }
   }
 
-  // Accept an appointment (for doctors)
+  // Accept an appointment (for doctors) - moves from temporary to permanent
   Future<Map<String, dynamic>> acceptAppointment(
     String appointmentId,
     String videoLink,
@@ -370,14 +434,14 @@ class SocketService {
               .eq('id', appointmentId)
               .single();
 
-      // Create a permanent appointment
+      // Create a permanent appointment with unpaid status
       await supabase.from('appointments').insert({
         'mother_id': tempAppointment['mother_id'],
         'doctor_id': tempAppointment['doctor_id'],
         'requested_time': tempAppointment['requested_time'],
         'status': 'accepted',
-        'payment_status': 'pending',
-        'video_conference_link': videoLink,
+        'payment_status': 'unpaid', // Payment required
+        'video_conference_link': null, // Will be set after payment
       });
 
       // Delete the temporary appointment
@@ -426,13 +490,14 @@ class SocketService {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      // Separate appointments by status
+      // Separate appointments by status and type
       List<Map<String, dynamic>> pending = [];
       List<Map<String, dynamic>> accepted = [];
       List<Map<String, dynamic>> declined = [];
 
       for (var appointment in appointments) {
         String status = appointment['status'] ?? 'pending';
+        String type = appointment['type'] ?? 'permanent';
 
         if (status == 'pending' || status == 'processing') {
           pending.add(appointment);
@@ -480,6 +545,18 @@ class SocketService {
     } catch (error) {
       // Return empty lists on error
       return {'pending': [], 'accepted': [], 'declined': []};
+    }
+  }
+
+  // Mark notification as read
+  Future<void> markNotificationAsRead(String notificationId) async {
+    try {
+      await supabase
+          .from('notifications')
+          .update({'read': true})
+          .eq('id', notificationId);
+    } catch (error) {
+      // Ignore errors
     }
   }
 }
