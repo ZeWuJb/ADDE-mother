@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'doctors_card.dart';
 import 'appointments_page.dart'; // Assuming SocketTestPage is from this import
+import 'package:flutter/foundation.dart';
 
 class DoctorsPage extends StatefulWidget {
   const DoctorsPage({super.key});
@@ -54,14 +55,14 @@ class _DoctorsPageState extends State<DoctorsPage> {
         throw Exception('User is not authenticated');
       }
 
-      print('Fetching professionals from doctors table');
+      debugPrint('Fetching professionals from doctors table');
       final response = await supabase
           .from('doctors')
           .select('*')
           .order('full_name', ascending: true)
           .timeout(const Duration(seconds: 120));
 
-      print('Supabase response: $response');
+      debugPrint('Supabase response: $response');
 
       if (!mounted) return;
 
@@ -71,7 +72,7 @@ class _DoctorsPageState extends State<DoctorsPage> {
         nurses = response.where((item) => item['type'] == 'nurse').toList();
       });
     } catch (error) {
-      print('Error fetching professionals: $error');
+      debugPrint('Error fetching professionals: $error');
       if (!mounted) return;
 
       setState(() {
@@ -152,7 +153,7 @@ class _DoctorsPageState extends State<DoctorsPage> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      theme.colorScheme.primary.withOpacity(0.2),
+                      theme.colorScheme.primary.withValues(alpha: 0.2),
                       theme.colorScheme.surface,
                     ],
                     begin: Alignment.topCenter,
@@ -187,7 +188,9 @@ class _DoctorsPageState extends State<DoctorsPage> {
                             backgroundColor: WidgetStatePropertyAll(
                               showProfessionals
                                   ? theme.colorScheme.primary
-                                  : theme.colorScheme.primary.withOpacity(0.5),
+                                  : theme.colorScheme.primary.withValues(
+                                    alpha: 0.5,
+                                  ),
                             ),
                             foregroundColor: WidgetStatePropertyAll(
                               theme.colorScheme.onPrimary,
@@ -215,7 +218,7 @@ class _DoctorsPageState extends State<DoctorsPage> {
                               MaterialPageRoute(
                                 builder:
                                     (context) =>
-                                        const SocketTestPage(doctorId: ''),
+                                        const AppointmentsPage(doctorId: ''),
                               ),
                             );
                           },
@@ -264,8 +267,8 @@ class _DoctorsPageState extends State<DoctorsPage> {
                               backgroundColor: WidgetStatePropertyAll(
                                 selectedType == 'doctor'
                                     ? theme.colorScheme.primary
-                                    : theme.colorScheme.primary.withOpacity(
-                                      0.5,
+                                    : theme.colorScheme.primary.withValues(
+                                      alpha: 0.5,
                                     ),
                               ),
                               foregroundColor: WidgetStatePropertyAll(
@@ -296,8 +299,8 @@ class _DoctorsPageState extends State<DoctorsPage> {
                               backgroundColor: WidgetStatePropertyAll(
                                 selectedType == 'nurse'
                                     ? theme.colorScheme.primary
-                                    : theme.colorScheme.primary.withOpacity(
-                                      0.5,
+                                    : theme.colorScheme.primary.withValues(
+                                      alpha: 0.5,
                                     ),
                               ),
                               foregroundColor: WidgetStatePropertyAll(
@@ -335,7 +338,7 @@ class _DoctorsPageState extends State<DoctorsPage> {
                                     Icons.medical_services_outlined,
                                     size: 64,
                                     color: theme.colorScheme.onSurfaceVariant
-                                        .withOpacity(0.5),
+                                        .withValues(alpha: 0.5),
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
@@ -400,7 +403,7 @@ class _DoctorsPageState extends State<DoctorsPage> {
                                       Icons.person_off,
                                       size: 64,
                                       color: theme.colorScheme.onSurfaceVariant
-                                          .withOpacity(0.5),
+                                          .withValues(alpha: 0.5),
                                     ),
                                     const SizedBox(height: 16),
                                     Text(

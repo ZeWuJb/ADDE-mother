@@ -1653,6 +1653,8 @@
 "unknownDoctor": "ያልታወቀ ዶክተር",
 "couldNotLaunchVideoCall": "የቪዲዮ ጥሪ መጀመር አልተቻለም",
 "videoLinkNotAvailable": "የቪዲዮ ሊንክ አይገኝም",
-"cancelLabel": "ይሰርዙ"
+"cancelLabel": "ይሰርዙ",
+"consultationFee": "የምክክር ክፍያ: {amount} ብር",
+"consultationsFee": "የምክክር ክፍያ"
   }
 

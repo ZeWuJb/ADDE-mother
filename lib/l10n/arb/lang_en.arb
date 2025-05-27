@@ -1645,7 +1645,9 @@
 "unknownDoctor": "Unknown Doctor",
 "couldNotLaunchVideoCall": "Could not launch video call",
 "videoLinkNotAvailable": "Video link not available",
-"cancelLabel": "Cancel"
+"cancelLabel": "Cancel",
+"consultationFee": "Consultation Fee: {amount} ETB",
+"consultationsFee": "Consultation Fee"
 
   }
   

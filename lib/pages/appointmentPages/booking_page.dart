@@ -233,18 +233,17 @@ class _BookingPageState extends State<BookingPage> {
       final now = DateTime.now();
       final expiresAt = now.add(const Duration(minutes: 20));
 
-      final result =
-          await supabase
-              .from('temporary_appointments')
-              .insert({
-                'doctor_id': widget.doctorId,
-                'mother_id': userId,
-                'requested_time': requestedDateTime.toIso8601String(),
-                'expires_at': expiresAt.toIso8601String(),
-                'status': 'pending',
-              })
-              .select()
-              .single();
+      await supabase
+          .from('temporary_appointments')
+          .insert({
+            'doctor_id': widget.doctorId,
+            'mother_id': userId,
+            'requested_time': requestedDateTime.toIso8601String(),
+            'expires_at': expiresAt.toIso8601String(),
+            'status': 'pending',
+          })
+          .select()
+          .single();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -267,7 +266,7 @@ class _BookingPageState extends State<BookingPage> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => SocketTestPage(doctorId: widget.doctorId),
+            builder: (context) => AppointmentsPage(doctorId: widget.doctorId),
           ),
         );
       }
@@ -339,7 +338,7 @@ class _BookingPageState extends State<BookingPage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       margin: const EdgeInsets.all(8),
-                      color: theme.colorScheme.error.withOpacity(0.1),
+                      color: theme.colorScheme.error.withValues(alpha: 0.1),
                       child: Row(
                         children: [
                           Icon(Icons.error, color: theme.colorScheme.error),
@@ -361,7 +360,7 @@ class _BookingPageState extends State<BookingPage> {
                     color:
                         _isConnected
                             ? Colors.green.shade50
-                            : theme.colorScheme.error.withOpacity(0.1),
+                            : theme.colorScheme.error.withValues(alpha: 0.1),
                     child: Row(
                       children: [
                         Icon(

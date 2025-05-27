@@ -101,8 +101,7 @@ class CalendarPage extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder:
-                              (context) => const SocketTestPage(doctorId: ''),
+                          builder: (context) => const AppointmentsPage(),
                         ),
                       );
                     },

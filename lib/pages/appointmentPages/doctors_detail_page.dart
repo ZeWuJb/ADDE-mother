@@ -169,7 +169,7 @@ class DoctorDetailsPage extends StatelessWidget {
                       ),
                       _buildContactRow(
                         Icons.attach_money,
-                        l10n.consultationFee,
+                        l10n.consultationsFee,
                         '\$${doctor['payment_required_amount']}',
                         theme,
                       ),
