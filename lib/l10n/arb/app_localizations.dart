@@ -3298,6 +3298,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add to Favorites'**
   String get addFavorite;
+
+  /// No description provided for @errorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Something Went Wrong'**
+  String get errorTitle;
+
+  /// No description provided for @errorOnboardingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load onboarding content.'**
+  String get errorOnboardingMessage;
+
+  /// No description provided for @errorRetryButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get errorRetryButton;
+
+  /// No description provided for @errorRegisterMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load registration page.'**
+  String get errorRegisterMessage;
+
+  /// No description provided for @okButton.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get okButton;
+
+  /// No description provided for @successTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Success'**
+  String get successTitle;
+
+  /// No description provided for @emailNullError.
+  ///
+  /// In en, this message translates to:
+  /// **'Email is required'**
+  String get emailNullError;
+
+  /// Error message displayed when checking notifications fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to check notifications: {error}'**
+  String errorCheckingNotifications(Object error);
+
+  /// Error message displayed when scheduling health tips fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to schedule health tips: {error}'**
+  String errorSchedulingTips(Object error);
+
+  /// Error message displayed when loading profile image fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load profile image: {error}'**
+  String errorLoadingProfileImage(Object error);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

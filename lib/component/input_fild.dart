@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class InputFiled extends StatelessWidget {
+class InputField extends StatefulWidget {
   final String hintText;
   final TextEditingController controller;
   final bool obscure;
@@ -8,7 +8,7 @@ class InputFiled extends StatelessWidget {
   final bool enabled;
   final TextInputType? keyboardType;
 
-  const InputFiled({
+  const InputField({
     super.key,
     required this.controller,
     required this.hintText,
@@ -19,12 +19,27 @@ class InputFiled extends StatelessWidget {
   });
 
   @override
+  State<InputField> createState() => _InputFieldState();
+}
+
+class _InputFieldState extends State<InputField> {
+  bool _isObscure = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _isObscure = widget.obscure; // Initialize with obscure value
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withOpacity(0.1),
+          color: theme.colorScheme.surface.withOpacity(0.1),
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
@@ -35,18 +50,18 @@ class InputFiled extends StatelessWidget {
           ],
         ),
         child: TextField(
-          controller: controller,
-          obscureText: obscure,
-          enabled: enabled,
+          controller: widget.controller,
+          obscureText: widget.obscure && _isObscure,
+          enabled: widget.enabled,
           keyboardType:
-              email
+              widget.email
                   ? TextInputType.emailAddress
-                  : keyboardType ?? TextInputType.text,
-          cursorColor: Theme.of(context).colorScheme.primary,
+                  : widget.keyboardType ?? TextInputType.text,
+          cursorColor: theme.colorScheme.primary,
           decoration: InputDecoration(
-            hintText: hintText,
+            hintText: widget.hintText,
             hintStyle: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              color: theme.colorScheme.onSurface.withOpacity(0.5),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
@@ -55,20 +70,20 @@ class InputFiled extends StatelessWidget {
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                color: theme.colorScheme.onSurface.withOpacity(0.2),
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.primary,
+                color: theme.colorScheme.primary,
                 width: 2,
               ),
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                color: theme.colorScheme.onSurface.withOpacity(0.1),
               ),
             ),
             contentPadding: const EdgeInsets.symmetric(
@@ -76,16 +91,31 @@ class InputFiled extends StatelessWidget {
               vertical: 15,
             ),
             fillColor:
-                enabled
+                widget.enabled
                     ? null
-                    : Theme.of(context).colorScheme.surface.withOpacity(0.05),
+                    : theme.colorScheme.surface.withOpacity(0.05),
             filled: true,
+            suffixIcon:
+                widget.obscure
+                    ? IconButton(
+                      icon: Icon(
+                        _isObscure ? Icons.visibility_off : Icons.visibility,
+                        color: theme.colorScheme.onSurfaceVariant,
+                        size: 20,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isObscure = !_isObscure;
+                        });
+                      },
+                    )
+                    : null,
           ),
           style: TextStyle(
             color:
-                enabled
-                    ? Theme.of(context).colorScheme.onSurface
-                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                widget.enabled
+                    ? theme.colorScheme.onSurface
+                    : theme.colorScheme.onSurface.withOpacity(0.5),
           ),
         ),
       ),

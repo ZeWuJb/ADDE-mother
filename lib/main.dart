@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:adde/pages/community/chat_provider.dart';
@@ -15,55 +16,41 @@ import 'package:adde/theme/theme_provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+// Entry point of the application
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Load environment variables
   await dotenv.load(fileName: ".env");
 
+  // Initialize Supabase
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
-  String? userId;
-  String? email;
-  final sessionString = await getSavedSession();
-  if (sessionString != null) {
-    try {
-      // Validate session string
-      final sessionJson = jsonDecode(sessionString);
-      if (sessionJson is Map<String, dynamic>) {
-        final response = await Supabase.instance.client.auth.recoverSession(
-          sessionString,
-        );
-        userId = response.user?.id;
-        email = response.user?.email;
-        print('Session restored: userId=$userId, email=$email');
-      } else {
-        print('Invalid session format: $sessionString');
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('supabase_session'); // Clear invalid session
-      }
-    } catch (e) {
-      print('Failed to restore session: $e');
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('supabase_session'); // Clear invalid session
-    }
-  }
+  // Attempt to restore saved session
+  final sessionData = await _getSavedSession();
+  final userId = sessionData['userId'];
+  final email = sessionData['email'];
 
+  // Initialize providers
   final localeProvider = LocaleProvider();
-  await localeProvider.loadLocale();
   final themeProvider = ThemeProvider();
-  await themeProvider.loadTheme();
   final notificationSettingsProvider = NotificationSettingsProvider();
-  await notificationSettingsProvider.loadSettings();
 
+  await Future.wait([
+    localeProvider.loadLocale(),
+    themeProvider.loadTheme(),
+    notificationSettingsProvider.loadSettings(),
+  ]);
+
+  // Run the app with providers
   runApp(
     MultiProvider(
       providers: [
@@ -74,27 +61,43 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => NameProvider()),
         ChangeNotifierProvider.value(value: localeProvider),
         ChangeNotifierProvider.value(value: notificationSettingsProvider),
-        Provider(create: (context) => NotificationService()),
+        Provider(create: (_) => NotificationService()),
       ],
       child: MyApp(userId: userId, email: email),
     ),
   );
 }
 
-Future<String?> getSavedSession() async {
+// Retrieve and validate saved Supabase session
+Future<Map<String, String?>> _getSavedSession() async {
   final prefs = await SharedPreferences.getInstance();
   final sessionString = prefs.getString('supabase_session');
-  print('Retrieved session: $sessionString'); // Debug log
-  return sessionString;
+  if (sessionString == null) return {'userId': null, 'email': null};
+
+  try {
+    final sessionJson = jsonDecode(sessionString);
+    if (sessionJson is Map<String, dynamic>) {
+      final response = await Supabase.instance.client.auth.recoverSession(
+        sessionString,
+      );
+      return {'userId': response.user?.id, 'email': response.user?.email};
+    }
+  } catch (_) {
+    // Clear invalid session
+    await prefs.remove('supabase_session');
+  }
+  return {'userId': null, 'email': null};
 }
 
+// Splash screen widget
 class SplashScreen extends StatefulWidget {
   final String? userId;
   final String? email;
-  const SplashScreen({super.key, required this.userId, this.email});
+
+  const SplashScreen({super.key, this.userId, this.email});
 
   @override
-  _SplashScreenState createState() => _SplashScreenState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen> {
@@ -104,20 +107,20 @@ class _SplashScreenState extends State<SplashScreen> {
     _checkConnectivityAndProceed();
   }
 
+  // Check internet connectivity
   Future<bool> _hasInternetConnection() async {
     final connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult == ConnectivityResult.none) {
-      return false;
-    }
+    if (connectivityResult == ConnectivityResult.none) return false;
 
     try {
       final result = await InternetAddress.lookup('google.com');
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } on SocketException catch (_) {
+    } on SocketException {
       return false;
     }
   }
 
+  // Show no internet dialog
   void _showNoInternetDialog() {
     final l10n = AppLocalizations.of(context)!;
     showDialog(
@@ -145,7 +148,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 },
                 child: Text(
                   l10n.retryButton,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: TextStyle(
                     color:
                         Theme.of(context).brightness == Brightness.light
                             ? Theme.of(context).colorScheme.primary
@@ -158,28 +161,30 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 
-  void _checkConnectivityAndProceed() async {
-    bool hasInternet = await _hasInternetConnection();
+  // Check connectivity and navigate to appropriate screen
+  Future<void> _checkConnectivityAndProceed() async {
+    final hasInternet = await _hasInternetConnection();
     if (!hasInternet) {
       _showNoInternetDialog();
-    } else {
-      Future.delayed(const Duration(seconds: 3), () {
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) =>
-                      widget.userId != null
-                          ? BottomPageNavigation(
-                            user_id: widget.userId!,
-                            email: widget.email,
-                          )
-                          : const AuthenticationGate(),
-            ),
-          );
-        }
-      });
+      return;
+    }
+
+    // Navigate after a brief delay for splash screen effect
+    await Future.delayed(const Duration(seconds: 3));
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder:
+              (context) =>
+                  widget.userId != null
+                      ? BottomPageNavigation(
+                        user_id: widget.userId!,
+                        email: widget.email,
+                      )
+                      : const AuthenticationGate(),
+        ),
+      );
     }
   }
 
@@ -218,16 +223,17 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
+// Main application widget
 class MyApp extends StatelessWidget {
   final String? userId;
   final String? email;
-  const MyApp({super.key, required this.userId, this.email});
+
+  const MyApp({super.key, this.userId, this.email});
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    return Consumer<LocaleProvider>(
-      builder: (context, localeProvider, child) {
+    return Consumer2<ThemeProvider, LocaleProvider>(
+      builder: (context, themeProvider, localeProvider, child) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'Adde Assistance App',
@@ -242,9 +248,8 @@ class MyApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          localeResolutionCallback: (deviceLocale, supportedLocales) {
-            return localeProvider.locale;
-          },
+          localeResolutionCallback:
+              (deviceLocale, supportedLocales) => localeProvider.locale,
           home: SplashScreen(userId: userId, email: email),
         );
       },

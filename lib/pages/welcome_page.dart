@@ -3,6 +3,7 @@ import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+// Welcome page widget for onboarding
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
 
@@ -12,23 +13,25 @@ class WelcomePage extends StatefulWidget {
 
 class _WelcomePageState extends State<WelcomePage>
     with TickerProviderStateMixin {
-  int _currentPage = 0;
   final PageController _pageController = PageController();
-  late AnimationController _backgroundAnimationController;
-  late Animation<Color?> _gradientColorAnimation;
+  late final AnimationController _backgroundAnimationController;
+  Animation<Color?>?
+  _gradientColorAnimation; // Non-late to handle initialization safely
+  int _currentPage = 0;
   String? _lastLocale;
 
   static const List<String> _imagePaths = [
-    "assets/woman.png",
-    "assets/woman-1.png",
-    "assets/notebook.png",
-    "assets/community.png",
-    "assets/chatbot-1.png",
+    'assets/woman.png',
+    'assets/woman-1.png',
+    'assets/notebook.png',
+    'assets/community.png',
+    'assets/chatbot-1.png',
   ];
 
   @override
   void initState() {
     super.initState();
+    // Initialize animation controller only
     _backgroundAnimationController = AnimationController(
       duration: const Duration(seconds: 5),
       vsync: this,
@@ -41,22 +44,32 @@ class _WelcomePageState extends State<WelcomePage>
     final theme = Theme.of(context);
     final currentLocale = Localizations.localeOf(context).languageCode;
 
+    // Initialize gradient animation if not already set
+    if (_gradientColorAnimation == null) {
+      try {
+        _gradientColorAnimation = ColorTween(
+          begin: theme.colorScheme.primary.withOpacity(0.2),
+          end: theme.colorScheme.secondary.withOpacity(0.2),
+        ).animate(
+          CurvedAnimation(
+            parent: _backgroundAnimationController,
+            curve: Curves.easeInOut,
+          ),
+        );
+        _backgroundAnimationController.repeat(reverse: true);
+      } catch (e) {
+        // Log error internally and show user-friendly error
+        debugPrint('Animation initialization failed: $e');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showErrorDialog('Failed to initialize onboarding animation.');
+        });
+      }
+    }
+
+    // Update state if locale changes
     if (_lastLocale != currentLocale) {
       _lastLocale = currentLocale;
       setState(() {});
-    }
-
-    if (!_backgroundAnimationController.isAnimating) {
-      _gradientColorAnimation = ColorTween(
-        begin: theme.colorScheme.primary.withOpacity(0.2),
-        end: theme.colorScheme.secondary.withOpacity(0.2),
-      ).animate(
-        CurvedAnimation(
-          parent: _backgroundAnimationController,
-          curve: Curves.easeInOut,
-        ),
-      );
-      _backgroundAnimationController.repeat(reverse: true);
     }
   }
 
@@ -67,6 +80,48 @@ class _WelcomePageState extends State<WelcomePage>
     super.dispose();
   }
 
+  // Show error dialog for in-app errors
+  void _showErrorDialog(String message) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => AlertDialog(
+            title: Text(
+              l10n.errorTitle,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Text(
+              message,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed:
+                    () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const RegisterPage()),
+                    ),
+                style: TextButton.styleFrom(
+                  foregroundColor:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onPrimary,
+                ),
+                child: Text(l10n.errorRetryButton),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // Navigate to the registration page
   void _navigateToRegister() {
     Navigator.pushReplacement(
       context,
@@ -80,21 +135,27 @@ class _WelcomePageState extends State<WelcomePage>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenHeight = MediaQuery.of(context).size.height;
+    final screenHeight = MediaQuery.sizeOf(context).height;
     final l10n = AppLocalizations.of(context)!;
+
+    // Fallback if animation initialization failed
+    if (_gradientColorAnimation == null) {
+      return _ErrorScreen(message: l10n.errorOnboardingMessage);
+    }
 
     return SafeArea(
       child: Scaffold(
         body: Stack(
           children: [
+            // Animated background gradient
             AnimatedBuilder(
-              animation: _backgroundAnimationController,
+              animation: _gradientColorAnimation!,
               builder: (context, child) {
                 return Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        _gradientColorAnimation.value ??
+                        _gradientColorAnimation!.value ??
                             theme.colorScheme.primary.withOpacity(0.2),
                         theme.colorScheme.secondary.withOpacity(0.2),
                       ],
@@ -107,19 +168,38 @@ class _WelcomePageState extends State<WelcomePage>
             ),
             Column(
               children: [
+                // PageView for onboarding slides
                 Expanded(
                   child: PageView.builder(
                     controller: _pageController,
                     itemCount: _imagePaths.length,
                     onPageChanged:
                         (index) => setState(() => _currentPage = index),
-                    itemBuilder:
-                        (context, index) =>
-                            _buildPageContent(theme, l10n, index, screenHeight),
+                    itemBuilder: (context, index) {
+                      try {
+                        return _buildPageContent(
+                          theme,
+                          l10n,
+                          index,
+                          screenHeight,
+                        );
+                      } catch (e) {
+                        // Log error and show user-friendly error
+                        debugPrint('Page content build failed: $e');
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _showErrorDialog(l10n.errorOnboardingMessage);
+                        });
+                        return const SizedBox.shrink();
+                      }
+                    },
                   ),
                 ),
+                // Navigation buttons and page indicators
                 Padding(
-                  padding: EdgeInsets.all(screenHeight * 0.02),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: screenHeight * 0.01,
+                    vertical: screenHeight * 0.02,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -133,9 +213,7 @@ class _WelcomePageState extends State<WelcomePage>
                         children: List.generate(
                           _imagePaths.length,
                           (index) => Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 4.0,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeInOut,
@@ -196,6 +274,7 @@ class _WelcomePageState extends State<WelcomePage>
     );
   }
 
+  // Build animated button widget
   Widget _buildAnimatedButton({
     required String text,
     required String semanticsLabel,
@@ -204,13 +283,13 @@ class _WelcomePageState extends State<WelcomePage>
   }) {
     return ElevatedButton(
       onPressed: onPressed,
-      style: theme.elevatedButtonTheme.style?.copyWith(
-        minimumSize: const MaterialStatePropertyAll(Size(100, 40)),
-        elevation: MaterialStateProperty.resolveWith<double>(
-          (states) => states.contains(MaterialState.pressed) ? 2 : 8,
-        ),
-        shadowColor: MaterialStatePropertyAll(
-          theme.colorScheme.shadow.withOpacity(0.3),
+      style: ElevatedButton.styleFrom(
+        minimumSize: const Size(100, 40),
+        elevation: 8,
+        shadowColor: theme.colorScheme.shadow.withOpacity(0.3),
+      ).copyWith(
+        elevation: WidgetStateProperty.resolveWith<double>(
+          (states) => states.contains(WidgetState.pressed) ? 2 : 8,
         ),
       ),
       child: Text(
@@ -224,6 +303,7 @@ class _WelcomePageState extends State<WelcomePage>
     );
   }
 
+  // Build content for each onboarding page
   Widget _buildPageContent(
     ThemeData theme,
     AppLocalizations l10n,
@@ -295,6 +375,70 @@ class _WelcomePageState extends State<WelcomePage>
               delay: 300.ms,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// Error screen for unhandled widget errors
+class _ErrorScreen extends StatelessWidget {
+  final String message;
+
+  const _ErrorScreen({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.errorContainer,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 60,
+                color: Theme.of(context).colorScheme.onErrorContainer,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.errorTitle,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onErrorContainer,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onErrorContainer,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed:
+                    () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const RegisterPage()),
+                    ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                ),
+                child: Text(l10n.errorRetryButton),
+              ),
+            ],
+          ),
         ),
       ),
     );

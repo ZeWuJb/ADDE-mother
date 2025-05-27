@@ -102,28 +102,60 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   }
 
   void _showSnackBar(String message, {bool isSuccess = false}) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            message,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+    if (!mounted) return;
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isSuccess ? Icons.check_circle : Icons.error_outline,
               color:
                   isSuccess
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.onError,
+                      ? theme.colorScheme.onPrimary
+                      : theme.colorScheme.onError,
+              size: 24,
             ),
-          ),
-          backgroundColor:
-              isSuccess
-                  ? Colors.green.shade400
-                  : Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color:
+                      isSuccess
+                          ? theme.colorScheme.onPrimary
+                          : theme.colorScheme.onError,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
         ),
-      );
-    }
+        backgroundColor:
+            isSuccess ? theme.colorScheme.primary : theme.colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 6,
+        duration: const Duration(seconds: 4),
+        action:
+            isSuccess
+                ? null
+                : SnackBarAction(
+                  label: l10n.retryButton,
+                  textColor: theme.colorScheme.onError,
+                  onPressed: () {
+                    if (_isEmailSent) {
+                      _verifyOtpAndUpdatePassword();
+                    } else {
+                      _sendPasswordResetEmail();
+                    }
+                  },
+                ),
+      ),
+    );
   }
 
   @override
@@ -239,7 +271,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   Widget _buildEmailInput(ThemeData theme, AppLocalizations l10n) {
     return Semantics(
       label: l10n.emailLabel,
-      child: InputFiled(
+      child: InputField(
         controller: emailController,
         hintText: l10n.emailLabel,
         email: true,
@@ -251,7 +283,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   Widget _buildOtpInput(ThemeData theme, AppLocalizations l10n) {
     return Semantics(
       label: l10n.otpLabel,
-      child: InputFiled(
+      child: InputField(
         controller: otpController,
         hintText: l10n.otpLabel,
         keyboardType: TextInputType.number,
@@ -262,7 +294,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   Widget _buildNewPasswordInput(ThemeData theme, AppLocalizations l10n) {
     return Semantics(
       label: l10n.newPasswordLabel,
-      child: InputFiled(
+      child: InputField(
         controller: newPasswordController,
         hintText: l10n.newPasswordLabel,
         obscure: true,

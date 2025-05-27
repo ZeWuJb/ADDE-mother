@@ -1783,6 +1783,16 @@
   "refresh": "አድስ",
   "favorites": "ተወዳጆች",
   "removeFavorite": "ከተወዳጆች አስወግድ",
-  "addFavorite": "ወደ ተወዳጆች ጨምር"
+  "addFavorite": "ወደ ተወዳጆች ጨምር",
+  "errorTitle": "የሆነ ችግር ተፈጥሯል",
+  "errorOnboardingMessage": "የመግቢያ ይዘት መጫን አልተሳካም።",
+  "errorRetryButton": "እንደገና ይሞክሩ",
+  "errorRegisterMessage": "የምዝገባ ገፅ መጫን አልተሳካም።",
+  "okButton": "እሺ",
+  "successTitle": "ስኬት",
+   "emailNullError": "ኢሜይል ያስፈልጋል",
+   "errorCheckingNotifications": "የማሳወቂያዎችን መፈተሽ አልተሳካም፡ {error}",
+   "errorSchedulingTips": "የጤና ምክሮችን መርሐግብር ማስያዝ አልተሳካም፡ {error}",
+   "errorLoadingProfileImage": "የመገለጫ ምስል መጫን አልተሳካም፡ {error}"
   }
 

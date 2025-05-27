@@ -1829,4 +1829,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addFavorite => 'Add to Favorites';
+
+  @override
+  String get errorTitle => 'Something Went Wrong';
+
+  @override
+  String get errorOnboardingMessage => 'Failed to load onboarding content.';
+
+  @override
+  String get errorRetryButton => 'Try Again';
+
+  @override
+  String get errorRegisterMessage => 'Failed to load registration page.';
+
+  @override
+  String get okButton => 'OK';
+
+  @override
+  String get successTitle => 'Success';
+
+  @override
+  String get emailNullError => 'Email is required';
+
+  @override
+  String errorCheckingNotifications(Object error) {
+    return 'Failed to check notifications: $error';
+  }
+
+  @override
+  String errorSchedulingTips(Object error) {
+    return 'Failed to schedule health tips: $error';
+  }
+
+  @override
+  String errorLoadingProfileImage(Object error) {
+    return 'Failed to load profile image: $error';
+  }
 }

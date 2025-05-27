@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
-import 'package:flutter_iconly/flutter_iconly.dart'; // For modern icons
+import 'package:flutter_iconly/flutter_iconly.dart';
 
 class BottomPageNavigation extends StatefulWidget {
   final String? email;
@@ -44,9 +44,13 @@ class _BottomPageNavigationState extends State<BottomPageNavigation>
   }
 
   Future<void> fetchMotherInfo() async {
+    setState(() {
+      isLoading = true;
+    });
+
     try {
       if (widget.email == null) {
-        throw Exception("Email is null, cannot fetch mother info.");
+        throw Exception(AppLocalizations.of(context)!.emailNullError);
       }
 
       final response =
@@ -87,40 +91,63 @@ class _BottomPageNavigationState extends State<BottomPageNavigation>
       setState(() {
         isLoading = false;
       });
-      showSnackBar(
+      _showErrorDialog(
+        AppLocalizations.of(context)!.errorTitle,
         AppLocalizations.of(context)!.errorLoadingData(error.toString()),
         retry: () => fetchMotherInfo(),
       );
     }
   }
 
-  void showSnackBar(String message, {VoidCallback? retry}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-            content: Text(
-              message,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onErrorContainer,
-                fontWeight: FontWeight.w500,
+  void _showErrorDialog(String title, String message, {VoidCallback? retry}) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text(
+              title,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Theme.of(context).colorScheme.errorContainer,
-            margin: const EdgeInsets.all(16),
+            content: Text(
+              message,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            actions: [
+              if (retry != null)
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    retry();
+                  },
+                  child: Text(
+                    AppLocalizations.of(context)!.retryButton,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  AppLocalizations.of(context)!.okButton,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            elevation: 4,
-            action:
-                retry != null
-                    ? SnackBarAction(
-                      label: AppLocalizations.of(context)!.retryButton,
-                      onPressed: retry,
-                      textColor: Theme.of(context).colorScheme.onErrorContainer,
-                    )
-                    : null,
-          ).animate().fadeIn(duration: 200.ms)
-          as SnackBar,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            elevation: 8,
+          ),
+      barrierDismissible: true,
     );
   }
 

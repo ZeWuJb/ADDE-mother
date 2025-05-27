@@ -16,7 +16,7 @@ import 'package:adde/auth/login_page.dart';
 import 'package:adde/pages/profile/profile_page.dart';
 import 'package:adde/pages/profile/locale_provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_iconly/flutter_iconly.dart'; // For modern icons
+import 'package:flutter_iconly/flutter_iconly.dart';
 
 class HomeScreen extends StatefulWidget {
   final String user_id;
@@ -125,7 +125,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _profileImageBase64 = response['profile_url'];
       });
     } catch (e) {
-      print('Error loading profile image: $e');
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        _showErrorDialog(
+          l10n.errorTitle,
+          l10n.errorLoadingProfileImage(e.toString()),
+        );
+      }
     }
   }
 
@@ -144,24 +150,40 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _hasUnreadNotifications = history.any((n) => n['seen'] == false);
       });
     } catch (e) {
-      print('Error checking unread notifications: $e');
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        _showErrorDialog(
+          l10n.errorTitle,
+          l10n.errorCheckingNotifications(e.toString()),
+        );
+      }
     }
   }
 
   Future<void> _scheduleHealthTips() async {
-    final notificationService = Provider.of<NotificationService>(
-      context,
-      listen: false,
-    );
-    final l10n = AppLocalizations.of(context)!;
-    final locale = l10n.localeName;
-    await notificationService.scheduleDailyHealthTips(
-      widget.pregnancyStartDate,
-      widget.user_id,
-      locale,
-      l10n.notificationChannelName,
-      l10n.notificationChannelDescription,
-    );
+    try {
+      final notificationService = Provider.of<NotificationService>(
+        context,
+        listen: false,
+      );
+      final l10n = AppLocalizations.of(context)!;
+      final locale = l10n.localeName;
+      await notificationService.scheduleDailyHealthTips(
+        widget.pregnancyStartDate,
+        widget.user_id,
+        locale,
+        l10n.notificationChannelName,
+        l10n.notificationChannelDescription,
+      );
+    } catch (e) {
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        _showErrorDialog(
+          l10n.errorTitle,
+          l10n.errorSchedulingTips(e.toString()),
+        );
+      }
+    }
   }
 
   Future<void> _checkAndShowTodaysTip() async {
@@ -184,10 +206,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         showPopup: notificationSettingsProvider.showPopupNotifications,
       );
     } catch (e) {
-      print('Error showing today\'s tip: $e');
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
-        _showSnackBar(
+        _showErrorDialog(
+          l10n.errorTitle,
           l10n.errorLoadingEntries(e.toString()),
           retry: _checkAndShowTodaysTip,
         );
@@ -218,9 +240,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             }).toList();
       });
     } catch (e) {
-      print('Error loading weekly tips: $e');
       if (mounted) {
-        _showSnackBar(
+        _showErrorDialog(
+          l10n.errorTitle,
           l10n.errorLoadingEntries(e.toString()),
           retry: _loadWeeklyTips,
         );
@@ -228,33 +250,55 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  void _showSnackBar(String message, {VoidCallback? retry}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-            content: Text(
-              message,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onErrorContainer,
-                fontWeight: FontWeight.w500,
+  void _showErrorDialog(String title, String message, {VoidCallback? retry}) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text(
+              title,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Theme.of(context).colorScheme.errorContainer,
-            margin: const EdgeInsets.all(16),
+            content: Text(
+              message,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            actions: [
+              if (retry != null)
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    retry();
+                  },
+                  child: Text(
+                    AppLocalizations.of(context)!.retryButton,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  AppLocalizations.of(context)!.okButton,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            elevation: 4,
-            action:
-                retry != null
-                    ? SnackBarAction(
-                      label: AppLocalizations.of(context)!.retryButton,
-                      onPressed: retry,
-                      textColor: Theme.of(context).colorScheme.onErrorContainer,
-                    )
-                    : null,
-          ).animate().fadeIn(duration: 300.ms)
-          as SnackBar,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            elevation: 8,
+          ),
+      barrierDismissible: true,
     );
   }
 
@@ -431,7 +475,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             } catch (e) {
               if (mounted) {
                 final l10n = AppLocalizations.of(context)!;
-                _showSnackBar(
+                _showErrorDialog(
+                  l10n.errorTitle,
                   l10n.errorLoggingOut(e.toString()),
                   retry: () async {
                     await Supabase.instance.client.auth.signOut();

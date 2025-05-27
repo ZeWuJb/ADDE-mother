@@ -91,9 +91,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       final sessionJson = session.toJson();
       final sessionString = jsonEncode(sessionJson);
       await prefs.setString('supabase_session', sessionString);
-      print('Session saved successfully');
     } catch (e) {
-      print('Error saving session: $e');
       if (mounted) {
         _showSnackBar(AppLocalizations.of(context)!.errorLabel(e.toString()));
       }
@@ -156,7 +154,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         throw l10n.googleSignInFailedError;
       }
     } catch (e) {
-      print('Google Sign-In error: $e');
       if (mounted) {
         _showSnackBar(
           e.toString().contains('cancelled')
@@ -223,7 +220,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         throw l10n.loginFailedError;
       }
     } catch (e) {
-      print('Login error: $e');
       if (mounted) {
         _showSnackBar(l10n.errorLabel(e.toString()));
       }
@@ -236,26 +232,57 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   void _showSnackBar(String message, {bool isSuccess = false}) {
     if (!mounted) return;
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color:
-                isSuccess
-                    ? Colors.white
-                    : Theme.of(context).colorScheme.onError,
-          ),
-        ),
+        content: Row(
+              children: [
+                Icon(
+                  isSuccess ? Icons.check_circle : Icons.error_outline,
+                  color:
+                      isSuccess
+                          ? theme.colorScheme.onPrimary
+                          : theme.colorScheme.onError,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    message,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color:
+                          isSuccess
+                              ? theme.colorScheme.onPrimary
+                              : theme.colorScheme.onError,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            )
+            .animate()
+            .slideY(
+              begin: 0.5,
+              end: 0,
+              duration: 300.ms,
+              curve: Curves.easeOutCubic,
+            )
+            .fadeIn(duration: 300.ms, curve: Curves.easeIn),
         backgroundColor:
-            isSuccess
-                ? Colors.green.shade400
-                : Theme.of(context).colorScheme.error,
+            isSuccess ? theme.colorScheme.primary : theme.colorScheme.error,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 6,
+        duration: const Duration(seconds: 4),
         action: SnackBarAction(
-          label: AppLocalizations.of(context)!.retryButton,
+          label: l10n.retryButton,
+          textColor:
+              isSuccess
+                  ? theme.colorScheme.onPrimary
+                  : theme.colorScheme.onError,
           onPressed: () {
             if (message.contains('Google')) {
               _nativeGoogleSignIn();
@@ -263,8 +290,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               _login();
             }
           },
-          textColor:
-              isSuccess ? Colors.white : Theme.of(context).colorScheme.onError,
         ),
       ),
     );
@@ -449,7 +474,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     bool obscure,
     int index,
   ) {
-    return InputFiled(
+    return InputField(
       controller: controller,
       hintText: hintText,
       obscure: obscure,
@@ -524,6 +549,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
+        SizedBox(width: 5),
         GestureDetector(
           onTap:
               () => Navigator.push(

@@ -91,42 +91,155 @@ class _MotherFormPageState extends State<MotherFormPage> {
     }
   }
 
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text(
+              title,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Text(
+              message,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  AppLocalizations.of(context)!.okButton,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            elevation: 8,
+          ),
+      barrierDismissible: true,
+    );
+  }
+
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text(
+              AppLocalizations.of(context)!.successTitle,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Colors.green.shade700,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Text(
+              message,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder:
+                          (context) => BottomPageNavigation(
+                            email: widget.email,
+                            user_id: widget.user_id!,
+                          ),
+                    ),
+                  );
+                },
+                child: Text(
+                  AppLocalizations.of(context)!.okButton,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            elevation: 8,
+          ),
+      barrierDismissible: false,
+    );
+  }
+
   void _confirmSubmit() {
     final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text(l10n.confirmSubmissionTitle),
-            content: Text(l10n.confirmSubmissionMessage),
+            title: Text(
+              l10n.confirmSubmissionTitle,
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            content: Text(
+              l10n.confirmSubmissionMessage,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text(l10n.cancelButton),
+                child: Text(
+                  l10n.cancelButton,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
                   formSubmit();
                 },
-                child: Text(l10n.submitButton),
+                child: Text(
+                  l10n.submitButton,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
               ),
             ],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            elevation: 8,
           ),
+      barrierDismissible: true,
     );
   }
 
   Future<void> formSubmit() async {
     final l10n = AppLocalizations.of(context)!;
     if (!_formKey.currentState!.validate() || pregnancyStartDate == null) {
-      _showSnackBar(l10n.requiredFieldsError);
+      _showErrorDialog(l10n.errorTitle, l10n.requiredFieldsError);
       return;
     }
 
     final weight = double.tryParse(weightController.text.trim());
     final height = double.tryParse(heightController.text.trim());
     if (weight == null || height == null) {
-      _showSnackBar(l10n.invalidNumberError);
+      _showErrorDialog(l10n.errorTitle, l10n.invalidNumberError);
       return;
     }
 
@@ -160,43 +273,9 @@ class _MotherFormPageState extends State<MotherFormPage> {
           .insert(formData)
           .select()
           .single();
-      _showSnackBar(l10n.formSubmitSuccess, isSuccess: true);
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder:
-              (context) => BottomPageNavigation(
-                email: widget.email,
-                user_id: widget.user_id!,
-              ),
-        ),
-      );
+      _showSuccessDialog(l10n.formSubmitSuccess);
     } catch (error) {
-      _showSnackBar(l10n.formSubmitError(error.toString()));
-    }
-  }
-
-  void _showSnackBar(String message, {bool isSuccess = false}) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            message,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color:
-                  isSuccess
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.onError,
-            ),
-          ),
-          backgroundColor:
-              isSuccess
-                  ? Colors.green.shade400
-                  : Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
+      _showErrorDialog(l10n.errorTitle, l10n.formSubmitError(error.toString()));
     }
   }
 
@@ -236,7 +315,10 @@ class _MotherFormPageState extends State<MotherFormPage> {
             shape: theme.cardTheme.shape,
             color: theme.cardTheme.color,
             child: Padding(
-              padding: EdgeInsets.all(screenHeight * 0.02),
+              padding: EdgeInsets.symmetric(
+                vertical: screenHeight * 0.02,
+                horizontal: screenHeight * 0.01,
+              ),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 600),
                 child: Form(
@@ -329,7 +411,7 @@ class _MotherFormPageState extends State<MotherFormPage> {
                   ),
                   value: "Male",
                   groupValue: selectedGender,
-                  onChanged: (value) => setState(() => selectedGender = value!),
+                  onChanged: null,
                   activeColor: theme.colorScheme.primary,
                 ),
               ),
@@ -656,7 +738,6 @@ class _MotherFormPageState extends State<MotherFormPage> {
     AppLocalizations l10n,
     double screenHeight,
   ) {
-    // Map health conditions to localized labels
     final healthConditionLabels = {
       "Diabetes": l10n.healthConditionDiabetes,
       "Hypertension": l10n.healthConditionHypertension,

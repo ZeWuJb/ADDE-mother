@@ -26,16 +26,18 @@ class _RegisterPageState extends State<RegisterPage>
       TextEditingController();
   final AuthenticationService _authService = AuthenticationService();
   final ScrollController _scrollController = ScrollController();
-  late AnimationController _backgroundAnimationController;
-  late Animation<Color?> _gradientColorAnimation;
-  late AnimationController _fadeController;
-  late Animation<double> _fadeAnimation;
+  late final AnimationController _backgroundAnimationController;
+  Animation<Color?>?
+  _gradientColorAnimation; // Non-late to handle initialization safely
+  late final AnimationController _fadeController;
+  late final Animation<double> _fadeAnimation;
   bool _isLoading = false;
   String? _lastLocale;
 
   @override
   void initState() {
     super.initState();
+    // Initialize animation controllers
     _backgroundAnimationController = AnimationController(
       duration: const Duration(seconds: 5),
       vsync: this,
@@ -48,6 +50,7 @@ class _RegisterPageState extends State<RegisterPage>
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
 
+    // Ensure scroll position is reset
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.jumpTo(0);
@@ -61,24 +64,35 @@ class _RegisterPageState extends State<RegisterPage>
     final theme = Theme.of(context);
     final currentLocale = Localizations.localeOf(context).languageCode;
 
+    // Initialize gradient animation if not already set
+    if (_gradientColorAnimation == null) {
+      try {
+        _gradientColorAnimation = ColorTween(
+          begin: theme.colorScheme.primary.withOpacity(0.2),
+          end: theme.colorScheme.secondary.withOpacity(0.2),
+        ).animate(
+          CurvedAnimation(
+            parent: _backgroundAnimationController,
+            curve: Curves.easeInOut,
+          ),
+        );
+        _backgroundAnimationController.repeat(reverse: true);
+      } catch (e) {
+        // Log error and show dialog
+        debugPrint('Animation initialization failed: $e');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showErrorDialog('Failed to initialize registration page.');
+        });
+      }
+    }
+
+    // Update locale if changed
     if (_lastLocale != currentLocale) {
       _lastLocale = currentLocale;
       setState(() {});
     }
 
-    if (!_backgroundAnimationController.isAnimating) {
-      _gradientColorAnimation = ColorTween(
-        begin: theme.colorScheme.primary.withOpacity(0.2),
-        end: theme.colorScheme.secondary.withOpacity(0.2),
-      ).animate(
-        CurvedAnimation(
-          parent: _backgroundAnimationController,
-          curve: Curves.easeInOut,
-        ),
-      );
-      _backgroundAnimationController.repeat(reverse: true);
-    }
-
+    // Update fade animation based on loading state
     if (_isLoading) {
       _fadeController.forward();
     } else {
@@ -86,21 +100,32 @@ class _RegisterPageState extends State<RegisterPage>
     }
   }
 
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    _scrollController.dispose();
+    _backgroundAnimationController.dispose();
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  // Save Supabase session to SharedPreferences
   Future<void> _saveSession(Session session) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final sessionJson = session.toJson();
       final sessionString = jsonEncode(sessionJson);
       await prefs.setString('supabase_session', sessionString);
-      print('Session saved successfully');
     } catch (e) {
-      print('Error saving session: $e');
       if (mounted) {
         _showSnackBar(AppLocalizations.of(context)!.signUpError(e.toString()));
       }
     }
   }
 
+  // Handle Google Sign-In
   Future<void> _nativeGoogleSignIn() async {
     if (!mounted) return;
     setState(() => _isLoading = true);
@@ -155,7 +180,6 @@ class _RegisterPageState extends State<RegisterPage>
         throw l10n.googleSignUpFailedError;
       }
     } catch (e) {
-      print('Google Sign-Up error: $e');
       if (mounted) {
         _showSnackBar(
           e.toString().contains('cancelled')
@@ -170,10 +194,12 @@ class _RegisterPageState extends State<RegisterPage>
     }
   }
 
+  // Handle email/password sign-up
   Future<void> _signUp(String email, String password) async {
     if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
 
+    // Validate inputs
     if (email.isEmpty ||
         password.isEmpty ||
         confirmPasswordController.text.isEmpty) {
@@ -219,7 +245,6 @@ class _RegisterPageState extends State<RegisterPage>
         throw l10n.signUpFailedError;
       }
     } catch (e) {
-      print('Sign-Up error: $e');
       if (mounted) {
         _showSnackBar(l10n.signUpError(e.toString()));
       }
@@ -230,28 +255,101 @@ class _RegisterPageState extends State<RegisterPage>
     }
   }
 
+  // Show error dialog for critical failures
+  void _showErrorDialog(String message) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => AlertDialog(
+            title: Text(
+              l10n.errorTitle,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Text(
+              message,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed:
+                    () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const RegisterPage()),
+                    ),
+                style: TextButton.styleFrom(
+                  foregroundColor:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onPrimary,
+                ),
+                child: Text(l10n.errorRetryButton),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // Show animated SnackBar for feedback
   void _showSnackBar(String message, {bool isSuccess = false}) {
     if (!mounted) return;
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color:
-                isSuccess
-                    ? Colors.white
-                    : Theme.of(context).colorScheme.onError,
-          ),
-        ),
+        content: Row(
+              children: [
+                Icon(
+                  isSuccess ? Icons.check_circle : Icons.error_outline,
+                  color:
+                      isSuccess
+                          ? theme.colorScheme.onPrimary
+                          : theme.colorScheme.onError,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    message,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color:
+                          isSuccess
+                              ? theme.colorScheme.onPrimary
+                              : theme.colorScheme.onError,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            )
+            .animate()
+            .slideY(
+              begin: 0.5,
+              end: 0,
+              duration: 300.ms,
+              curve: Curves.easeOutCubic,
+            )
+            .fadeIn(duration: 300.ms, curve: Curves.easeIn),
         backgroundColor:
-            isSuccess
-                ? Colors.green.shade400
-                : Theme.of(context).colorScheme.error,
+            isSuccess ? theme.colorScheme.primary : theme.colorScheme.error,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 6,
+        duration: const Duration(seconds: 4),
         action: SnackBarAction(
-          label: AppLocalizations.of(context)!.retryButton,
+          label: l10n.retryButton,
+          textColor:
+              isSuccess
+                  ? theme.colorScheme.onPrimary
+                  : theme.colorScheme.onError,
           onPressed: () {
             if (message.contains('Google')) {
               _nativeGoogleSignIn();
@@ -259,42 +357,35 @@ class _RegisterPageState extends State<RegisterPage>
               _signUp(emailController.text, passwordController.text);
             }
           },
-          textColor:
-              isSuccess ? Colors.white : Theme.of(context).colorScheme.onError,
         ),
       ),
     );
   }
 
   @override
-  void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
-    confirmPasswordController.dispose();
-    _scrollController.dispose();
-    _backgroundAnimationController.dispose();
-    _fadeController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenHeight = MediaQuery.of(context).size.height;
+    final screenHeight = MediaQuery.sizeOf(context).height;
     final l10n = AppLocalizations.of(context)!;
+
+    // Fallback if animation initialization failed
+    if (_gradientColorAnimation == null) {
+      return _ErrorScreen(message: l10n.errorRegisterMessage);
+    }
 
     return SafeArea(
       child: Scaffold(
         body: Stack(
           children: [
+            // Animated background gradient
             AnimatedBuilder(
-              animation: _backgroundAnimationController,
+              animation: _gradientColorAnimation!,
               builder: (context, child) {
                 return Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        _gradientColorAnimation.value ??
+                        _gradientColorAnimation!.value ??
                             theme.colorScheme.primary.withOpacity(0.2),
                         theme.colorScheme.surface,
                       ],
@@ -305,6 +396,7 @@ class _RegisterPageState extends State<RegisterPage>
                 );
               },
             ),
+            // Main content
             SingleChildScrollView(
               controller: _scrollController,
               physics: const BouncingScrollPhysics(),
@@ -387,6 +479,7 @@ class _RegisterPageState extends State<RegisterPage>
                 ),
               ),
             ),
+            // Loading overlay
             if (_isLoading)
               FadeTransition(
                 opacity: _fadeAnimation,
@@ -406,13 +499,14 @@ class _RegisterPageState extends State<RegisterPage>
     );
   }
 
+  // Build profile image widget
   Widget _buildProfileImage(ThemeData theme) {
     return Container(
       height: 120,
       width: 120,
       decoration: BoxDecoration(
         image: const DecorationImage(
-          image: AssetImage("assets/user.png"),
+          image: AssetImage('assets/user.png'),
           fit: BoxFit.cover,
         ),
         shape: BoxShape.circle,
@@ -427,6 +521,7 @@ class _RegisterPageState extends State<RegisterPage>
     );
   }
 
+  // Build welcome text widget
   Widget _buildWelcomeText(ThemeData theme, AppLocalizations l10n) {
     return Column(
       children: [
@@ -449,13 +544,14 @@ class _RegisterPageState extends State<RegisterPage>
     );
   }
 
+  // Build input field widget
   Widget _buildInputField(
     TextEditingController controller,
     String hintText,
     bool obscure,
     int index,
   ) {
-    return InputFiled(
+    return InputField(
       controller: controller,
       hintText: hintText,
       obscure: obscure,
@@ -463,6 +559,7 @@ class _RegisterPageState extends State<RegisterPage>
     );
   }
 
+  // Build sign-up button widget
   Widget _buildSignUpButton(ThemeData theme, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -471,13 +568,13 @@ class _RegisterPageState extends State<RegisterPage>
             _isLoading
                 ? null
                 : () => _signUp(emailController.text, passwordController.text),
-        style: theme.elevatedButtonTheme.style?.copyWith(
-          minimumSize: const WidgetStatePropertyAll(Size(double.infinity, 50)),
-          elevation: WidgetStateProperty.resolveWith<double>(
-            (states) => states.contains(WidgetState.pressed) ? 2 : 8,
-          ),
-          shadowColor: WidgetStatePropertyAll(
-            theme.colorScheme.primary.withOpacity(0.3),
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size(double.infinity, 50),
+          elevation: 8,
+          shadowColor: theme.colorScheme.primary.withOpacity(0.3),
+        ).copyWith(
+          elevation: MaterialStateProperty.resolveWith<double>(
+            (states) => states.contains(MaterialState.pressed) ? 2 : 8,
           ),
         ),
         child:
@@ -497,6 +594,7 @@ class _RegisterPageState extends State<RegisterPage>
     );
   }
 
+  // Build login link widget
   Widget _buildLoginLink() {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
@@ -509,6 +607,7 @@ class _RegisterPageState extends State<RegisterPage>
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
+        SizedBox(width: 5),
         GestureDetector(
           onTap:
               () => Navigator.push(
@@ -530,6 +629,7 @@ class _RegisterPageState extends State<RegisterPage>
     );
   }
 
+  // Build Google Sign-In button widget
   Widget _buildGoogleSignInButton() {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
@@ -547,13 +647,77 @@ class _RegisterPageState extends State<RegisterPage>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset("assets/google.png", height: 24),
+              Image.asset('assets/google.png', height: 24),
               const SizedBox(width: 8),
               Text(
                 l10n.signUpWithGoogle,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: theme.colorScheme.onSecondaryContainer,
                 ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Error screen for unhandled widget errors
+class _ErrorScreen extends StatelessWidget {
+  final String message;
+
+  const _ErrorScreen({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.errorContainer,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 60,
+                color: Theme.of(context).colorScheme.onErrorContainer,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.errorTitle,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onErrorContainer,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onErrorContainer,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed:
+                    () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const RegisterPage()),
+                    ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                ),
+                child: Text(l10n.errorRetryButton),
               ),
             ],
           ),

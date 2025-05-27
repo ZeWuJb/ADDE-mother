@@ -1829,4 +1829,40 @@ class AppLocalizationsAm extends AppLocalizations {
 
   @override
   String get addFavorite => 'ወደ ተወዳጆች ጨምር';
+
+  @override
+  String get errorTitle => 'የሆነ ችግር ተፈጥሯል';
+
+  @override
+  String get errorOnboardingMessage => 'የመግቢያ ይዘት መጫን አልተሳካም።';
+
+  @override
+  String get errorRetryButton => 'እንደገና ይሞክሩ';
+
+  @override
+  String get errorRegisterMessage => 'የምዝገባ ገፅ መጫን አልተሳካም።';
+
+  @override
+  String get okButton => 'እሺ';
+
+  @override
+  String get successTitle => 'ስኬት';
+
+  @override
+  String get emailNullError => 'ኢሜይል ያስፈልጋል';
+
+  @override
+  String errorCheckingNotifications(Object error) {
+    return 'የማሳወቂያዎችን መፈተሽ አልተሳካም፡ $error';
+  }
+
+  @override
+  String errorSchedulingTips(Object error) {
+    return 'የጤና ምክሮችን መርሐግብር ማስያዝ አልተሳካም፡ $error';
+  }
+
+  @override
+  String errorLoadingProfileImage(Object error) {
+    return 'የመገለጫ ምስል መጫን አልተሳካም፡ $error';
+  }
 }

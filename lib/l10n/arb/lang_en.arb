@@ -1775,7 +1775,41 @@
   "refresh": "Refresh",
   "favorites": "Favorites",
   "removeFavorite": "Remove from Favorites",
-  "addFavorite": "Add to Favorites"
+  "addFavorite": "Add to Favorites",
+  "errorTitle": "Something Went Wrong",
+  "errorOnboardingMessage": "Failed to load onboarding content.",
+  "errorRetryButton": "Try Again",
+  "errorRegisterMessage": "Failed to load registration page.",
+    "okButton": "OK",
+  "successTitle": "Success",
+  "emailNullError": "Email is required",
+  "errorCheckingNotifications": "Failed to check notifications: {error}",
+  "@errorCheckingNotifications": {
+    "description": "Error message displayed when checking notifications fails",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "errorSchedulingTips": "Failed to schedule health tips: {error}",
+  "@errorSchedulingTips": {
+    "description": "Error message displayed when scheduling health tips fails",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "errorLoadingProfileImage": "Failed to load profile image: {error}",
+  "@errorLoadingProfileImage": {
+    "description": "Error message displayed when loading profile image fails",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  }
   }
   
   
