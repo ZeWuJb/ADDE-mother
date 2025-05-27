@@ -847,7 +847,9 @@ class AppLocalizationsAm extends AppLocalizations {
   String get themeMode => 'ገጽታ ሁኔታ';
 
   @override
-  String get consultationFee => 'የምክር ክፍያ';
+  String consultationFee(Object amount) {
+    return 'የምክክር ክፍያ: $amount ብር';
+  }
 
   @override
   String get unknownName => 'ያልታወቀ ስም';
@@ -1721,6 +1723,9 @@ class AppLocalizationsAm extends AppLocalizations {
 
   @override
   String get cancelLabel => 'ይሰርዙ';
+
+  @override
+  String get consultationsFee => 'የምክክር ክፍያ';
 
   @override
   String get typing => 'እየፃፈ ነው...';

@@ -1646,6 +1646,8 @@
 "couldNotLaunchVideoCall": "Could not launch video call",
 "videoLinkNotAvailable": "Video link not available",
 "cancelLabel": "Cancel",
+"consultationFee": "Consultation Fee: {amount} ETB",
+"consultationsFee": "Consultation Fee",
   "typing": "Typing...",
   "online": "Online",
   "lastSeen": "Last seen {time}",

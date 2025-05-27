@@ -847,7 +847,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeMode => 'Theme Mode';
 
   @override
-  String get consultationFee => 'Consultation Fee';
+  String consultationFee(Object amount) {
+    return 'Consultation Fee: $amount ETB';
+  }
 
   @override
   String get unknownName => 'Unknown Name';
@@ -1721,6 +1723,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cancelLabel => 'Cancel';
+
+  @override
+  String get consultationsFee => 'Consultation Fee';
 
   @override
   String get typing => 'Typing...';

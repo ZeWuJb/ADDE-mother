@@ -1654,6 +1654,8 @@
 "couldNotLaunchVideoCall": "የቪዲዮ ጥሪ መጀመር አልተቻለም",
 "videoLinkNotAvailable": "የቪዲዮ ሊንክ አይገኝም",
 "cancelLabel": "ይሰርዙ",
+"consultationFee": "የምክክር ክፍያ: {amount} ብር",
+"consultationsFee": "የምክክር ክፍያ",
   "typing": "እየፃፈ ነው...",
   "online": "በመስመር ላይ",
   "lastSeen": "መጨረሻ የታየው {time}",

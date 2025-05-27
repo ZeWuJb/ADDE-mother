@@ -1526,8 +1526,8 @@ abstract class AppLocalizations {
   /// Label for the consultation fee of a doctor
   ///
   /// In en, this message translates to:
-  /// **'Consultation Fee'**
-  String get consultationFee;
+  /// **'Consultation Fee: {amount} ETB'**
+  String consultationFee(Object amount);
 
   /// Fallback text for when a doctor's name is not available
   ///
@@ -3106,6 +3106,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel'**
   String get cancelLabel;
+
+  /// No description provided for @consultationsFee.
+  ///
+  /// In en, this message translates to:
+  /// **'Consultation Fee'**
+  String get consultationsFee;
 
   /// Text shown when other user is typing
   ///
