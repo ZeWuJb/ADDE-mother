@@ -218,7 +218,7 @@ class _BookingPageState extends State<BookingPage> {
       final selectedTime = _availableTimes[_currentTimeIndex!];
 
       // Create the requested datetime in UTC to avoid timezone issues
-      final requestedDateTime = DateTime.utc(
+      final requestedDateTime = DateTime(
         _selectedDay!.year,
         _selectedDay!.month,
         _selectedDay!.day,
@@ -419,17 +419,26 @@ class _BookingPageState extends State<BookingPage> {
                         color: theme.colorScheme.onSurface,
                       ),
                     ),
-                    Wrap(
-                      children: List.generate(_availableTimes.length, (index) {
-                        final time = DateFormat('h:mm a').format(
-                          _availableTimes[index],
-                        ); // Changed to 12-hour format with AM/PM
-                        return Padding(
-                          padding: const EdgeInsets.all(4.0),
-                          child: ChoiceChip(
+                    Container(
+                      height: 120,
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      child: GridView.builder(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              childAspectRatio: 2.5,
+                              crossAxisSpacing: 8,
+                              mainAxisSpacing: 8,
+                            ),
+                        itemCount: _availableTimes.length,
+                        itemBuilder: (context, index) {
+                          final time = DateFormat(
+                            'h:mm a',
+                          ).format(_availableTimes[index]);
+                          return ChoiceChip(
                             label: Text(
                               time,
-                              style: theme.textTheme.bodyMedium?.copyWith(
+                              style: theme.textTheme.bodySmall?.copyWith(
                                 color:
                                     _currentTimeIndex == index
                                         ? theme.colorScheme.onPrimary
@@ -445,9 +454,9 @@ class _BookingPageState extends State<BookingPage> {
                                 _timeSelected = selected;
                               });
                             },
-                          ),
-                        );
-                      }),
+                          );
+                        },
+                      ),
                     ),
                   ],
                   const Spacer(),
