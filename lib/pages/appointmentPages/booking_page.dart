@@ -217,7 +217,8 @@ class _BookingPageState extends State<BookingPage> {
 
       final selectedTime = _availableTimes[_currentTimeIndex!];
 
-      final requestedDateTime = DateTime(
+      // Create the requested datetime in UTC to avoid timezone issues
+      final requestedDateTime = DateTime.utc(
         _selectedDay!.year,
         _selectedDay!.month,
         _selectedDay!.day,
@@ -230,8 +231,16 @@ class _BookingPageState extends State<BookingPage> {
         throw Exception('User not authenticated');
       }
 
-      final now = DateTime.now();
+      final now = DateTime.now().toUtc();
       final expiresAt = now.add(const Duration(minutes: 20));
+
+      debugPrint('=== BOOKING TIME DEBUG ===');
+      debugPrint('Selected date: ${_selectedDay}');
+      debugPrint('Selected time: ${selectedTime}');
+      debugPrint(
+        'Requested DateTime (UTC): ${requestedDateTime.toIso8601String()}',
+      );
+      debugPrint('Current time (UTC): ${now.toIso8601String()}');
 
       await supabase
           .from('temporary_appointments')
