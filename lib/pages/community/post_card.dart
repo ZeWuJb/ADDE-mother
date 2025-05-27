@@ -186,55 +186,12 @@ class PostCard extends StatelessWidget {
                   children: [
                     IconButton(
                       icon: Icon(
-                        post.isLiked ? Icons.favorite : Icons.favorite_border,
-                        color: post.isLiked ? Colors.red : null,
-                        size: 20,
-                      ),
-                      onPressed:
-                          currentMotherId == null
-                              ? null
-                              : () async {
-                                try {
-                                  await postProvider.likePost(
-                                    post.id,
-                                    currentMotherId,
-                                    post.isLiked,
-                                  );
-                                  print('Toggled like for post ID: ${post.id}');
-                                } catch (e) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        l10n.errorLikingPost(e.toString()),
-                                      ),
-                                      backgroundColor: theme.colorScheme.error,
-                                    ),
-                                  );
-                                }
-                              },
-                      tooltip: post.isLiked ? l10n.unlikePost : l10n.likePost,
-                    ),
-                    Text(
-                      '${post.likesCount}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    IconButton(
-                      icon: Icon(
                         Icons.comment,
                         color: theme.colorScheme.onSurfaceVariant,
                         size: 20,
                       ),
                       onPressed: onTap,
                       tooltip: l10n.viewComments,
-                    ),
-                    Text(
-                      '${post.commentCount}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
                     ),
                   ],
                 ),

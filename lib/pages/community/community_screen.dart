@@ -10,6 +10,8 @@ import 'package:adde/pages/community/create_post_screen.dart';
 import 'package:adde/pages/community/post_detail_screen.dart';
 import 'package:adde/pages/community/search_screen.dart';
 import 'package:adde/pages/community/messages_screen.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_iconly/flutter_iconly.dart'; // For modern icons
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -33,35 +35,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context)!.pleaseLogIn,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onError,
-              ),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
-        setState(() {
-          _isLoading = false;
-        });
+        _showSnackBar(AppLocalizations.of(context)!.pleaseLogIn);
+        setState(() => _isLoading = false);
         return;
       }
       motherId = user.id;
-      print('Initialized motherId: $motherId');
-      final motherData =
-          await Supabase.instance.client
-              .from('mothers')
-              .select('profile_url')
-              .eq('user_id', motherId!)
-              .single();
+      final motherData = await Supabase.instance.client
+          .from('mothers')
+          .select('profile_url')
+          .eq('user_id', motherId!)
+          .single()
+          .timeout(const Duration(seconds: 120));
       setState(() {
         _profileImageUrl = motherData['profile_url'] as String?;
         _isLoading = false;
@@ -71,35 +55,50 @@ class _CommunityScreenState extends State<CommunityScreen> {
         listen: false,
       ).fetchPosts(motherId!);
     } catch (e) {
-      print('Error initializing: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context)!.errorFetchingUser(e.toString()),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onError,
-            ),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
+      _showSnackBar(
+        AppLocalizations.of(context)!.errorFetchingUser(e.toString()),
       );
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
   Future<void> _refreshPosts() async {
     if (motherId != null) {
-      final postProvider = Provider.of<PostProvider>(context, listen: false);
-      await postProvider.fetchPosts(motherId!);
-      setState(() {
-        print('UI refreshed for motherId: $motherId');
-      });
+      await Provider.of<PostProvider>(
+        context,
+        listen: false,
+      ).fetchPosts(motherId!);
     }
+  }
+
+  void _showSnackBar(String message, {VoidCallback? retry}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+            content: Text(
+              message,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onErrorContainer,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Theme.of(context).colorScheme.errorContainer,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 4,
+            action:
+                retry != null
+                    ? SnackBarAction(
+                      label: AppLocalizations.of(context)!.retryButton,
+                      onPressed: retry,
+                      textColor: Theme.of(context).colorScheme.onErrorContainer,
+                    )
+                    : null,
+          ).animate().fadeIn(duration: 300.ms)
+          as SnackBar,
+    );
   }
 
   void _showCreatePostDialog() {
@@ -108,6 +107,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const CreatePostScreen(),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      elevation: 4,
     ).then((_) => _refreshPosts());
   }
 
@@ -120,11 +123,25 @@ class _CommunityScreenState extends State<CommunityScreen> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text(l10n.reportPostTitle),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            backgroundColor: theme.colorScheme.surfaceContainer,
+            title: Text(
+              l10n.reportPostTitle,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             content: DropdownButtonFormField<String>(
               decoration: InputDecoration(
                 hintText: l10n.reportReasonHint,
-                border: const OutlineInputBorder(),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: theme.colorScheme.outline),
+                ),
+                filled: true,
+                fillColor: theme.colorScheme.surfaceContainerLowest,
               ),
               value: selectedReason,
               items: [
@@ -151,26 +168,22 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 ),
                 DropdownMenuItem(value: 'other', child: Text(l10n.reasonOther)),
               ],
-              onChanged: (value) {
-                selectedReason = value;
-              },
+              onChanged: (value) => selectedReason = value,
               validator:
                   (value) => value == null ? l10n.reportReasonRequired : null,
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text(l10n.cancelButton),
+                child: Text(
+                  l10n.cancelButton,
+                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                ),
               ),
               ElevatedButton(
                 onPressed: () async {
                   if (selectedReason == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(l10n.reportReasonRequired),
-                        backgroundColor: theme.colorScheme.error,
-                      ),
-                    );
+                    _showSnackBar(l10n.reportReasonRequired);
                     return;
                   }
                   try {
@@ -183,26 +196,23 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       reason: selectedReason!,
                     );
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(l10n.reportSubmitted),
-                        backgroundColor: theme.colorScheme.primary,
-                      ),
-                    );
+                    _showSnackBar(l10n.reportSubmitted, retry: null);
                   } catch (e) {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(l10n.errorReportingPost(e.toString())),
-                        backgroundColor: theme.colorScheme.error,
-                      ),
-                    );
+                    _showSnackBar(l10n.errorReportingPost(e.toString()));
                   }
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 child: Text(l10n.submitButton),
               ),
             ],
-          ),
+          ).animate().fadeIn(duration: 300.ms, curve: Curves.easeOutCubic),
     );
   }
 
@@ -214,12 +224,29 @@ class _CommunityScreenState extends State<CommunityScreen> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text(l10n.deletePostTitle),
-            content: Text(l10n.deletePostConfirmation),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            backgroundColor: theme.colorScheme.surfaceContainer,
+            title: Text(
+              l10n.deletePostTitle,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            content: Text(
+              l10n.deletePostConfirmation,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text(l10n.cancelButton),
+                child: Text(
+                  l10n.cancelButton,
+                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                ),
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -229,12 +256,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       listen: false,
                     ).deletePost(postId: postId, motherId: motherId!);
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(l10n.deletePostSuccess),
-                        backgroundColor: theme.colorScheme.primary,
-                      ),
-                    );
+                    _showSnackBar(l10n.deletePostSuccess);
                     await _refreshPosts();
                   } catch (e) {
                     Navigator.pop(context);
@@ -242,18 +264,20 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     if (e.toString().contains('has associated comments')) {
                       errorMessage = l10n.errorDeletingPostWithComments;
                     }
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(errorMessage),
-                        backgroundColor: theme.colorScheme.error,
-                      ),
-                    );
+                    _showSnackBar(errorMessage);
                   }
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.error,
+                  foregroundColor: theme.colorScheme.onError,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 child: Text(l10n.deleteButton),
               ),
             ],
-          ),
+          ).animate().fadeIn(duration: 300.ms, curve: Curves.easeOutCubic),
     );
   }
 
@@ -271,18 +295,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final postProvider = Provider.of<PostProvider>(context, listen: true);
-    final screenHeight = MediaQuery.of(context).size.height;
+    final postProvider = Provider.of<PostProvider>(context);
     final l10n = AppLocalizations.of(context)!;
 
     if (_isLoading || motherId == null) {
       return Scaffold(
+        backgroundColor: theme.colorScheme.surface,
         body: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(
-              theme.colorScheme.primary,
-            ),
-          ),
+            color: theme.colorScheme.primary,
+            strokeWidth: 3,
+          ).animate().fadeIn(duration: 300.ms, curve: Curves.easeOut),
         ),
       );
     }
@@ -290,54 +313,47 @@ class _CommunityScreenState extends State<CommunityScreen> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.primaryContainer,
+        elevation: 0,
         title: Text(
           l10n.pageTitleCommunity,
-          style: theme.appBarTheme.titleTextStyle?.copyWith(
-            color:
-                theme.brightness == Brightness.light
-                    ? theme.colorScheme.onPrimary
-                    : theme.colorScheme.primary,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onPrimaryContainer,
           ),
         ),
-        backgroundColor:
-            theme.brightness == Brightness.light
-                ? theme.colorScheme.primary
-                : theme.colorScheme.onPrimary,
-        elevation: theme.appBarTheme.elevation,
         actions: [
           IconButton(
             icon: Icon(
-              Icons.search,
-              color:
-                  theme.brightness == Brightness.light
-                      ? theme.colorScheme.onPrimary
-                      : theme.colorScheme.primary,
+              IconlyLight.search,
+              color: theme.colorScheme.onPrimaryContainer,
+              size: 24,
             ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SearchScreen()),
-              );
-            },
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SearchScreen()),
+                ),
             tooltip: l10n.searchPosts,
-          ),
+          ).animate().scale(duration: 300.ms, curve: Curves.easeOutCubic),
           IconButton(
             icon: Icon(
-              Icons.message,
-              color:
-                  theme.brightness == Brightness.light
-                      ? theme.colorScheme.onPrimary
-                      : theme.colorScheme.primary,
+              IconlyLight.message,
+              color: theme.colorScheme.onPrimaryContainer,
+              size: 24,
             ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => MessagesScreen(motherId: motherId!),
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MessagesScreen(motherId: motherId!),
+                  ),
                 ),
-              );
-            },
             tooltip: l10n.viewMessages,
+          ).animate().scale(
+            duration: 300.ms,
+            delay: 100.ms,
+            curve: Curves.easeOutCubic,
           ),
         ],
       ),
@@ -346,10 +362,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
         color: theme.colorScheme.primary,
         backgroundColor: theme.colorScheme.surface,
         child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.all(screenHeight * 0.02),
+                padding: const EdgeInsets.all(16),
                 child: Semantics(
                   label: l10n.createNewPost,
                   child: GestureDetector(
@@ -361,15 +378,21 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.surfaceContainer,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: theme.colorScheme.outline),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: theme.colorScheme.shadow.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Row(
                         children: [
                           CircleAvatar(
                             radius: 20,
-                            backgroundColor: theme.colorScheme.secondary,
-                            foregroundColor: theme.colorScheme.onSecondary,
+                            backgroundColor: theme.colorScheme.primary
+                                .withOpacity(0.1),
                             backgroundImage: _getImageProvider(
                               _profileImageUrl,
                             ),
@@ -377,75 +400,113 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                 _profileImageUrl == null ||
                                         _getImageProvider(_profileImageUrl) ==
                                             null
-                                    ? Text(motherId![0].toUpperCase())
+                                    ? Text(
+                                      motherId![0].toUpperCase(),
+                                      style: TextStyle(
+                                        color: theme.colorScheme.primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    )
                                     : null,
                           ),
                           const SizedBox(width: 12),
-                          Text(
-                            l10n.whatsOnYourMind,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                          Expanded(
+                            child: Text(
+                              l10n.whatsOnYourMind,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
+                          ),
+                          Icon(
+                            IconlyLight.edit,
+                            color: theme.colorScheme.primary,
+                            size: 20,
                           ),
                         ],
                       ),
                     ),
+                  ).animate().fadeIn(
+                    duration: 300.ms,
+                    curve: Curves.easeOutCubic,
                   ),
                 ),
               ),
             ),
-            SliverToBoxAdapter(
-              child:
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              sliver:
                   postProvider.posts.isEmpty
-                      ? Center(
-                        child: Semantics(
-                          label: l10n.noPosts,
-                          child: Text(
-                            l10n.noPosts,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
+                      ? SliverToBoxAdapter(
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                IconlyLight.document,
+                                size: 48,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ).animate().fadeIn(duration: 300.ms),
+                              const SizedBox(height: 16),
+                              Text(
+                                l10n.noPosts,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ).animate().fadeIn(
+                                duration: 300.ms,
+                                delay: 100.ms,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _refreshPosts,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: theme.colorScheme.primary,
+                                  foregroundColor: theme.colorScheme.onPrimary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: Text(l10n.retryButton),
+                              ).animate().scale(
+                                duration: 300.ms,
+                                delay: 200.ms,
+                                curve: Curves.easeOutCubic,
+                              ),
+                            ],
                           ),
                         ),
                       )
-                      : Column(
-                        children:
-                            postProvider.posts.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final post = entry.value;
-                              return AnimatedOpacity(
-                                opacity: 1.0,
-                                duration: Duration(
-                                  milliseconds: 300 + index * 100,
-                                ),
-                                child: PostCard(
+                      : SliverList(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final post = postProvider.posts[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: PostCard(
                                   motherId: motherId,
                                   post: post,
-                                  onTap: () {
-                                    print('Tapped post ID: ${post.id}');
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (_) => PostDetailScreen(post: post),
+                                  onTap:
+                                      () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (_) =>
+                                                  PostDetailScreen(post: post),
+                                        ),
                                       ),
-                                    );
-                                  },
-                                  onProfileTap: () {
-                                    print(
-                                      'Tapped profile for motherId: ${post.motherId}',
-                                    );
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (_) => UserProfileScreen(
-                                              motherId: post.motherId,
-                                              fullName: post.fullName,
-                                            ),
+                                  onProfileTap:
+                                      () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (_) => UserProfileScreen(
+                                                motherId: post.motherId,
+                                                fullName: post.fullName,
+                                              ),
+                                        ),
                                       ),
-                                    );
-                                  },
                                   onReport:
                                       motherId != post.motherId
                                           ? () => _showReportDialog(post.id)
@@ -454,9 +515,22 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                       motherId == post.motherId
                                           ? () => _showDeleteDialog(post.id)
                                           : null,
+                                )
+                                .animate()
+                                .fadeIn(
+                                  duration: 400.ms,
+                                  delay: (index * 100).ms,
+                                  curve: Curves.easeOutCubic,
+                                )
+                                .slideY(
+                                  begin: 0.2,
+                                  end: 0,
+                                  duration: 400.ms,
+                                  delay: (index * 100).ms,
+                                  curve: Curves.easeOutCubic,
                                 ),
-                              );
-                            }).toList(),
+                          );
+                        }, childCount: postProvider.posts.length),
                       ),
             ),
           ],

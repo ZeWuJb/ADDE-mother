@@ -328,9 +328,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   AppBar _buildAppBar(BuildContext context) {
     final theme = Theme.of(context);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return AppBar(
-      backgroundColor: theme.colorScheme.secondary,
+      backgroundColor:
+          isDarkMode ? theme.colorScheme.onPrimary : theme.colorScheme.surface,
       elevation: 0,
       title: Row(
         children: [
@@ -352,7 +354,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     _profileImageBase64 == null
                         ? Icon(
                           Icons.person,
-                          color: theme.colorScheme.onSurfaceVariant,
+                          color:
+                              isDarkMode
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.onSurface,
                         )
                         : null,
               ).animate().scale(duration: 400.ms, curve: Curves.easeOutCubic),
@@ -366,7 +371,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             IconButton(
               icon: Icon(
                 IconlyLight.notification,
-                color: theme.colorScheme.onPrimary,
+                color:
+                    isDarkMode
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurface,
                 size: 30,
               ),
               onPressed: () async {
@@ -402,7 +410,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         IconButton(
           icon: Icon(
             IconlyLight.logout,
-            color: theme.colorScheme.onPrimary,
+            color:
+                isDarkMode
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurface,
             size: 30,
           ),
           onPressed: () async {
@@ -686,15 +697,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          l10n.weekLabel(tip['week']),
-                                          style: theme.textTheme.titleMedium
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w600,
-                                                color:
-                                                    theme.colorScheme.primary,
-                                              ),
-                                        ),
                                         const SizedBox(height: 4),
                                         Text(
                                           title ?? l10n.noTitle,
@@ -706,6 +708,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                         .onSurfaceVariant,
                                               ),
                                           maxLines: 1,
+                                          softWrap: true,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ],

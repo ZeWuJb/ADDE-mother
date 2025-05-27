@@ -1526,8 +1526,8 @@ abstract class AppLocalizations {
   /// Label for the consultation fee of a doctor
   ///
   /// In en, this message translates to:
-  /// **'Consultation Fee: {amount} ETB'**
-  String consultationFee(Object amount);
+  /// **'Consultation Fee'**
+  String get consultationFee;
 
   /// Fallback text for when a doctor's name is not available
   ///
@@ -2681,19 +2681,19 @@ abstract class AppLocalizations {
   /// **'You'**
   String get you;
 
-  /// No description provided for @imageMessage.
+  /// Label for image message
   ///
   /// In en, this message translates to:
   /// **'Image'**
   String get imageMessage;
 
-  /// No description provided for @videoMessage.
+  /// Label for video message
   ///
   /// In en, this message translates to:
   /// **'Video'**
   String get videoMessage;
 
-  /// No description provided for @documentMessage.
+  /// Label for document message
   ///
   /// In en, this message translates to:
   /// **'Document'**
@@ -3107,11 +3107,191 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get cancelLabel;
 
-  /// No description provided for @consultationsFee.
+  /// Text shown when other user is typing
   ///
   /// In en, this message translates to:
-  /// **'Consultation Fee'**
-  String get consultationsFee;
+  /// **'Typing...'**
+  String get typing;
+
+  /// Text shown when user is online
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get online;
+
+  /// Text shown for last seen status
+  ///
+  /// In en, this message translates to:
+  /// **'Last seen {time}'**
+  String lastSeen(Object time);
+
+  /// Tooltip for send image button
+  ///
+  /// In en, this message translates to:
+  /// **'Send image'**
+  String get sendImageTooltip;
+
+  /// Tooltip for send voice message button
+  ///
+  /// In en, this message translates to:
+  /// **'Send voice message'**
+  String get sendVoiceMessageTooltip;
+
+  /// Message when voice messages are not supported
+  ///
+  /// In en, this message translates to:
+  /// **'Voice messages are not supported yet'**
+  String get voiceMessagesNotSupported;
+
+  /// Success message when message is pinned
+  ///
+  /// In en, this message translates to:
+  /// **'Message pinned'**
+  String get messagePinned;
+
+  /// Success message when message is unpinned
+  ///
+  /// In en, this message translates to:
+  /// **'Message unpinned'**
+  String get messageUnpinned;
+
+  /// Error message when pinning message fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to pin message: {error}'**
+  String errorPinningMessage(Object error);
+
+  /// Error message when unpinning message fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to unpin message: {error}'**
+  String errorUnpinningMessage(Object error);
+
+  /// Label for pin message action
+  ///
+  /// In en, this message translates to:
+  /// **'Pin message'**
+  String get pinMessage;
+
+  /// Label for unpin message action
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin message'**
+  String get unpinMessage;
+
+  /// Label for reply message action
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get replyMessage;
+
+  /// Label for copy message action
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copyMessage;
+
+  /// Success message when message is copied
+  ///
+  /// In en, this message translates to:
+  /// **'Message copied'**
+  String get messageCopied;
+
+  /// Label for delete message action
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteMessage;
+
+  /// Success message when message is deleted
+  ///
+  /// In en, this message translates to:
+  /// **'Message deleted'**
+  String get messageDeleted;
+
+  /// Error message when deleting message fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete message: {error}'**
+  String errorDeletingMessage(Object error);
+
+  /// Error message when sending image fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send image: {error}'**
+  String errorSendingImage(Object error);
+
+  /// Tooltip for viewing chat activity
+  ///
+  /// In en, this message translates to:
+  /// **'View chat activity'**
+  String get viewChatActivity;
+
+  /// Title for chat activity chart
+  ///
+  /// In en, this message translates to:
+  /// **'Chat Activity'**
+  String get chatActivity;
+
+  /// No description provided for @editMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Message'**
+  String get editMessage;
+
+  /// No description provided for @failedToDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete message: @error'**
+  String get failedToDeleteMessage;
+
+  /// No description provided for @editMessageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit your message...'**
+  String get editMessageHint;
+
+  /// No description provided for @cancelEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Edit'**
+  String get cancelEdit;
+
+  /// No description provided for @saveEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Edit'**
+  String get saveEdit;
+
+  /// No description provided for @edited.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited'**
+  String get edited;
+
+  /// No description provided for @refresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get refresh;
+
+  /// No description provided for @favorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get favorites;
+
+  /// No description provided for @removeFavorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from Favorites'**
+  String get removeFavorite;
+
+  /// No description provided for @addFavorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Favorites'**
+  String get addFavorite;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

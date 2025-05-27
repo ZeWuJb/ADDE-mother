@@ -1646,9 +1646,134 @@
 "couldNotLaunchVideoCall": "Could not launch video call",
 "videoLinkNotAvailable": "Video link not available",
 "cancelLabel": "Cancel",
-"consultationFee": "Consultation Fee: {amount} ETB",
-"consultationsFee": "Consultation Fee"
-
+  "typing": "Typing...",
+  "online": "Online",
+  "lastSeen": "Last seen {time}",
+  "sendImageTooltip": "Send image",
+  "sendVoiceMessageTooltip": "Send voice message",
+  "voiceMessagesNotSupported": "Voice messages are not supported yet",
+  "messagePinned": "Message pinned",
+  "messageUnpinned": "Message unpinned",
+  "errorPinningMessage": "Failed to pin message: {error}",
+  "errorUnpinningMessage": "Failed to unpin message: {error}",
+  "pinMessage": "Pin message",
+  "unpinMessage": "Unpin message",
+  "replyMessage": "Reply",
+  "copyMessage": "Copy",
+  "messageCopied": "Message copied",
+  "deleteMessage": "Delete",
+  "messageDeleted": "Message deleted",
+  "errorDeletingMessage": "Failed to delete message: {error}",
+  "errorSendingImage": "Failed to send image: {error}",
+  "viewChatActivity": "View chat activity",
+  "chatActivity": "Chat Activity",
+  "@typing": {
+    "description": "Text shown when other user is typing"
+  },
+  "@online": {
+    "description": "Text shown when user is online"
+  },
+  "@lastSeen": {
+    "description": "Text shown for last seen status",
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      }
+    }
+  },
+  "@imageMessage": {
+    "description": "Label for image message"
+  },
+  "@videoMessage": {
+    "description": "Label for video message"
+  },
+  "@documentMessage": {
+    "description": "Label for document message"
+  },
+  "@sendImageTooltip": {
+    "description": "Tooltip for send image button"
+  },
+  "@sendVoiceMessageTooltip": {
+    "description": "Tooltip for send voice message button"
+  },
+  "@voiceMessagesNotSupported": {
+    "description": "Message when voice messages are not supported"
+  },
+  "@messagePinned": {
+    "description": "Success message when message is pinned"
+  },
+  "@messageUnpinned": {
+    "description": "Success message when message is unpinned"
+  },
+  "@errorPinningMessage": {
+    "description": "Error message when pinning message fails",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@errorUnpinningMessage": {
+    "description": "Error message when unpinning message fails",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@pinMessage": {
+    "description": "Label for pin message action"
+  },
+  "@unpinMessage": {
+    "description": "Label for unpin message action"
+  },
+  "@replyMessage": {
+    "description": "Label for reply message action"
+  },
+  "@copyMessage": {
+    "description": "Label for copy message action"
+  },
+  "@messageCopied": {
+    "description": "Success message when message is copied"
+  },
+  "@deleteMessage": {
+    "description": "Label for delete message action"
+  },
+  "@messageDeleted": {
+    "description": "Success message when message is deleted"
+  },
+  "@errorDeletingMessage": {
+    "description": "Error message when deleting message fails",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@errorSendingImage": {
+    "description": "Error message when sending image fails",
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "@viewChatActivity": {
+    "description": "Tooltip for viewing chat activity"
+  },
+  "@chatActivity": {
+    "description": "Title for chat activity chart"
+  },
+  "editMessage": "Edit Message",
+  "failedToDeleteMessage": "Failed to delete message: @error",
+  "editMessageHint": "Edit your message...",
+  "cancelEdit": "Cancel Edit",
+  "saveEdit": "Save Edit",
+  "edited": "Edited",
+  "refresh": "Refresh",
+  "favorites": "Favorites",
+  "removeFavorite": "Remove from Favorites",
+  "addFavorite": "Add to Favorites"
   }
   
   

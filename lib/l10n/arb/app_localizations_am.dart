@@ -847,9 +847,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get themeMode => 'ገጽታ ሁኔታ';
 
   @override
-  String consultationFee(Object amount) {
-    return 'የምክክር ክፍያ: $amount ብር';
-  }
+  String get consultationFee => 'የምክር ክፍያ';
 
   @override
   String get unknownName => 'ያልታወቀ ስም';
@@ -1725,5 +1723,105 @@ class AppLocalizationsAm extends AppLocalizations {
   String get cancelLabel => 'ይሰርዙ';
 
   @override
-  String get consultationsFee => 'የምክክር ክፍያ';
+  String get typing => 'እየፃፈ ነው...';
+
+  @override
+  String get online => 'በመስመር ላይ';
+
+  @override
+  String lastSeen(Object time) {
+    return 'መጨረሻ የታየው $time';
+  }
+
+  @override
+  String get sendImageTooltip => 'ምስል ላክ';
+
+  @override
+  String get sendVoiceMessageTooltip => 'የድምጽ መልዕክት ላክ';
+
+  @override
+  String get voiceMessagesNotSupported => 'የድምጽ መልዕክቶች እስካሁን አይደገፉም';
+
+  @override
+  String get messagePinned => 'መልዕክት ተሰካ';
+
+  @override
+  String get messageUnpinned => 'መልዕክት ተለቀቀ';
+
+  @override
+  String errorPinningMessage(Object error) {
+    return 'መልዕክት መሰካት አልተሳካም፡ $error';
+  }
+
+  @override
+  String errorUnpinningMessage(Object error) {
+    return 'መልዕክት መለቀቅ አልተሳካም፡ $error';
+  }
+
+  @override
+  String get pinMessage => 'መልዕክት ሰካ';
+
+  @override
+  String get unpinMessage => 'መልዕክት ንቀል';
+
+  @override
+  String get replyMessage => 'መልስ';
+
+  @override
+  String get copyMessage => 'ቅዳ';
+
+  @override
+  String get messageCopied => 'መልዕክት ተቀድቷል';
+
+  @override
+  String get deleteMessage => 'ሰርዝ';
+
+  @override
+  String get messageDeleted => 'መልዕክት ተሰርዟል';
+
+  @override
+  String errorDeletingMessage(Object error) {
+    return 'መልዕክት መሰረዝ አልተሳካም፡ $error';
+  }
+
+  @override
+  String errorSendingImage(Object error) {
+    return 'ምስል መላክ አልተሳካም፡ $error';
+  }
+
+  @override
+  String get viewChatActivity => 'የውይይት እንቅስቃሴ ተመልከት';
+
+  @override
+  String get chatActivity => 'የውይይት እንቅስቃሴ';
+
+  @override
+  String get editMessage => 'መልእክት አርትዕ';
+
+  @override
+  String get failedToDeleteMessage => 'መልእክት መሰረዝ አልተሳካም፡ @error';
+
+  @override
+  String get editMessageHint => 'መልእክትህን አርትዕ...';
+
+  @override
+  String get cancelEdit => 'አርትዕ ሰርዝ';
+
+  @override
+  String get saveEdit => 'አርትዕ አስቀምጥ';
+
+  @override
+  String get edited => 'ተስተካክሏል';
+
+  @override
+  String get refresh => 'አድስ';
+
+  @override
+  String get favorites => 'ተወዳጆች';
+
+  @override
+  String get removeFavorite => 'ከተወዳጆች አስወግድ';
+
+  @override
+  String get addFavorite => 'ወደ ተወዳጆች ጨምር';
 }
