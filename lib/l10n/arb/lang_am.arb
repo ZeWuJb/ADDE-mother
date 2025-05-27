@@ -1092,7 +1092,7 @@
   "@passwordsDoNotMatchError": {
     "description": "Error message when passwords do not match"
   },
-  "googleSignUpCancelledError": "Google መመዝገብ ተሰርዟል።",
+  "googleSignUpCancelledError": "Google መመ��ገብ ተሰርዟል።",
   "@googleSignUpCancelledError": {
     "description": "Error message when Google Sign-Up is cancelled"
   },
@@ -1795,4 +1795,3 @@
    "errorSchedulingTips": "የጤና ምክሮችን መርሐግብር ማስያዝ አልተሳካም፡ {error}",
    "errorLoadingProfileImage": "የመገለጫ ምስል መጫን አልተሳካም፡ {error}"
   }
-

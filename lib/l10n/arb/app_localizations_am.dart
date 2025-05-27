@@ -1142,7 +1142,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get passwordsDoNotMatchError => 'የይለፍ ቃሎች አይዛመዱም!';
 
   @override
-  String get googleSignUpCancelledError => 'Google መመዝገብ ተሰርዟል።';
+  String get googleSignUpCancelledError => 'Google መመ��ገብ ተሰርዟል።';
 
   @override
   String get googleSignUpFailedError => 'Google መመዝገብ አልተሳካም። እባክህ እንደገና ሞክር።';

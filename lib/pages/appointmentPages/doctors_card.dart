@@ -1,5 +1,6 @@
 import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'dart:convert';
 
 import 'doctors_detail_page.dart';
 
@@ -42,11 +43,7 @@ class DoctorCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 32,
                   backgroundColor: theme.colorScheme.primary.withOpacity(0.2),
-                  child: Icon(
-                    Icons.person,
-                    size: 32,
-                    color: theme.colorScheme.primary,
-                  ),
+                  child: _buildProfileImage(doctor['profile_url'], theme),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -95,5 +92,77 @@ class DoctorCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildProfileImage(String? profileUrl, ThemeData theme) {
+    if (profileUrl == null || profileUrl.isEmpty) {
+      return Icon(Icons.person, size: 32, color: theme.colorScheme.primary);
+    }
+
+    if (profileUrl.startsWith('data:image/')) {
+      // Handle base64 images
+      try {
+        // More robust base64 extraction
+        final parts = profileUrl.split(',');
+        if (parts.length < 2) {
+          print('Invalid base64 format: missing comma separator');
+          return Icon(Icons.person, size: 32, color: theme.colorScheme.primary);
+        }
+
+        final base64String = parts[1].trim();
+        if (base64String.isEmpty) {
+          print('Empty base64 string');
+          return Icon(Icons.person, size: 32, color: theme.colorScheme.primary);
+        }
+
+        // Add padding if needed for proper base64 format
+        String paddedBase64 = base64String;
+        while (paddedBase64.length % 4 != 0) {
+          paddedBase64 += '=';
+        }
+
+        final bytes = base64Decode(paddedBase64);
+        print('Successfully decoded ${bytes.length} bytes');
+
+        return ClipOval(
+          child: Image.memory(
+            bytes,
+            fit: BoxFit.cover,
+            width: 64,
+            height: 64,
+            errorBuilder: (context, error, stackTrace) {
+              print('Image.memory error: $error');
+              return Icon(
+                Icons.person,
+                size: 32,
+                color: theme.colorScheme.primary,
+              );
+            },
+          ),
+        );
+      } catch (e, stackTrace) {
+        print('Base64 decode error: $e');
+        print('Stack trace: $stackTrace');
+        return Icon(Icons.person, size: 32, color: theme.colorScheme.primary);
+      }
+    } else {
+      // Handle network URLs
+      return ClipOval(
+        child: Image.network(
+          profileUrl,
+          fit: BoxFit.cover,
+          width: 64,
+          height: 64,
+          errorBuilder: (context, error, stackTrace) {
+            print('Network image error: $error');
+            return Icon(
+              Icons.person,
+              size: 32,
+              color: theme.colorScheme.primary,
+            );
+          },
+        ),
+      );
+    }
   }
 }
