@@ -250,56 +250,57 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  void _showErrorDialog(String title, String message, {VoidCallback? retry}) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Theme.of(context).colorScheme.error,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            content: Text(
-              message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            actions: [
-              if (retry != null)
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    retry();
-                  },
-                  child: Text(
-                    AppLocalizations.of(context)!.retryButton,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(
-                  AppLocalizations.of(context)!.okButton,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-            ],
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            elevation: 8,
-          ),
-      barrierDismissible: true,
-    );
+  _showErrorDialog(String title, String message, {VoidCallback? retry}) {
+    return print(title);
+    // showDialog(
+    //   context: context,
+    //   builder:
+    //       (context) => AlertDialog(
+    //         title: Text(
+    //           title,
+    //           style: Theme.of(context).textTheme.titleLarge?.copyWith(
+    //             color: Theme.of(context).colorScheme.error,
+    //             fontWeight: FontWeight.bold,
+    //           ),
+    //         ),
+    //         content: Text(
+    //           message,
+    //           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+    //             color: Theme.of(context).colorScheme.onSurface,
+    //           ),
+    //         ),
+    //         actions: [
+    //           if (retry != null)
+    //             TextButton(
+    //               onPressed: () {
+    //                 Navigator.pop(context);
+    //                 retry();
+    //               },
+    //               child: Text(
+    //                 AppLocalizations.of(context)!.retryButton,
+    //                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
+    //                   color: Theme.of(context).colorScheme.primary,
+    //                 ),
+    //               ),
+    //             ),
+    //           TextButton(
+    //             onPressed: () => Navigator.pop(context),
+    //             child: Text(
+    //               AppLocalizations.of(context)!.okButton,
+    //               style: Theme.of(context).textTheme.labelLarge?.copyWith(
+    //                 color: Theme.of(context).colorScheme.primary,
+    //               ),
+    //             ),
+    //           ),
+    //         ],
+    //         shape: RoundedRectangleBorder(
+    //           borderRadius: BorderRadius.circular(12),
+    //         ),
+    //         backgroundColor: Theme.of(context).colorScheme.surface,
+    //         elevation: 8,
+    //       ),
+    //   barrierDismissible: true,
+    // );
   }
 
   @override
@@ -375,6 +376,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return AppBar(
+      automaticallyImplyLeading: false,
       backgroundColor:
           isDarkMode ? theme.colorScheme.onPrimary : theme.colorScheme.surface,
       elevation: 0,
