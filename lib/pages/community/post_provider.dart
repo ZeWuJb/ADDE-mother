@@ -35,17 +35,6 @@ class PostProvider with ChangeNotifier {
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
-          table: 'likes',
-          callback: (payload) {
-            print('Like change detected: ${payload.eventType}');
-            final motherId =
-                Supabase.instance.client.auth.currentUser?.id ?? '';
-            fetchPosts(motherId);
-          },
-        )
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
           table: 'comments',
           callback: (payload) {
             print('Comment change detected: ${payload.eventType}');
@@ -75,13 +64,7 @@ class PostProvider with ChangeNotifier {
 
       _posts =
           response.map<Post>((map) {
-            final isLiked =
-                (map['likes'] as List<dynamic>?)?.any(
-                  (like) => like['mother_id'] == motherId,
-                ) ??
-                false;
-            return Post.fromMap(map, map['mothers']['full_name'] ?? 'Unknown')
-              ..isLiked = isLiked;
+            return Post.fromMap(map, map['mothers']['full_name'] ?? 'Unknown');
           }).toList();
 
       // Prioritize posts based on engagement
@@ -232,44 +215,6 @@ class PostProvider with ChangeNotifier {
       }
     } catch (e) {
       print('Error updating post: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> likePost(String postId, String motherId, bool isLiked) async {
-    try {
-      print(
-        'Toggling like for post ID: $postId, isLiked: $isLiked, motherId: $motherId',
-      );
-      if (isLiked) {
-        await Supabase.instance.client
-            .from('likes')
-            .delete()
-            .eq('post_id', postId)
-            .eq('mother_id', motherId);
-        await Supabase.instance.client.rpc(
-          'decrement_likes',
-          params: {'row_id': postId},
-        );
-      } else {
-        await Supabase.instance.client.from('likes').insert({
-          'post_id': postId,
-          'mother_id': motherId,
-        });
-        await Supabase.instance.client.rpc(
-          'increment_likes',
-          params: {'row_id': postId},
-        );
-      }
-
-      final index = _posts.indexWhere((post) => post.id == postId);
-      if (index != -1) {
-        _posts[index].isLiked = !isLiked;
-        _posts[index].likesCount += isLiked ? -1 : 1;
-        notifyListeners();
-      }
-    } catch (e) {
-      print('Error toggling like: $e');
       rethrow;
     }
   }

@@ -277,20 +277,23 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 6,
         duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: l10n.retryButton,
-          textColor:
-              isSuccess
-                  ? theme.colorScheme.onPrimary
-                  : theme.colorScheme.onError,
-          onPressed: () {
-            if (message.contains('Google')) {
-              _nativeGoogleSignIn();
-            } else {
-              _login();
-            }
-          },
-        ),
+        action:
+            isSuccess
+                ? null
+                : SnackBarAction(
+                  label: l10n.retryButton,
+                  textColor:
+                      isSuccess
+                          ? theme.colorScheme.onPrimary
+                          : theme.colorScheme.onError,
+                  onPressed: () {
+                    if (message.contains('Google')) {
+                      _nativeGoogleSignIn();
+                    } else {
+                      _login();
+                    }
+                  },
+                ),
       ),
     );
   }

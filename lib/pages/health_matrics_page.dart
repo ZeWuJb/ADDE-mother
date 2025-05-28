@@ -351,12 +351,18 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             color:
                 Theme.of(context).brightness == Brightness.light
-                    ? Theme.of(context).colorScheme.onPrimary
-                    : Theme.of(context).colorScheme.primary,
+                    ? Theme.of(context).colorScheme.onSurface
+                    : Theme.of(context).colorScheme.onPrimary,
           ),
         ),
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.light
+                ? Theme.of(context).colorScheme.surface
+                : Theme.of(context).colorScheme.primary,
+        foregroundColor:
+            Theme.of(context).brightness == Brightness.light
+                ? Theme.of(context).colorScheme.onSurface
+                : Theme.of(context).colorScheme.onPrimary,
         elevation: Theme.of(context).appBarTheme.elevation,
       ),
       body: SingleChildScrollView(

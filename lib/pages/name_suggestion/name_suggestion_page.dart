@@ -73,30 +73,30 @@ class _NameSuggestionPageState extends State<NameSuggestionPage>
           style: theme.appBarTheme.titleTextStyle?.copyWith(
             color:
                 theme.brightness == Brightness.light
-                    ? theme.colorScheme.onPrimary
+                    ? theme.colorScheme.onSurface
                     : theme.colorScheme.primary,
           ),
         ),
         backgroundColor:
             theme.brightness == Brightness.light
-                ? theme.colorScheme.primary
+                ? theme.colorScheme.surface
                 : theme.colorScheme.onPrimary,
         elevation: theme.appBarTheme.elevation,
         bottom: TabBar(
           controller: _tabController,
           labelColor:
               theme.brightness == Brightness.light
-                  ? theme.colorScheme.primary
+                  ? theme.colorScheme.onSurface
                   : theme.colorScheme.onPrimary,
           unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
           indicatorColor:
               theme.brightness == Brightness.light
-                  ? theme.colorScheme.primary
+                  ? theme.colorScheme.onSurface
                   : theme.colorScheme.onPrimary,
           labelStyle: theme.tabBarTheme.labelStyle?.copyWith(
             color:
                 theme.brightness == Brightness.light
-                    ? theme.colorScheme.primary
+                    ? theme.colorScheme.onSurface
                     : theme.colorScheme.onPrimary,
           ),
           unselectedLabelStyle: theme.tabBarTheme.unselectedLabelStyle

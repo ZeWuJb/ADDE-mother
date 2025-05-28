@@ -344,20 +344,23 @@ class _RegisterPageState extends State<RegisterPage>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 6,
         duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: l10n.retryButton,
-          textColor:
-              isSuccess
-                  ? theme.colorScheme.onPrimary
-                  : theme.colorScheme.onError,
-          onPressed: () {
-            if (message.contains('Google')) {
-              _nativeGoogleSignIn();
-            } else {
-              _signUp(emailController.text, passwordController.text);
-            }
-          },
-        ),
+        action:
+            isSuccess
+                ? null
+                : SnackBarAction(
+                  label: l10n.retryButton,
+                  textColor:
+                      isSuccess
+                          ? theme.colorScheme.onPrimary
+                          : theme.colorScheme.onError,
+                  onPressed: () {
+                    if (message.contains('Google')) {
+                      _nativeGoogleSignIn();
+                    } else {
+                      _signUp(emailController.text, passwordController.text);
+                    }
+                  },
+                ),
       ),
     );
   }
@@ -573,8 +576,8 @@ class _RegisterPageState extends State<RegisterPage>
           elevation: 8,
           shadowColor: theme.colorScheme.primary.withOpacity(0.3),
         ).copyWith(
-          elevation: MaterialStateProperty.resolveWith<double>(
-            (states) => states.contains(MaterialState.pressed) ? 2 : 8,
+          elevation: WidgetStateProperty.resolveWith<double>(
+            (states) => states.contains(WidgetState.pressed) ? 2 : 8,
           ),
         ),
         child:

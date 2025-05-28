@@ -165,13 +165,13 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
           style: theme.appBarTheme.titleTextStyle?.copyWith(
             color:
                 theme.brightness == Brightness.light
-                    ? theme.colorScheme.onPrimary
+                    ? theme.colorScheme.onSurface
                     : theme.colorScheme.primary,
           ),
         ),
         backgroundColor:
             theme.brightness == Brightness.light
-                ? theme.colorScheme.primary
+                ? theme.colorScheme.surface
                 : theme.colorScheme.onPrimary,
         elevation: theme.appBarTheme.elevation,
       ),

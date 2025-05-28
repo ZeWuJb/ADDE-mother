@@ -168,13 +168,13 @@ class _WeeklyTipPageState extends State<WeeklyTipPage> {
             fontWeight: FontWeight.bold,
             color:
                 Theme.of(context).brightness == Brightness.light
-                    ? Theme.of(context).colorScheme.onPrimary
+                    ? Theme.of(context).colorScheme.onSurface
                     : Theme.of(context).colorScheme.primary,
           ),
         ),
         backgroundColor:
             Theme.of(context).brightness == Brightness.light
-                ? Theme.of(context).colorScheme.primary
+                ? Theme.of(context).colorScheme.surface
                 : Theme.of(context).colorScheme.onPrimary,
         elevation: Theme.of(context).appBarTheme.elevation,
         actions: [
@@ -183,7 +183,7 @@ class _WeeklyTipPageState extends State<WeeklyTipPage> {
               Icons.refresh,
               color:
                   Theme.of(context).brightness == Brightness.light
-                      ? Theme.of(context).colorScheme.onPrimary
+                      ? Theme.of(context).colorScheme.onSurface
                       : Theme.of(context).colorScheme.primary,
             ),
             onPressed: _loadTips,

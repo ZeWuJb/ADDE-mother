@@ -22,7 +22,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // System prompt with "adde"
   static const String _systemPrompt = """
-You are adde, a friendly and knowledgeable assistant specializing in pregnancy and child care. Provide accurate, supportive advice on topics like prenatal health, nutrition, baby milestones, postpartum care, and parenting tips. Keep responses concise, empathetic, and tailored to the user's needs.
+You are adey, a friendly and knowledgeable assistant specializing in pregnancy and child care. Provide accurate, supportive advice on topics like prenatal health, nutrition, baby milestones, postpartum care, and parenting tips. Keep responses concise, empathetic, and tailored to the user's needs.
 """;
 
   @override
@@ -51,7 +51,7 @@ You are adde, a friendly and knowledgeable assistant specializing in pregnancy a
       _messages.add(
         ChatMessage(
           text:
-              "Hello! I’m adde, your pregnancy and child care companion. How can I assist you today?",
+              "Hello! I’m adey, your pregnancy and child care companion. How can I assist you today?",
           isUser: false,
           timestamp: DateTime.now(),
         ),
@@ -225,12 +225,18 @@ You are adde, a friendly and knowledgeable assistant specializing in pregnancy a
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "adde - Your Pregnancy Companion",
+          "adey - Your Pregnancy Companion",
           style: theme.appBarTheme.titleTextStyle?.copyWith(
-            color: theme.appBarTheme.foregroundColor,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Theme.of(context).colorScheme.onSurface
+                    : Theme.of(context).colorScheme.primary,
           ),
         ),
-        backgroundColor: theme.appBarTheme.backgroundColor,
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.light
+                ? Theme.of(context).colorScheme.surface
+                : Theme.of(context).colorScheme.onPrimary,
         elevation: theme.appBarTheme.elevation,
         actions: [
           IconButton(
@@ -272,7 +278,7 @@ You are adde, a friendly and knowledgeable assistant specializing in pregnancy a
                 children: [
                   SizedBox(width: screenHeight * 0.01),
                   Text(
-                    "adde is typing...",
+                    "adey is typing...",
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -317,7 +323,7 @@ You are adde, a friendly and knowledgeable assistant specializing in pregnancy a
               Text(
                 message.text,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 4),
@@ -326,7 +332,7 @@ You are adde, a friendly and knowledgeable assistant specializing in pregnancy a
                     ? DateFormat('HH:mm').format(message.timestamp)
                     : "Time unavailable",
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ],

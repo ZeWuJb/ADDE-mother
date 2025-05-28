@@ -235,8 +235,8 @@ class _BookingPageState extends State<BookingPage> {
       final expiresAt = now.add(const Duration(minutes: 20));
 
       debugPrint('=== BOOKING TIME DEBUG ===');
-      debugPrint('Selected date: ${_selectedDay}');
-      debugPrint('Selected time: ${selectedTime}');
+      debugPrint('Selected date: $_selectedDay');
+      debugPrint('Selected time: $selectedTime');
       debugPrint(
         'Requested DateTime (UTC): ${requestedDateTime.toIso8601String()}',
       );

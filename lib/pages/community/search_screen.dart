@@ -34,7 +34,7 @@ class _SearchScreenState extends State<SearchScreen> {
       final response = await Supabase.instance.client
           .from('posts')
           .select('*, mothers(full_name)')
-          .ilike('content', '%$query%')
+          .ilike('title', '%$query%')
           .order('created_at', ascending: false);
       setState(() {
         _searchResults =

@@ -167,13 +167,13 @@ class _EducationPageState extends State<EducationPage> {
           fontWeight: FontWeight.w600,
           color:
               Theme.of(context).brightness == Brightness.light
-                  ? Theme.of(context).colorScheme.onPrimary
+                  ? Theme.of(context).colorScheme.onSurface
                   : Theme.of(context).colorScheme.primary,
         ),
       ),
       backgroundColor:
           Theme.of(context).brightness == Brightness.light
-              ? Theme.of(context).colorScheme.primary
+              ? Theme.of(context).colorScheme.surface
               : Theme.of(context).colorScheme.onPrimary,
       elevation: Theme.of(context).appBarTheme.elevation,
       actions: [
@@ -391,7 +391,9 @@ class _EducationPageState extends State<EducationPage> {
                             (context, error, stackTrace) => Container(
                               height: 200,
                               color:
-                                  Theme.of(context).colorScheme.surfaceVariant,
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
                               child: const Icon(Icons.broken_image, size: 50),
                             ),
                       ),

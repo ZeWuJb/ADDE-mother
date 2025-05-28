@@ -87,13 +87,13 @@ class _JournalScreenState extends State<JournalScreen> {
           style: TextStyle(
             color:
                 Theme.of(context).brightness == Brightness.light
-                    ? Theme.of(context).colorScheme.onPrimary
+                    ? Theme.of(context).colorScheme.onSurface
                     : Theme.of(context).colorScheme.primary,
           ),
         ),
         backgroundColor:
             Theme.of(context).brightness == Brightness.light
-                ? Theme.of(context).colorScheme.primary
+                ? Theme.of(context).colorScheme.surface
                 : Theme.of(context).colorScheme.onPrimary,
       ),
       body:

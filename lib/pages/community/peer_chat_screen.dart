@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -675,6 +674,7 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Directionality(
       textDirection:
@@ -707,14 +707,20 @@ class _PeerChatScreenState extends State<PeerChatScreen> {
                 child: Text(
                   widget.otherMotherName,
                   style: theme.appBarTheme.titleTextStyle?.copyWith(
-                    color: theme.colorScheme.onPrimary,
+                    color:
+                        isDarkMode
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurface,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          backgroundColor: theme.colorScheme.primary,
+          backgroundColor:
+              isDarkMode
+                  ? theme.colorScheme.onPrimary
+                  : theme.colorScheme.surface,
           elevation: theme.appBarTheme.elevation,
         ),
         body:

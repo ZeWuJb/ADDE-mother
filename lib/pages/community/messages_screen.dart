@@ -179,17 +179,24 @@ class _MessagesScreenState extends State<MessagesScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: theme.colorScheme.primaryContainer,
+        backgroundColor:
+            isDarkMode
+                ? theme.colorScheme.onPrimary
+                : theme.colorScheme.surface,
         elevation: 0,
         title: Text(
           l10n.messagesTitle,
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onPrimaryContainer,
+            color:
+                isDarkMode
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurface,
           ),
         ),
       ),

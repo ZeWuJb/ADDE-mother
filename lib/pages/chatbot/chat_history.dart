@@ -105,15 +105,25 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "adde Chat History",
+          "adey Chat History",
           style: theme.appBarTheme.titleTextStyle?.copyWith(
-            color: theme.appBarTheme.foregroundColor,
+            color:
+                theme.brightness == Brightness.light
+                    ? theme.colorScheme.onSurface
+                    : theme.colorScheme.primary,
           ),
         ),
-        backgroundColor: theme.appBarTheme.backgroundColor,
+        backgroundColor:
+            theme.brightness == Brightness.light
+                ? theme.colorScheme.surface
+                : theme.colorScheme.onPrimary,
         elevation: theme.appBarTheme.elevation,
         actions: [
           IconButton(
+            color:
+                theme.brightness == Brightness.light
+                    ? theme.colorScheme.onSurface
+                    : theme.colorScheme.primary,
             icon: const Icon(Icons.delete_forever),
             onPressed: () async {
               final confirm = await showDialog<bool>(
@@ -293,14 +303,14 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                 "You: ${entry['message'] ?? 'No message'}",
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 "adde: ${entry['response'] ?? 'No response'}",
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 4),
@@ -309,7 +319,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                     ? DateFormat('yyyy-MM-dd HH:mm').format(timestamp)
                     : "Time unavailable",
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ],

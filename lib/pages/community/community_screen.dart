@@ -50,10 +50,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
         _profileImageUrl = motherData['profile_url'] as String?;
         _isLoading = false;
       });
-      await Provider.of<PostProvider>(
-        context,
-        listen: false,
-      ).fetchPosts(motherId!);
+      final postProvider = Provider.of<PostProvider>(context, listen: false);
+      if (postProvider.posts.isEmpty) {
+        await postProvider.fetchPosts(motherId!);
+      }
     } catch (e) {
       _showSnackBar(
         AppLocalizations.of(context)!.errorFetchingUser(e.toString()),
@@ -74,30 +74,27 @@ class _CommunityScreenState extends State<CommunityScreen> {
   void _showSnackBar(String message, {VoidCallback? retry}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-            content: Text(
-              message,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onErrorContainer,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Theme.of(context).colorScheme.errorContainer,
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 4,
-            action:
-                retry != null
-                    ? SnackBarAction(
-                      label: AppLocalizations.of(context)!.retryButton,
-                      onPressed: retry,
-                      textColor: Theme.of(context).colorScheme.onErrorContainer,
-                    )
-                    : null,
-          ).animate().fadeIn(duration: 300.ms)
-          as SnackBar,
+        content: Text(
+          message,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onErrorContainer,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Theme.of(context).colorScheme.errorContainer,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 4,
+        action:
+            retry != null
+                ? SnackBarAction(
+                  label: AppLocalizations.of(context)!.retryButton,
+                  onPressed: retry,
+                  textColor: Theme.of(context).colorScheme.onErrorContainer,
+                )
+                : null,
+      ),
     );
   }
 
@@ -297,6 +294,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final theme = Theme.of(context);
     final postProvider = Provider.of<PostProvider>(context);
     final l10n = AppLocalizations.of(context)!;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     if (_isLoading || motherId == null) {
       return Scaffold(
@@ -313,20 +311,29 @@ class _CommunityScreenState extends State<CommunityScreen> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: theme.colorScheme.primaryContainer,
+        backgroundColor:
+            isDarkMode
+                ? theme.colorScheme.onPrimary
+                : theme.colorScheme.surface,
         elevation: 0,
         title: Text(
           l10n.pageTitleCommunity,
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onPrimaryContainer,
+            color:
+                isDarkMode
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurface,
           ),
         ),
         actions: [
           IconButton(
             icon: Icon(
               IconlyLight.search,
-              color: theme.colorScheme.onPrimaryContainer,
+              color:
+                  isDarkMode
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurface,
               size: 24,
             ),
             onPressed:
@@ -339,7 +346,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
           IconButton(
             icon: Icon(
               IconlyLight.message,
-              color: theme.colorScheme.onPrimaryContainer,
+              color:
+                  isDarkMode
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurface,
               size: 24,
             ),
             onPressed:

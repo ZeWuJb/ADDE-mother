@@ -388,7 +388,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
                             (context, error, stackTrace) => Container(
                               height: 200,
                               color:
-                                  Theme.of(context).colorScheme.surfaceVariant,
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
                               child: const Icon(Icons.broken_image, size: 50),
                             ),
                       ),

@@ -1,9 +1,9 @@
 import 'package:adde/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'doctors_card.dart';
 import 'appointments_page.dart'; // Assuming SocketTestPage is from this import
-import 'package:flutter/foundation.dart';
 
 class DoctorsPage extends StatefulWidget {
   const DoctorsPage({super.key});
@@ -18,6 +18,7 @@ class _DoctorsPageState extends State<DoctorsPage> {
   List<dynamic> nurses = [];
   bool isLoading = false;
   bool hasError = false;
+
   bool showProfessionals =
       true; // Default to true to show professionals on load
   String selectedType = 'doctor'; // Default to doctors
@@ -25,74 +26,56 @@ class _DoctorsPageState extends State<DoctorsPage> {
   @override
   void initState() {
     super.initState();
-    // Fetch will be triggered in didChangeDependencies
+    fetchProfessionals();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Fetch professionals on page load or on error
-    if (doctors.isEmpty && nurses.isEmpty || hasError) {
-      fetchProfessionals();
-    }
-  }
+  // @override
+  // void didChangeDependencies() {
+  //   super.didChangeDependencies();
+  //   if (doctors.isEmpty || nurses.isEmpty) {
+  //     fetchProfessionals();
+  //     return;
+  //   }
+  //   // Fetch data only once
+  // }
 
   Future<void> fetchProfessionals() async {
-    if (!mounted) return;
+    if (doctors.isNotEmpty || nurses.isNotEmpty) {
+      // Data already fetched, no need to fetch again
+      return;
+    }
 
+    if (!mounted) return; // Ensure the widget is still in the tree
     setState(() {
       isLoading = true;
       hasError = false;
     });
 
-    final l10n = AppLocalizations.of(context)!;
-
     try {
-      final supabase = Supabase.instance.client;
-
       // Check authentication status
       if (supabase.auth.currentUser == null) {
         throw Exception('User is not authenticated');
       }
 
-      debugPrint('Fetching professionals from doctors table');
       final response = await supabase
           .from('doctors')
           .select('*')
           .order('full_name', ascending: true)
           .timeout(const Duration(seconds: 120));
 
-      debugPrint('Supabase response: $response');
-
-      if (!mounted) return;
-
-      setState(() {
-        // Split professionals by type
-        doctors = response.where((item) => item['type'] == 'doctor').toList();
-        nurses = response.where((item) => item['type'] == 'nurse').toList();
-      });
+      doctors = response.where((item) => item['type'] == 'doctor').toList();
+      nurses = response.where((item) => item['type'] == 'nurse').toList();
     } catch (error) {
-      debugPrint('Error fetching professionals: $error');
-      if (!mounted) return;
-
+      if (!mounted) return; // Ensure the widget is still in the tree
       setState(() {
         hasError = true;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.errorLoadingEntries(error.toString())),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          action: SnackBarAction(
-            label: l10n.retryButton,
-            onPressed: fetchProfessionals,
-            textColor: Theme.of(context).colorScheme.onError,
-          ),
-        ),
-      );
+      debugPrint('Error fetching professionals: $error');
     } finally {
-      if (mounted) {
-        setState(() => isLoading = false);
-      }
+      if (!mounted) return; // Ensure the widget is still in the tree
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -102,7 +85,6 @@ class _DoctorsPageState extends State<DoctorsPage> {
     final theme = Theme.of(context);
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
-
     // Determine which professionals to display
     final professionals = selectedType == 'doctor' ? doctors : nurses;
     final professionalLabel =

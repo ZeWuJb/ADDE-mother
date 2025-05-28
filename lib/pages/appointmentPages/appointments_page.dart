@@ -286,7 +286,7 @@ class _AppointmentsPageState extends State<AppointmentsPage>
       icon = Icons.check_circle;
       statusText = 'Completed';
     } else {
-      backgroundColor = theme.colorScheme.surfaceVariant;
+      backgroundColor = theme.colorScheme.surfaceContainerHighest;
       textColor = theme.colorScheme.onSurfaceVariant;
       icon = Icons.help_outline;
       statusText = 'Pending';
@@ -722,7 +722,7 @@ class _AppointmentsPageState extends State<AppointmentsPage>
           SliverToBoxAdapter(
             child:
                 _isLoading
-                    ? Container(
+                    ? SizedBox(
                       height: 400,
                       child: Center(
                         child: CircularProgressIndicator(
@@ -733,7 +733,7 @@ class _AppointmentsPageState extends State<AppointmentsPage>
                       ),
                     )
                     : _appointments.isEmpty
-                    ? Container(
+                    ? SizedBox(
                       height: 400,
                       child: Center(
                         child: Column(

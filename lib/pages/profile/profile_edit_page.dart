@@ -393,13 +393,6 @@ class _ProfileEditPageState extends State<ProfileEditPage>
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            color: Theme.of(context).appBarTheme.foregroundColor,
-            onPressed: () {},
-          ),
-        ],
       ),
       body:
           _isLoading

@@ -138,13 +138,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           style: theme.appBarTheme.titleTextStyle?.copyWith(
             color:
                 theme.brightness == Brightness.light
-                    ? theme.colorScheme.onPrimary
+                    ? theme.colorScheme.onSurface
                     : theme.colorScheme.primary,
           ),
         ),
         backgroundColor:
             theme.brightness == Brightness.light
-                ? theme.colorScheme.primary
+                ? theme.colorScheme.surface
                 : theme.colorScheme.onPrimary,
         elevation: theme.appBarTheme.elevation,
       ),
@@ -164,26 +164,39 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
-                          CircleAvatar(
-                            radius: 50,
-                            backgroundColor: theme.colorScheme.secondary,
-                            foregroundColor: theme.colorScheme.onSecondary,
-                            backgroundImage: _getImageProvider(
-                              _profileImageBase64,
+                          GestureDetector(
+                            onTap:
+                                () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => UserProfileScreen(
+                                          motherId: currentUserId ?? '',
+                                          fullName: currentUserId ?? '',
+                                        ),
+                                  ),
+                                ),
+                            child: CircleAvatar(
+                              radius: 50,
+                              backgroundColor: theme.colorScheme.secondary,
+                              foregroundColor: theme.colorScheme.onSecondary,
+                              backgroundImage: _getImageProvider(
+                                _profileImageBase64,
+                              ),
+                              child:
+                                  _profileImageBase64 == null ||
+                                          _getImageProvider(
+                                                _profileImageBase64,
+                                              ) ==
+                                              null
+                                      ? Text(
+                                        widget.fullName.isNotEmpty
+                                            ? widget.fullName[0].toUpperCase()
+                                            : '?',
+                                        style: const TextStyle(fontSize: 32),
+                                      )
+                                      : null,
                             ),
-                            child:
-                                _profileImageBase64 == null ||
-                                        _getImageProvider(
-                                              _profileImageBase64,
-                                            ) ==
-                                            null
-                                    ? Text(
-                                      widget.fullName.isNotEmpty
-                                          ? widget.fullName[0].toUpperCase()
-                                          : '?',
-                                      style: const TextStyle(fontSize: 32),
-                                    )
-                                    : null,
                           ),
                           const SizedBox(height: 12),
                           Text(

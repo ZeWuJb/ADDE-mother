@@ -415,14 +415,20 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   AppBar _buildAppBar(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return AppBar(
-      backgroundColor: theme.colorScheme.primaryContainer,
+      backgroundColor:
+          isDarkMode ? theme.colorScheme.onPrimary : theme.colorScheme.surface,
       elevation: 0,
       title: Text(
         l10n.postDetailTitle,
         style: theme.textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w600,
-          color: theme.colorScheme.onPrimaryContainer,
+          color:
+              isDarkMode
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurface,
         ),
       ),
     );
@@ -569,13 +575,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         IconlyLight.chat,
                         color: theme.colorScheme.onSurfaceVariant,
                         size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _currentPost.commentCount?.toString() ?? '0',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
                       ),
                     ],
                   ),

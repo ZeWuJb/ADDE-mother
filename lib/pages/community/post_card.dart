@@ -38,8 +38,7 @@ class PostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final currentMotherId = Supabase.instance.client.auth.currentUser?.id;
-    final postProvider = Provider.of<PostProvider>(context, listen: true);
+    Provider.of<PostProvider>(context, listen: true);
 
     return Semantics(
       label: l10n.postBy(post.fullName),
